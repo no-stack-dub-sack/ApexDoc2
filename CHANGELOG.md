@@ -31,3 +31,4 @@
 - Fixed CSS bug for TOC method descriptions: `text-overflow: ellipsis;` was not working as `white-space: nowrap;` was missing. Also made the width of the descriptions smaller, as they were extending across the whole page which I found a bit distracting. Now will have ellipsis overflow at 500px;
 - Fixed line-height CSS for TOC method descriptions. The bottom of letters like 'g' and '__' were getting cut off, now full line is visible.
 - Fix comparisons when getting token content so that tokens without values do not get rendered.
+- Fix bug where classes without explicit access modifiers (either top-level `@isTest` or inner classes), assumed to be private, are ignored by the parser. [See](https://github.com/no-stack-dub-sack/ApexDoc2/pull/3).
