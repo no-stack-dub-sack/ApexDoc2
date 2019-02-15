@@ -68,7 +68,7 @@ Example
 * @deprecated Replaced by AccountTriggerHandler
 * @see AccountTriggerHandler
 *
-* @description Trigger Handler on Accounts that handles ensuring the correct system flags are set on
+* @description Trigger Handler on Accounts that handles ensuring the correct `System__c` flags are set on
 * our special accounts (Household, One-to-One), and also detects changes on Household Account that requires
 * name updating.
 */

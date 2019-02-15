@@ -5,3 +5,4 @@ Miscelaneous:
     ☐ Class renders @description token itself when no token value is provided
     ☐ If no description is provided for a method, do not show blank space
     ☐ Do not show 'Parameters' sub-header when param token is provided with no value
+    ☐ Do not make class, property, and method names links, unless a source url is provided
