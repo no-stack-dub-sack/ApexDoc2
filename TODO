@@ -1,0 +1,7 @@
+Testing:
+    ☐ Tests, tests, tests! (look into the possibility of snapshot tests to compare expected HTML output with the live output of test source files).
+
+Miscelaneous:
+    ☐ Class renders @description token itself when no token value is provided
+    ☐ If no description is provided for a method, do not show blank space
+    ☐ Do not show 'Parameters' sub-header when param token is provided with no value
