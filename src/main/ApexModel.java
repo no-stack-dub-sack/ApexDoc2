@@ -95,8 +95,11 @@ public class ApexModel {
         scope = null;
         if (nameLine != null) {
             String str = ApexDoc.strContainsScope(nameLine);
-            if (str != null)
+            if (str != null) {
                 scope = str;
+            } else {
+                scope = "private";
+            }
         }
     }
 }

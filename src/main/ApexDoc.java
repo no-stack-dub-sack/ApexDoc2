@@ -126,7 +126,7 @@ public class ApexDoc {
             // each file is parsed, html created, written to disk.
             // but for each class file, there is an xml file we'll ignore.
             // plus we add 2 for the author file and home file loading.
-            monitor.beginTask("ApexDoc - documenting your Apex Class files.", (files.size() / 2) * 3 + 2);
+            monitor.beginTask("ApexDoc2 - documenting your Apex Class files.", (files.size() / 2) * 3 + 2);
         }
         // parse each file, creating a class model for it
         for (File fromFile : files) {
@@ -162,16 +162,16 @@ public class ApexDoc {
         }
 
         // we are done!
-        System.out.println("ApexDoc has completed!");
+        System.out.println("ApexDoc2 has completed!");
     }
 
     private static void printHelp() {
-        System.out.println("ApexDoc - a tool for generating documentation from Salesforce Apex code class files.\n");
+        System.out.println("ApexDoc2 - a tool for generating documentation from Salesforce Apex code class files.\n");
         System.out.println("    Invalid Arguments detected.  The correct syntax is:\n");
         System.out.println("apexdoc -s <source_directory> [-t <target_directory>] [-g <source_url>] [-h <homefile>] [-a <authorfile>] [-p <scope>] [-o <sort_order>] [-n <toc_desc>] [-d <doc_title>]\n");
         System.out.println("<source_directory> - The folder location which contains your apex .cls classes");
         System.out.println("<target_directory> - Optional. Specifies your target folder where documentation will be generated.");
-        System.out.println("<source_url> - Optional. Specifies a URL where the source is hosted (so ApexDoc can provide links to your source).");
+        System.out.println("<source_url> - Optional. Specifies a URL where the source is hosted (so ApexDoc2 can provide links to your source).");
         System.out.println("<homefile> - Optional. Specifies the html file that contains the contents for the home page\'s content area.");
         System.out.println("<authorfile> - Optional. Specifies the text file that contains project information for the documentation header.");
         System.out.println("<scope> - Optional. Semicolon seperated list of scopes to document.  Defaults to 'global;public'. ");
@@ -311,15 +311,13 @@ public class ApexDoc {
                     strLine = strLine.substring(0, ich);
                 }
 
-                // ignore lines not dealing with scope
-                if (strContainsScope(strLine) == null &&
-                        // interface methods don't have scope
-                        !(cModel != null && cModel.getIsInterface() && strLine.contains("("))) {
-                    continue;
-                }
+                // skip lines not dealing with scope that are not inner
+                // classes, interface methods, or (assumed to be) @isTest
+                if (shouldSkipLine(strLine, cModel)) continue;
 
-                // look for a class
-                if ((strLine.toLowerCase().contains(" class ") || strLine.toLowerCase().contains(" interface "))) {
+                // look for a class. Use regexp to match class since we might be dealing with an inner
+                // class or @isTest class without an explicit access modifier (in other words, private)
+                if ((strLine.toLowerCase().matches(".*\\bclass\\b.*") || strLine.toLowerCase().contains(" interface "))) {
 
                     // create the new class
                     ClassModel cModelNew = new ClassModel(cModelParent);
@@ -385,6 +383,23 @@ public class ApexDoc {
         }
 
         return null;
+    }
+
+    /**
+     * @description Helper method to determine if a line being parsed should be skipped.
+     * Ignore lines not dealing with scope unless they start with the class keyword. If
+     * so, must be an @isTest class or inner class since Apex does not otherwise allow
+     * classes without access modifiers. Also, interface methods don't have scope, so
+     * don't skip those lines either.
+     */
+    private static boolean shouldSkipLine(String line, ClassModel cModel) {
+        if (strContainsScope(line) == null &&
+            !line.toLowerCase().startsWith("class ") &&
+                !(cModel != null && cModel.getIsInterface() && line.contains("("))) {
+                    return true;
+        }
+
+        return false;
     }
 
     public static String strContainsScope(String str) {

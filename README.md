@@ -52,7 +52,7 @@ Located in the lines above the class declaration.  The special tokens are all op
 | @author | The author of the class |
 | @date | The date the class was first implemented |
 | @group | A group to display this class under, in the menu hierarchy|
-| @group-content | A relative path to a static html file that provides content about the group|
+| @group-content | A relative path (from the classes source directory) to a static html file that provides content about the group|
 | @description | One or more lines that provide an overview of the class|
 | @deprecated | Indicates class should no longer be used; message should indicate replacement |
 | @see | A fully qualified class or method name; creates a link to that class or method in the documentation. The name must be a fully qualified name, even if its a reference to another method in the same class, e.g. Class.Method, Class.InnerClass, Class.InnerClass.InnerClassMethod|
