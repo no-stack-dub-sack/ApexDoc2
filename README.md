@@ -1,3 +1,9 @@
+***
+
+**NOTE:** ApexDoc2 has not been released! See the CHANGELOG for updates that will be forthcoming in the next release. This note will be removed with the first release since forking ApexDoc.
+
+***
+
 ApexDoc2
 =======
 
