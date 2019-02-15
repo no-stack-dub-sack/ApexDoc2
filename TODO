@@ -2,7 +2,8 @@ Testing:
     ☐ Tests, tests, tests! (look into the possibility of snapshot tests to compare expected HTML output with the live output of test source files).
 
 Miscelaneous:
-    ☐ Class renders @description token itself when no token value is provided
-    ☐ If no description is provided for a method, do not show blank space
-    ☐ Do not show 'Parameters' sub-header when param token is provided with no value
-    ☐ Do not make class, property, and method names links, unless a source url is provided
+    ☐ Fix issue where class docs render @description token itself when no token value is provided
+    ☐ Fix issue where ff no description is provided for a method, a blank space is shown beneath in the TOC
+    ☐ Fix issue where 'Parameters' sub-header renders when param token is provided with no value
+    ☐ Do not make class, property, and method names links unless a source url is provided
+    ✔ Fix issue where @isTest and inner classes not explicity given access modifers are ignored @done(19-02-14 22:42)
