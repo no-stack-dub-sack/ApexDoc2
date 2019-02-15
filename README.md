@@ -14,7 +14,7 @@ As the Salesforce Foundation was [no longer able to offer direct support for rep
 |-------------------------- | ---------------------|
 | -s *source_directory* | The folder location which contains your apex .cls classes.|
 | -t *target_directory* | The folder location where documentation will be generated to.|
-| -g *source_url* | A URL where the source is hosted (so ApexDoc can provide links to your source). Optional.|
+| -g *source_url* | A URL where the source is hosted (so ApexDoc2 can provide links to your source). Optional.|
 | -h *home_page* | The full path to an html file that contains the contents for the home page's content area. Optional.|
 | -a *banner_page* | The full path to an html file that contains the content for the banner section of each generated page. Optional.|
 | -p *scope* | A semicolon separated list of scopes to document.  Defaults to 'global;public;webService'. Optional.|
@@ -23,14 +23,14 @@ As the Salesforce Foundation was [no longer able to offer direct support for rep
 | -o *sort_order* | The order in which class methods, properties, and inner classes are presented. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. Optional.|
 
 ## Usage
-Copy apexdoc.jar file to your local machine, somewhere on your path.  Each release tag in gitHub has the matching apexdoc.jar attached to it.  Make sure that java is on your path.  Invoke ApexDoc like this example:
+Copy apexdoc.jar file to your local machine, somewhere on your path.  Each release tag in gitHub has the matching apexdoc.jar attached to it.  Make sure that java is on your path.  Invoke ApexDoc2 like this example:
 ```
 java -jar apexdoc.jar
     -s C:\Users\pweinberg\Workspaces\Force.com IDE\Cumulus3\src\classes
-    -t C:\Users\pweinberg\Dropbox\Cumulus\ApexDoc
+    -t C:\Users\pweinberg\Dropbox\Cumulus\ApexDoc2
     -p global;public;private;testmethod;webService
-    -h C:\Users\pweinberg\Dropbox\Cumulus\ApexDoc\homepage.htm
-    -a C:\Users\pweinberg\Dropbox\Cumulus\ApexDoc\projectheader.htm
+    -h C:\Users\pweinberg\Dropbox\Cumulus\ApexDoc2\homepage.htm
+    -a C:\Users\pweinberg\Dropbox\Cumulus\ApexDoc2\projectheader.htm
     -g http://github.com/SalesforceFoundation/Cumulus/blob/dev/src/classes/
     -d "My Docs Title"
     -o logical
@@ -93,7 +93,7 @@ Example
 ```
 
 ### Method Comments
-In order for ApexDoc to identify class methods, the method line must contain an explicit scope (global, public, private, testMethod, webService).  The comment block is located in the lines above a method.  The special tokens are all optional.
+In order for ApexDoc2 to identify class methods, the method line must contain an explicit scope (global, public, private, testMethod, webService).  The comment block is located in the lines above a method.  The special tokens are all optional.
 
 | token | description |
 |-------|-------------|
