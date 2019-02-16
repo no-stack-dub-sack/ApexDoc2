@@ -83,7 +83,7 @@ public class ClassModel extends ApexModel {
 
     public String getClassName() {
         String nameLine = getNameLine();
-        String strParent = cmodelParent == null ? "" : cmodelParent.getClassName() + ".";
+        String parent = cmodelParent == null ? "" : cmodelParent.getClassName() + ".";
         if (nameLine != null)
             nameLine = nameLine.trim();
         if (nameLine != null && nameLine.trim().length() > 0) {
@@ -97,12 +97,12 @@ public class ClassModel extends ApexModel {
                 nameLine = nameLine.substring(fFound + cch).trim();
             int lFound = nameLine.indexOf(" ");
             if (lFound == -1)
-                return strParent + nameLine;
+                return parent + nameLine;
             try {
                 String name = nameLine.substring(0, lFound);
-                return strParent + name;
+                return parent + name;
             } catch (Exception ex) {
-                return strParent + nameLine.substring(nameLine.lastIndexOf(" ") + 1);
+                return parent + nameLine.substring(nameLine.lastIndexOf(" ") + 1);
             }
         } else {
             return "";

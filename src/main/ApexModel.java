@@ -4,7 +4,7 @@ public class ApexModel {
 
     private String deprecated;
     private String nameLine;
-    private int inameLine;
+    private int lineNum;
     private String description;
     private String author;
     private String date;
@@ -17,13 +17,13 @@ public class ApexModel {
         return nameLine;
     }
 
-    public int getInameLine() {
-        return inameLine;
+    public int getLineNum() {
+        return lineNum;
     }
 
-    public void setNameLine(String nameLine, int iLine) {
+    public void setNameLine(String nameLine, int lineNum) {
         this.nameLine = nameLine.trim();
-        this.inameLine = iLine;
+        this.lineNum = lineNum;
         parseScope();
     }
 
@@ -94,7 +94,7 @@ public class ApexModel {
     private void parseScope() {
         scope = null;
         if (nameLine != null) {
-            String str = ApexDoc.strContainsScope(nameLine);
+            String str = ApexDoc.containsScope(nameLine);
             if (str != null) {
                 scope = str;
             } else {

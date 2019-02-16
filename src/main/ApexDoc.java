@@ -77,8 +77,8 @@ public class ApexDoc {
             } else if (args[i].equalsIgnoreCase("-a")) {
                 authorfilepath = args[++i];
             } else if (args[i].equalsIgnoreCase("-p")) {
-                String strScope = args[++i];
-                rgstrScope = strScope.split(";");
+                String scope = args[++i];
+                rgstrScope = scope.split(";");
             } else if (args[i].equalsIgnoreCase("-d")) {
                 documentTitle = args[++i];
             } else if (args[i].equalsIgnoreCase("-n")) {
@@ -206,17 +206,19 @@ public class ApexDoc {
 
     public static ClassModel parseFileContents(String filePath) {
         try {
-            FileInputStream fstream = new FileInputStream(filePath);
             // Get the object of DataInputStream
-            DataInputStream in = new DataInputStream(fstream);
-            BufferedReader br = new BufferedReader(new InputStreamReader(in));
-            String strLine;
+            FileInputStream fileStream = new FileInputStream(filePath);
+            DataInputStream inputStream = new DataInputStream(fileStream);
+            BufferedReader bufferReader = new BufferedReader(new InputStreamReader(inputStream));
+
+            String line;
             boolean commentsStarted = false;
             boolean docBlockStarted = false;
             int nestedCurlyBraceDepth = 0;
-            ArrayList<String> lstComments = new ArrayList<String>();
+
             ClassModel cModel = null;
             ClassModel cModelParent = null;
+            ArrayList<String> comments = new ArrayList<String>();
             Stack<ClassModel> cModels = new Stack<ClassModel>();
 
             // DH: Consider using java.io.StreamTokenizer to read the file a
@@ -233,45 +235,45 @@ public class ApexDoc {
             // with 1 param, are actually properties.
             //
 
-            int iLine = 0;
-            while ((strLine = br.readLine()) != null) {
-                iLine++;
+            int lineNum = 0;
+            while ((line = bufferReader.readLine()) != null) {
+                lineNum++;
 
-                strLine = strLine.trim();
-                if (strLine.length() == 0)
+                line = line.trim();
+                if (line.length() == 0)
                     continue;
 
                 // ignore anything after // style comments. this allows hiding
                 //  of tokens from ApexDoc. However, don't ignore when line
                 // doesn't start with //, we want to preserver @example comments
-                int ich = strLine.indexOf("//");
-                if (ich == 0) {
-                    strLine = strLine.substring(0, ich);
+                int shouldIgnore = line.indexOf("//");
+                if (shouldIgnore == 0) {
+                    line = line.substring(0, shouldIgnore);
                 }
 
                 // gather up our comments
-                if (strLine.startsWith("/*")) {
+                if (line.startsWith("/*")) {
                     commentsStarted = true;
                     boolean commentEnded = false;
-                    if (strLine.startsWith("/**")) {
-                    	if (strLine.endsWith("*/")) {
-                            strLine = strLine.replace("*/", "");
+                    if (line.startsWith("/**")) {
+                    	if (line.endsWith("*/")) {
+                            line = line.replace("*/", "");
                             commentEnded = true;
                     	}
-                    	lstComments.add(strLine);
+                    	comments.add(line);
                     	docBlockStarted = true;
                     }
-                    if (strLine.endsWith("*/") || commentEnded) {
+                    if (line.endsWith("*/") || commentEnded) {
                         commentsStarted = false;
                         docBlockStarted = false;
                     }
                     continue;
                 }
 
-                if (commentsStarted && strLine.endsWith("*/")) {
-                    strLine = strLine.replace("*/", "");
+                if (commentsStarted && line.endsWith("*/")) {
+                    line = line.replace("*/", "");
                     if (docBlockStarted) {
-                    	lstComments.add(strLine);
+                    	comments.add(line);
                     	docBlockStarted = false;
                     }
                     commentsStarted = false;
@@ -280,14 +282,14 @@ public class ApexDoc {
 
                 if (commentsStarted) {
                 	if (docBlockStarted) {
-                		lstComments.add(strLine);
+                		comments.add(line);
                 	}
                     continue;
                 }
 
                 // keep track of our nesting so we know which class we are in
-                int openCurlies = countChars(strLine, '{');
-                int closeCurlies = countChars(strLine, '}');
+                int openCurlies = countChars(line, '{');
+                int closeCurlies = countChars(line, '}');
                 nestedCurlyBraceDepth += openCurlies;
                 nestedCurlyBraceDepth -= closeCurlies;
 
@@ -300,29 +302,29 @@ public class ApexDoc {
                 }
 
                 // ignore anything after an =. this avoids confusing properties with methods.
-                ich = strLine.indexOf("=");
-                if (ich > -1) {
-                    strLine = strLine.substring(0, ich);
+                shouldIgnore = line.indexOf("=");
+                if (shouldIgnore > -1) {
+                    line = line.substring(0, shouldIgnore);
                 }
 
                 // ignore anything after an {. this avoids confusing properties with methods.
-                ich = strLine.indexOf("{");
-                if (ich > -1) {
-                    strLine = strLine.substring(0, ich);
+                shouldIgnore = line.indexOf("{");
+                if (shouldIgnore > -1) {
+                    line = line.substring(0, shouldIgnore);
                 }
 
                 // skip lines not dealing with scope that are not inner
                 // classes, interface methods, or (assumed to be) @isTest
-                if (shouldSkipLine(strLine, cModel)) continue;
+                if (shouldSkipLine(line, cModel)) continue;
 
                 // look for a class. Use regexp to match class since we might be dealing with an inner
                 // class or @isTest class without an explicit access modifier (in other words, private)
-                if ((strLine.toLowerCase().matches(".*\\bclass\\b.*") || strLine.toLowerCase().contains(" interface "))) {
+                if ((line.toLowerCase().matches(".*\\bclass\\b.*") || line.toLowerCase().contains(" interface "))) {
 
                     // create the new class
                     ClassModel cModelNew = new ClassModel(cModelParent);
-                    fillClassModel(cModelParent, cModelNew, strLine, lstComments, iLine);
-                    lstComments.clear();
+                    fillClassModel(cModelParent, cModelNew, line, comments, lineNum);
+                    comments.clear();
 
                     // keep track of the new class, as long as it wasn't a single liner {}
                     // but handle not having any curlies on the class line!
@@ -342,40 +344,40 @@ public class ApexDoc {
                 }
 
                 // look for a method
-                if (strLine.contains("(")) {
+                if (line.contains("(")) {
                     // deal with a method over multiple lines.
-                    while (!strLine.contains(")")) {
-                        strLine += br.readLine();
-                        iLine++;
+                    while (!line.contains(")")) {
+                        line += bufferReader.readLine();
+                        lineNum++;
                     }
                     MethodModel mModel = new MethodModel();
-                    fillMethodModel(mModel, strLine, lstComments, iLine);
+                    fillMethodModel(mModel, line, comments, lineNum);
                     cModel.getMethods().add(mModel);
-                    lstComments.clear();
+                    comments.clear();
                     continue;
                 }
 
                 // handle set & get within the property
-                if (strLine.contains(" get ") ||
-                    strLine.contains(" set ") ||
-                    strLine.contains(" get;") ||
-                    strLine.contains(" set;") ||
-                    strLine.contains(" get{") ||
-                    strLine.contains(" set{")) {
+                if (line.contains(" get ") ||
+                    line.contains(" set ") ||
+                    line.contains(" get;") ||
+                    line.contains(" set;") ||
+                    line.contains(" get{") ||
+                    line.contains(" set{")) {
                     continue;
                 }
 
                 // must be a property
                 PropertyModel propertyModel = new PropertyModel();
-                fillPropertyModel(propertyModel, strLine, lstComments, iLine);
+                fillPropertyModel(propertyModel, line, comments, lineNum);
                 cModel.getProperties().add(propertyModel);
-                lstComments.clear();
+                comments.clear();
                 continue;
 
             }
 
             // Close the input stream
-            in.close();
+            inputStream.close();
             // we only want to return the parent class
             return cModelParent;
         } catch (Exception e) { // Catch exception if any
@@ -393,7 +395,7 @@ public class ApexDoc {
      * don't skip those lines either.
      */
     private static boolean shouldSkipLine(String line, ClassModel cModel) {
-        if (strContainsScope(line) == null &&
+        if (containsScope(line) == null &&
             !line.toLowerCase().startsWith("class ") &&
                 !(cModel != null && cModel.getIsInterface() && line.contains("("))) {
                     return true;
@@ -402,7 +404,7 @@ public class ApexDoc {
         return false;
     }
 
-    public static String strContainsScope(String str) {
+    public static String containsScope(String str) {
         for (int i = 0; i < rgstrScope.length; i++) {
             if (str.toLowerCase().contains(rgstrScope[i].toLowerCase() + " ")) {
                 return rgstrScope[i];
@@ -411,11 +413,11 @@ public class ApexDoc {
         return null;
     }
 
-    private static void fillPropertyModel(PropertyModel propertyModel, String name, ArrayList<String> lstComments, int iLine) {
-        propertyModel.setNameLine(name, iLine);
+    private static void fillPropertyModel(PropertyModel propertyModel, String name, ArrayList<String> comments, int lineNum) {
+        propertyModel.setNameLine(name, lineNum);
         boolean inDescription = false;
         int i = 0;
-        for (String comment : lstComments) {
+        for (String comment : comments) {
         	i++;
             comment = comment.trim();
             int idxStart = comment.toLowerCase().indexOf(Tokens.DESCRIPTION);
@@ -450,12 +452,12 @@ public class ApexDoc {
         }
     }
 
-    private static void fillMethodModel(MethodModel mModel, String name, ArrayList<String> lstComments, int iLine) {
-        mModel.setNameLine(name, iLine);
+    private static void fillMethodModel(MethodModel mModel, String name, ArrayList<String> comments, int lineNum) {
+        mModel.setNameLine(name, lineNum);
         boolean inDescription = false;
         boolean inExample = false;
         int i = 0;
-        for (String comment : lstComments) {
+        for (String comment : comments) {
             i++;
             comment = comment.trim();
 
@@ -566,10 +568,10 @@ public class ApexDoc {
                         mModel.setDescription(mModel.getDescription() + ' ' + comment.substring(j));
                     } else if (inExample) {
                         // preserve whitespace in @example blocks using isBlank flag
-                        String previous = mModel.getExample().trim().length() == 0 ? "" : "\n";
-                        String line = previous + (isBlank ? "\n" : comment.substring(2));
+                        String prepend = mModel.getExample().trim().length() == 0 ? "" : "\n";
+                        String exampleLine = prepend + (isBlank ? "\n" : comment.substring(2));
 
-                        mModel.setExample(mModel.getExample() + line);
+                        mModel.setExample(mModel.getExample() + exampleLine);
                     }
                 }
                 continue;
@@ -577,14 +579,14 @@ public class ApexDoc {
         }
     }
 
-    private static void fillClassModel(ClassModel cModelParent, ClassModel cModel, String name, ArrayList<String> lstComments, int iLine) {
-        cModel.setNameLine(name, iLine);
+    private static void fillClassModel(ClassModel cModelParent, ClassModel cModel, String name, ArrayList<String> comments, int lineNum) {
+        cModel.setNameLine(name, lineNum);
         if (name.toLowerCase().contains(" interface ")) {
             cModel.setIsInterface(true);
         }
         boolean inDescription = false;
         int i = 0;
-        for (String comment : lstComments) {
+        for (String comment : comments) {
             i++;
             comment = comment.trim();
 
@@ -651,8 +653,9 @@ public class ApexDoc {
                 int j;
                 for (j = 0; j < comment.length(); j++) {
                     char ch = comment.charAt(j);
-                    if (ch != '*' && ch != ' ')
+                    if (ch != '*' && ch != ' ') {
                         break;
+                    }
                 }
                 if (j < comment.length()) {
                     cModel.setDescription(cModel.getDescription() + ' ' + comment.substring(j));
@@ -662,40 +665,37 @@ public class ApexDoc {
         }
     }
 
-    /*************************************************************************
-     * strPrevWord
-     *
-     * @param str
-     *            - string to search
-     * @param iSearch
-     *            - where to start searching backwards from
-     * @return - the previous word, or null if none found.
+    /**
+     * @description returns the previous word in a string
+     * @param str string to search
+     * @param searchIdx where to start searching backwards from
+     * @return the previous word, or null if none found.
      */
-    public static String strPrevWord(String str, int iSearch) {
+    public static String previousWord(String str, int searchIdx) {
         if (str == null) return null;
-        if (iSearch >= str.length()) return null;
+        if (searchIdx >= str.length()) return null;
 
-        int iStart;
-        int iEnd;
-        for (iStart = iSearch - 1, iEnd = 0; iStart >= 0; iStart--) {
-            if (iEnd == 0) {
-                if (str.charAt(iStart) == ' ') {
+        int idxStart;
+        int idxEnd;
+        for (idxStart = searchIdx - 1, idxEnd = 0; idxStart >= 0; idxStart--) {
+            if (idxEnd == 0) {
+                if (str.charAt(idxStart) == ' ') {
                     continue;
                 }
-                iEnd = iStart + 1;
-            } else if (str.charAt(iStart) == ' ') {
-                iStart++;
+                idxEnd = idxStart + 1;
+            } else if (str.charAt(idxStart) == ' ') {
+                idxStart++;
                 break;
             }
         }
 
-        if (iStart == -1)
+        if (idxStart == -1)
             return null;
         else
-            return str.substring(iStart, iEnd);
+            return str.substring(idxStart, idxEnd);
     }
 
-    /*************************************************************************
+    /**
      * @description Count the number of occurrences of character in the string
      * @param str
      * @param ch
