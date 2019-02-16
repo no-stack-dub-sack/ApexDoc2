@@ -240,8 +240,7 @@ public class ApexDoc {
                 lineNum++;
 
                 line = line.trim();
-                if (line.length() == 0)
-                    continue;
+                if (line.length() == 0) continue;
 
                 // ignore anything after // style comments. this allows hiding
                 //  of tokens from ApexDoc. However, don't ignore when line
@@ -689,10 +688,11 @@ public class ApexDoc {
             }
         }
 
-        if (idxStart == -1)
+        if (idxStart == -1) {
             return null;
-        else
+        } else {
             return str.substring(idxStart, idxEnd);
+        }
     }
 
     /**

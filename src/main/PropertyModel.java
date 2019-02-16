@@ -2,21 +2,15 @@ package main;
 
 public class PropertyModel extends ApexModel {
 
-    public PropertyModel() {
-    }
-
     public void setNameLine(String nameLine, int iLine) {
         if (nameLine != null) {
             // remove any trailing stuff after property name. { =
             int i = nameLine.indexOf('{');
-            if (i == -1)
-                i = nameLine.indexOf('=');
-            if (i == -1)
-                i = nameLine.indexOf(';');
-            if (i >= 0)
-                nameLine = nameLine.substring(0, i);
-
+            if (i == -1) i = nameLine.indexOf('=');
+            if (i == -1) i = nameLine.indexOf(';');
+            if (i >= 0) nameLine = nameLine.substring(0, i);
         }
+
         super.setNameLine(nameLine, iLine);
     }
 

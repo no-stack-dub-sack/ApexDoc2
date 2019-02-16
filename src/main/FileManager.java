@@ -123,8 +123,8 @@ public class FileManager {
         return false;
     }
 
-    private String makeLinkfromModel(ApexModel model, String strClassName, String hostedSourceURL) {
-        return "<a target='_blank' class='hostedSourceLink' href='" + hostedSourceURL + strClassName + ".cls#L"
+    private String makeLinkfromModel(ApexModel model, String className, String hostedSourceURL) {
+        return "<a target='_blank' class='hostedSourceLink' href='" + hostedSourceURL + className + ".cls#L"
                 + model.getLineNum() + "'>";
     }
 
@@ -200,8 +200,9 @@ public class FileManager {
 
             contents = HTML.getHeader(projectDetail, this.documentTitle) + contents + HTML.FOOTER;
             mapFNameToContent.put(fileName, contents);
-            if (monitor != null)
+            if (monitor != null) {
                 monitor.worked(1);
+            }
         }
         createHTML(mapFNameToContent, monitor);
     }
@@ -314,7 +315,7 @@ public class FileManager {
                     contents += "<div class='methodDescription'>" + escapeHTML(method.getDescription()) + "</div>";
                 }
 
-                if(isDeprecated){
+                if (isDeprecated) {
                     contents +="<div class='methodSubTitle deprecated'>Deprecated</div>";
                     contents += "<div class='methodSubDescription'>" + escapeHTML(method.getDeprecated()) + "</div>";
                 }
@@ -339,8 +340,9 @@ public class FileManager {
                             }
                             contents += "<div class='paramName'>" + paramName + "</div>";
 
-                            if (paramDescription != null)
+                            if (paramDescription != null) {
                                 contents += "<div class='paramDescription'>" + paramDescription + "</div>";
+                            }
                         }
                     }
                     // end Parameters
@@ -475,26 +477,26 @@ public class FileManager {
             if (cg.getContentSource() != null) {
                 String cgContent = parseHTMLFile(cg.getContentSource());
                 if (cgContent != "") {
-                    String strHtml = HTML.getHeader(projectDetail, this.documentTitle) + links + "<td class='contentTD'>" +
-                            "<h2 class='section-title'>" +
-                            escapeHTML(cg.getName()) + "</h2>" + cgContent + "</td>";
-                    strHtml += HTML.FOOTER;
-                    mapFNameToContent.put(cg.getContentFilename(), strHtml);
-                    if (monitor != null)
+
+                    String html = HTML.getHeader(projectDetail, this.documentTitle) + links +
+                                     "<td class='contentTD'>" + "<h2 class='section-title'>" +
+                                     escapeHTML(cg.getName()) + "</h2>" + cgContent + "</td>";
+
+                    html += HTML.FOOTER;
+
+                    mapFNameToContent.put(cg.getContentFilename(), html);
+                    if (monitor != null) {
                         monitor.worked(1);
+                    }
                 }
             }
         }
     }
 
     /**
-     * @description generate the HTML string for the Class Menu to display on
-     *              each page.
-     * @param mapGroupNameToClassGroup
-     *            map that holds all the Class names, and their respective Class
-     *            Group.
-     * @param cModels
-     *            list of ClassModels
+     * @description generate the HTML string for the Class Menu to display on each page.
+     * @param mapGroupNameToClassGroup map that holds all the Class names, and their respective Class Group.
+     * @param cModels list of ClassModels
      * @return String of HTML
      */
     private String getPageLinks(TreeMap<String, ClassGroup> mapGroupNameToClassGroup, ArrayList<ClassModel> cModels) {
@@ -504,8 +506,9 @@ public class FileManager {
         TreeMap<String, ClassModel> tm = new TreeMap<String, ClassModel>();
         for (ClassModel cm : cModels) {
             tm.put(cm.getClassName().toLowerCase(), cm);
-            if (!createMiscellaneousGroup && cm.getClassGroup() == null)
+            if (!createMiscellaneousGroup && cm.getClassGroup() == null) {
                 createMiscellaneousGroup = true;
+            }
         }
         cModels = new ArrayList<ClassModel>(tm.values());
 
@@ -616,21 +619,19 @@ public class FileManager {
         try {
             if (filePath != null && filePath.trim().length() > 0) {
                 FileInputStream fstream = new FileInputStream(filePath);
-                // Get the object of DataInputStream
-                DataInputStream in = new DataInputStream(fstream);
-                BufferedReader br = new BufferedReader(new InputStreamReader(in));
+                DataInputStream input = new DataInputStream(fstream);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(input));
                 String contents = "";
                 String strLine;
 
-                while ((strLine = br.readLine()) != null) {
-                    // Print the content on the console
+                while ((strLine = reader.readLine()) != null) {
                     strLine = strLine.trim();
                     if (strLine != null && strLine.length() > 0) {
                         contents += strLine;
                     }
                 }
-                // System.out.println("Contents = " + contents);
-                br.close();
+
+                reader.close();
                 return contents;
             }
         } catch (Exception e) {
