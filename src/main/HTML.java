@@ -33,7 +33,7 @@ public class HTML {
     // SVG info circle icon, stored as a string so it can be rendered directly in the HTML rather than
     // referenced as an SVG file. This gives us more control over styling, specifically hover styling
     public static final String INFO_CIRCLE =
-        "<svg version='1.1' id='info-circle' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' " +
+        "<svg version='1.1' tabindex='0' class='info-circle' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' " +
         "x='0px' y='0px' viewBox='0 0 23.625 23.625' style='enable-background:new 0 0 23.625 23.625;' xml:space='preserve'>" +
         "<g><path d='M11.812,0C5.289,0,0,5.289,0,11.812s5.289,11.813,11.812,11.813s11.813-5.29,11.813-11.813" +
 		"S18.335,0,11.812,0z M14.271,18.307c-0.608,0.24-1.092,0.422-1.455,0.548c-0.362,0.126-0.783,0.189-1.262,0.189" +
@@ -47,6 +47,14 @@ public class HTML {
 		 "M14.137,7.429c-0.353,0.328-0.778,0.492-1.275,0.492c-0.496,0-0.924-0.164-1.28-0.492c-0.354-0.328-0.533-0.727-0.533-1.193" +
 		"c0-0.465,0.18-0.865,0.533-1.196c0.356-0.332,0.784-0.497,1.28-0.497c0.497,0,0.923,0.165,1.275,0.497" +
         "c0.353,0.331,0.53,0.731,0.53,1.196C14.667,6.703,14.49,7.101,14.137,7.429z'/></g></svg>";
+
+    public static final String EXTERNAL_LINK =
+        "<svg aria-hidden='true' focusable='false' role='img' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512' class='externalLink'>" +
+        "<path d='M576 24v127.984c0 21.461-25.96 31.98-40.971 16.971l-35.707-35.709-243.523 243.523c-9.373 9.373-24.568 9.373-33.941 " +
+        "0l-22.627-22.627c-9.373-9.373-9.373-24.569 0-33.941L442.756 76.676l-35.703-35.705C391.982 25.9 402.656 0 424.024 " +
+        "0H552c13.255 0 24 10.745 24 24zM407.029 270.794l-16 16A23.999 23.999 0 0 0 384 303.765V448H64V128h264a24.003 24.003 " +
+        "0 0 0 16.97-7.029l16-16C376.089 89.851 365.381 64 344 64H48C21.49 64 0 85.49 0 112v352c0 26.51 21.49 48 48 48h352c26.51 " +
+        "0 48-21.49 48-48V287.764c0-21.382-25.852-32.09-40.971-16.97z' class='externalLink'></path></svg>";
 
     public static String getHeader(String projectDetail, String documentTitle) {
         String header =  "<html><head><title>" + documentTitle + "</title>";

@@ -106,20 +106,28 @@
 	    return "";
 	}
 
-    function goToLocation(url, event) {
+	function handleKeydown(url, event) {
+		if (event.keyCode === 13) {
+			goToLocation(url);
+		}
+	}
+
+	function toggleMenu(event) {
+		var clist = $('#mynavbar').data('collapsibleList');
+		var li = $(event.currentTarget.parentNode);
+		var isCollapsed = li.hasClass('collapsed');
+		if (isCollapsed) {
+			expandListToClass(li);
+			event.stopImmediatePropagation();
+		} else {
+			clist.collapseElement(li);
+			event.stopImmediatePropagation();
+		}
+	}
+
+    function goToLocation(url) {
     	if (document.location.href.toLowerCase().indexOf(url.toLowerCase()) == -1) {
 			document.location.href = url;
-		} else {
-	        var clist = $('#mynavbar').data('collapsibleList');
-            var li = $(event.currentTarget.parentNode);
-            var isCollapsed = li.hasClass('collapsed');
-            if (isCollapsed) {
-        	    expandListToClass(li);
-        	    event.stopImmediatePropagation();
-			} else {
-				clist.collapseElement(li);
-				event.stopImmediatePropagation();
-			}
 		}
     }
 

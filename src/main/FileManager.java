@@ -123,9 +123,16 @@ public class FileManager {
         return false;
     }
 
-    private String makeLinkfromModel(ApexModel model, String className, String hostedSourceURL) {
-        return "<a target='_blank' class='hostedSourceLink' href='" + hostedSourceURL + className + ".cls#L"
-                + model.getLineNum() + "'>";
+    private String maybeMakeSourceLink(ApexModel model, String className, String hostedSourceURL, String modelName) {
+        if (hostedSourceURL != null && !hostedSourceURL.equals("")) {
+            // if user leaves off trailing slash, save the day!
+            if (!hostedSourceURL.endsWith("/")) hostedSourceURL += "/";
+            return "<a target='_blank' title='Go to source' class='hostedSourceLink' href='" +
+                    hostedSourceURL + className + ".cls#L" + model.getLineNum() + "'>" +
+                    modelName + "</a>";
+        } else {
+            return "<span>" + modelName + "</span>";
+        }
     }
 
     private String makeHTMLScopingPanel() {
@@ -216,14 +223,17 @@ public class FileManager {
      */
     private String htmlForClassModel(ClassModel cModel, String hostedSourceURL, ArrayList<ClassModel> cModels) {
         String contents = "";
-        contents += "<h2 class='section-title'>" +
-                makeLinkfromModel(cModel, cModel.getTopmostClassName(), hostedSourceURL) +
-                cModel.getClassName() + "</a>" +
-                "</h2>";
+        hostedSourceURL = hostedSourceURL.trim();
+        String outerClass = cModel.getTopmostClassName();
+        boolean hasSource = hostedSourceURL != null && !hostedSourceURL.equals("");
 
-        contents += "<div class='classSignature'>" +
-                makeLinkfromModel(cModel, cModel.getTopmostClassName(), hostedSourceURL) +
-                escapeHTML(cModel.getNameLine()) + "</a></div>";
+        String sectionSourceLink = maybeMakeSourceLink(cModel, outerClass, hostedSourceURL, escapeHTML(cModel.getClassName()));
+        String classSourceLink = maybeMakeSourceLink(cModel, outerClass, hostedSourceURL, escapeHTML(cModel.getNameLine()));
+
+        contents += "<h2 class='section-title'>" + sectionSourceLink +
+                 (hasSource ? "<span>" + HTML.EXTERNAL_LINK + "</span>" : "") +"</h2>";
+
+        contents += "<div class='classSignature'>" + classSourceLink + "</div>";
 
         if (!cModel.getDescription().equals("")) {
             contents += "<div class='classDetails'>" + escapeHTML(cModel.getDescription());
@@ -261,11 +271,9 @@ public class FileManager {
                         "<table class='properties' > ";
 
             for (PropertyModel prop : properties) {
-                contents += "<tr class='propertyscope" + prop.getScope() + "'><td class='clsPropertyName'>" +
-                        prop.getPropertyName() + "</td>";
-                contents += "<td><div class='clsPropertyDeclaration'>" +
-                        makeLinkfromModel(prop, cModel.getTopmostClassName(), hostedSourceURL) +
-                        escapeHTML(prop.getNameLine()) + "</a></div>";
+                String propSourceLink = maybeMakeSourceLink(prop, outerClass, hostedSourceURL, escapeHTML(prop.getNameLine()));
+                contents += "<tr class='propertyscope" + prop.getScope() + "'><td class='clsPropertyName'>" + prop.getPropertyName() + "</td>";
+                contents += "<td><div class='clsPropertyDeclaration'>" + propSourceLink + "</div>";
                 contents += "<div class='clsPropertyDescription'>" + escapeHTML(prop.getDescription()) + "</div></tr>";
             }
             // end Properties
@@ -303,13 +311,11 @@ public class FileManager {
             // full method display
             for (MethodModel method : methods) {
                 boolean isDeprecated = !method.getDeprecated().equals("");
-
+                String methodSourceLink = maybeMakeSourceLink(method, outerClass, hostedSourceURL, escapeHTML(method.getNameLine()));
                 contents += "<div class='methodscope" + method.getScope() + "' >";
                 contents += "<h2 class='methodHeader" + (isDeprecated ? " deprecated" : "") + "'>" +
-                        "<a id='" + method.getMethodName() + "'/>" + method.getMethodName() + "</h2>" +
-                        "<div class='methodSignature'>" +
-                        makeLinkfromModel(method, cModel.getTopmostClassName(), hostedSourceURL) +
-                        escapeHTML(method.getNameLine()) + "</a></div>";
+                         "<a id='" + method.getMethodName() + "'/>" + method.getMethodName() + "</h2>" +
+                         "<div class='methodSignature'>" + methodSourceLink + "</div>";
 
                 if (!method.getDescription().equals("")) {
                     contents += "<div class='methodDescription'>" + escapeHTML(method.getDescription()) + "</div>";
@@ -525,18 +531,20 @@ public class FileManager {
         int groupIdx = 0;
         for (String group : mapGroupNameToClassGroup.keySet()) {
             ClassGroup cg = mapGroupNameToClassGroup.get(group);
-            String goTo = "onclick=\"goToLocation(document.location.href, event);\"";
-            String icon = "";
+            String infoLink = "";
 
             if (cg.getContentFilename() != null) {
-                goTo = "onclick=\"goToLocation('" + cg.getContentFilename() + ".html" + "', event);\"";
-                icon = "<span title='See Class Group info'" + goTo + ">" + HTML.INFO_CIRCLE + "</span>";
+                String destination = cg.getContentFilename() + ".html";
+                // handle both onclick and onkeydown when tabbing to info link
+                infoLink = "<span title='See Class Group info' onclick=\"goToLocation('" + destination + "', event);\"" +
+                       " onkeydown=\"handleKeydown('" + destination + "', event);\">" +
+                       HTML.INFO_CIRCLE + "</span>";
             }
 
             String collapsed = groupIdx == 0 ? "" : " collapsed";
             links += "<li class='header" + collapsed + "' id='idMenu" + cg.getContentFilename() + "'>" +
-                     "<a class='nav-item nav-section-title' onclick=\"goToLocation(document.location.href, event);\"" +
-                     " href='javascript:void(0)'>" + group + icon + "<span class='caret'></span>" +
+                     "<a class='nav-item nav-section-title' onclick=\"toggleMenu(event);\"" +
+                     " href='javascript:void(0)'>" + group + infoLink + "<span class='caret'></span>" +
                      "</a></li><ul>";
 
             // even though this algorithm is O(n^2), it was timed at just 12
