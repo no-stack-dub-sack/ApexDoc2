@@ -403,7 +403,6 @@ public class ApexDoc {
     }
 
     public static String strContainsScope(String str) {
-        str = str.toLowerCase();
         for (int i = 0; i < rgstrScope.length; i++) {
             if (str.toLowerCase().contains(rgstrScope[i].toLowerCase() + " ")) {
                 return rgstrScope[i];
