@@ -520,7 +520,7 @@ public class FileManager {
 
         String links = "<td width='20%' vertical-align='top' >";
         links += "<div class='sidebar'><div class='navbar'><nav role='navigation'><ul id='mynavbar'>";
-        links += "<li id='idMenuindex'><a href='javascript:void(0)' onclick=\"goToLocation('index.html', event);\" class='nav-item'>Home</a></li>";
+        links += "<li id='idMenuindex'><a href='javascript:void(0)' onclick=\"goToLocation('index.html');\" class='nav-item'>Home</a></li>";
 
         // add a bucket ClassGroup for all Classes without a ClassGroup specified
         if (createMiscellaneousGroup) {
@@ -531,21 +531,24 @@ public class FileManager {
         int groupIdx = 0;
         for (String group : mapGroupNameToClassGroup.keySet()) {
             ClassGroup cg = mapGroupNameToClassGroup.get(group);
-            String infoLink = "";
+            String link = "";
 
             if (cg.getContentFilename() != null) {
                 String destination = cg.getContentFilename() + ".html";
-                // handle both onclick and onkeydown when tabbing to info link
-                infoLink = "<span title='See Class Group info' onclick=\"goToLocation('" + destination + "', event);\"" +
-                       " onkeydown=\"handleKeydown('" + destination + "', event);\">" +
-                       HTML.INFO_CIRCLE + "</span>";
+                // handle both onclick and onkeydown when tabbing to link
+                link = "<a class='nav-item nav-section-title' href='javascript:void(0)'>" +
+                       "<span title='See Class Group info' onclick=\"goToLocation('" + destination + "');\"" +
+                       " onkeydown=\"handleKeydown('" + destination + "', event);\">" + group + "</span>" +
+                       "<span class='caret' /></a>";
+            } else {
+                link = "<span class='nav-item nav-section-title'>" + group + "<span class='caret' /></span>";
             }
 
+
             String collapsed = groupIdx == 0 ? "" : " collapsed";
-            links += "<li class='header" + collapsed + "' id='idMenu" + cg.getContentFilename() + "'>" +
-                     "<a class='nav-item nav-section-title' onclick=\"toggleMenu(event);\"" +
-                     " href='javascript:void(0)'>" + group + infoLink + "<span class='caret'></span>" +
-                     "</a></li><ul>";
+            links += "<li onclick=\"toggleMenu(event);\" class='header" + collapsed +
+                     "' id='idMenu" + cg.getContentFilename() + "'>" + link +
+                     "</li><ul>";
 
             // even though this algorithm is O(n^2), it was timed at just 12
             // milliseconds, so not an issue!
@@ -555,7 +558,7 @@ public class FileManager {
                     if (cModel.getNameLine() != null && cModel.getNameLine().trim().length() > 0) {
                         String fileName = cModel.getClassName();
                         links += "<li class='subitem classscope" + cModel.getScope() + "' id='idMenu" + fileName +
-                                "'><a href='javascript:void(0)' onclick=\"goToLocation('" + fileName + ".html', event);\" class='nav-item sub-nav-item scope" +
+                                "'><a href='javascript:void(0)' onclick=\"goToLocation('" + fileName + ".html');\" class='nav-item sub-nav-item scope" +
                                 cModel.getScope() + "'>" +
                                 fileName + "</a></li>";
                     }

@@ -114,7 +114,7 @@
 
 	function toggleMenu(event) {
 		var clist = $('#mynavbar').data('collapsibleList');
-		var li = $(event.currentTarget.parentNode);
+		var li = $(event.currentTarget);
 		var isCollapsed = li.hasClass('collapsed');
 		if (isCollapsed) {
 			expandListToClass(li);
