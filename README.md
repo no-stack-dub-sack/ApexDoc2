@@ -24,8 +24,8 @@ As the Salesforce Foundation was [no longer able to offer direct support for rep
 | -h *home_page* | The full path to an html file that contains the contents for the home page's content area. Optional.|
 | -a *banner_page* | The full path to an html file that contains the content for the banner section of each generated page. Optional.|
 | -p *scope* | A semicolon separated list of scopes to document.  Defaults to 'global;public;webService'. Optional.|
-| -d *document_title* | The value for the document's &lt;title&gt; attribute.  Defaults to 'ApexDocs'. Optional.|
-| -n *toc_description* | If 'true', will hide the method's description snippet in the class's table of contents. Defaults to 'false'. Optional.|
+| -d *doc_title* | The value for the document's &lt;title&gt; attribute.  Defaults to 'ApexDocs'. Optional.|
+| -n *toc_desc* | If 'true', will hide the method's description snippet in the class's table of contents. Defaults to 'false'. Optional.|
 | -o *sort_order* | The order in which class methods, properties, and inner classes are presented. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. Optional.|
 
 ## Usage
