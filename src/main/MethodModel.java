@@ -11,14 +11,15 @@ public class MethodModel extends ApexModel {
         params = new ArrayList<String>();
     }
 
-    public void setNameLine(String nameLine, int iLine) {
+    public void setNameLine(String nameLine, int lineNum) {
         // remove anything after the parameter list
         if (nameLine != null) {
             int i = nameLine.lastIndexOf(")");
-            if (i >= 0)
+            if (i >= 0) {
                 nameLine = nameLine.substring(0, i + 1);
+            }
         }
-        super.setNameLine(nameLine, iLine);
+        super.setNameLine(nameLine, lineNum);
     }
 
     public ArrayList<String> getParams() {
@@ -42,7 +43,7 @@ public class MethodModel extends ApexModel {
         if (nameLine != null && nameLine.length() > 0) {
             int lastindex = nameLine.indexOf("(");
             if (lastindex >= 0) {
-                String methodName = ApexDoc.strPrevWord(nameLine, lastindex);
+                String methodName = ApexDoc.previousWord(nameLine, lastindex);
                 return methodName;
             }
         }

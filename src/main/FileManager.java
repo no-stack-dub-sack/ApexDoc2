@@ -125,7 +125,7 @@ public class FileManager {
 
     private String makeLinkfromModel(ApexModel model, String strClassName, String hostedSourceURL) {
         return "<a target='_blank' class='hostedSourceLink' href='" + hostedSourceURL + strClassName + ".cls#L"
-                + model.getInameLine() + "'>";
+                + model.getLineNum() + "'>";
     }
 
     private String makeHTMLScopingPanel() {
@@ -141,7 +141,7 @@ public class FileManager {
         return str;
     }
 
-    /********************************************************************************************
+    /**
      * @description main routine that creates an HTML file for each class specified
      * @param mapGroupNameToClassGroup
      * @param cModels
@@ -206,7 +206,7 @@ public class FileManager {
         createHTML(mapFNameToContent, monitor);
     }
 
-    /*********************************************************************************************
+    /**
      * @description creates the HTML for the provided class, including its
      *              property and methods
      * @param cModel
@@ -487,7 +487,7 @@ public class FileManager {
         }
     }
 
-    /**********************************************************************************************************
+    /**
      * @description generate the HTML string for the Class Menu to display on
      *              each page.
      * @param mapGroupNameToClassGroup

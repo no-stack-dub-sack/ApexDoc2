@@ -4,9 +4,9 @@ public class ClassGroup {
     private String name;
     private String contentSource;
 
-    public ClassGroup(String name, String strContent) {
+    public ClassGroup(String name, String contentSource) {
         this.name = name;
-        this.contentSource = strContent;
+        this.contentSource = contentSource;
     }
 
     public String getName() {
@@ -21,8 +21,8 @@ public class ClassGroup {
         return contentSource;
     }
 
-    public void setContentSource(String strContent) {
-        this.contentSource = strContent;
+    public void setContentSource(String contentSource) {
+        this.contentSource = contentSource;
     }
 
     public String getContentFilename() {
