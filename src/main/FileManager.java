@@ -150,7 +150,7 @@ public class FileManager {
      * @param hostedSourceURL
      * @param monitor
      */
-    private void makeFile(TreeMap<String, ClassGroup> mapGroupNameToClassGroup, ArrayList<ClassModel> cModels,
+    public void createDoc(TreeMap<String, ClassGroup> mapGroupNameToClassGroup, ArrayList<ClassModel> cModels,
                           String projectDetail, String homeContents, String hostedSourceURL, IProgressMonitor monitor) {
 
         String links = "<table width='100%'>";
@@ -608,11 +608,6 @@ public class FileManager {
             }
         }
         return listOfFilesToCopy;
-    }
-
-    public void createDoc(TreeMap<String, ClassGroup> mapGroupNameToClassGroup, ArrayList<ClassModel> cModels,
-                          String projectDetail, String homeContents, String hostedSourceURL, IProgressMonitor monitor) {
-        makeFile(mapGroupNameToClassGroup, cModels, projectDetail, homeContents, hostedSourceURL, monitor);
     }
 
     private String parseFile(String filePath) {

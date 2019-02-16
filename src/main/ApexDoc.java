@@ -143,7 +143,7 @@ public class ApexDoc {
         }
 
         // create our Groups
-        TreeMap<String, ClassGroup> mapGroupNameToClassGroup = createMapGroupNameToClassGroup(cModels, sourceDirectory);
+        TreeMap<String, ClassGroup> classGroupMap = createGroupNameToClassGroupMap(cModels, sourceDirectory);
 
         // load up optional specified file templates
         String projectDetail = fm.parseHTMLFile(authorfilepath);
@@ -156,7 +156,7 @@ public class ApexDoc {
         }
 
         // create our set of HTML files
-        fm.createDoc(mapGroupNameToClassGroup, cModels, projectDetail, homeContents, hostedSourceURL, monitor);
+        fm.createDoc(classGroupMap, cModels, projectDetail, homeContents, hostedSourceURL, monitor);
         if (monitor != null) {
             monitor.done();
         }
@@ -180,7 +180,7 @@ public class ApexDoc {
         System.out.println("<sort_order> - Optional. The order in which class methods, properties, and inner classes are presented. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. ");
     }
 
-    private static TreeMap<String, ClassGroup> createMapGroupNameToClassGroup(ArrayList<ClassModel> cModels, String sourceDirectory) {
+    private static TreeMap<String, ClassGroup> createGroupNameToClassGroupMap(ArrayList<ClassModel> cModels, String sourceDirectory) {
         TreeMap<String, ClassGroup> map = new TreeMap<String, ClassGroup>();
         for (ClassModel cmodel : cModels) {
             String group = cmodel.getClassGroup();
