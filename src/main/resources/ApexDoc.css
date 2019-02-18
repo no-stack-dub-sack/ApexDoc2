@@ -77,7 +77,7 @@ body {
     font-weight: bold;
 }
 
-.clsPropertyDeclaration a {
+.clsPropertyDeclaration {
     font-family: Courier;
     font-size: .8em;
     font-weight: normal;
@@ -91,15 +91,12 @@ body {
 
 /* the class's signature line */
 .classSignature {
+    color: mediumblue;
     font-family: Courier;
     font-size: .9em;
     font-weight: normal;
     text-indent: -15px;
     padding: 6px 0 4px 15px;
-}
-
-.classSignature a {
-    color: mediumblue;
 }
 
 /* the description, author, date and other class attributes */
@@ -259,6 +256,7 @@ div.navbar ul li a {
     text-decoration: none;
     padding: 5px 5px 5px 10px;
     color: black;
+    user-select: none;
 }
 
 div.navbar ul li a:hover {
@@ -309,6 +307,10 @@ li .caret {
     margin-left: 20px;
 }
 
+span.nav-item {
+    user-select: none;
+}
+
 /* accents */
 .inlineCode {
     background-color: #f2f2f2;
@@ -327,12 +329,8 @@ li .caret {
     margin-bottom: 10px;
 }
 
-#info-circle {
-    height: 14px;
-    margin: 0 0 -2.5px 5px;
-    fill: #b7b7b7;
-}
-
-#info-circle:hover {
-    fill: #f2f2f2;
+.externalLink {
+    margin: 0 5px;
+    height: 10px;
+    fill: #ccc;
 }
