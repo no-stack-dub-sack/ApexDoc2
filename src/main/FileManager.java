@@ -141,7 +141,7 @@ public class FileManager {
 
         for (int i = 0; i < ApexDoc.rgstrScope.length; i++) {
             str += "<input type='checkbox' checked='checked' id='cbx" + ApexDoc.rgstrScope[i] +
-                    "' onclick='ToggleScope(\"" + ApexDoc.rgstrScope[i] + "\", this.checked );'>" +
+                    "' onclick='toggleScope(\"" + ApexDoc.rgstrScope[i] + "\", this.checked );'>" +
                     ApexDoc.rgstrScope[i] + "</input>&nbsp;&nbsp;";
         }
         str += "</td></tr>";
@@ -272,7 +272,7 @@ public class FileManager {
 
             for (PropertyModel prop : properties) {
                 String propSourceLink = maybeMakeSourceLink(prop, outerClass, hostedSourceURL, escapeHTML(prop.getNameLine()));
-                contents += "<tr class='propertyscope" + prop.getScope() + "'><td class='clsPropertyName'>" + prop.getPropertyName() + "</td>";
+                contents += "<tr class='property-scope-" + prop.getScope() + "'><td class='clsPropertyName'>" + prop.getPropertyName() + "</td>";
                 contents += "<td><div class='clsPropertyDeclaration'>" + propSourceLink + "</div>";
                 contents += "<div class='clsPropertyDescription'>" + escapeHTML(prop.getDescription()) + "</div></tr>";
             }
@@ -294,7 +294,7 @@ public class FileManager {
             for (MethodModel method : methods) {
                 boolean isDeprecated = method.getDeprecated() != "";
 
-                contents += "<li class='methodscope" + method.getScope() + "' >";
+                contents += "<li class='method-scope-" + method.getScope() + "' >";
                 contents += "<a class='methodTOCEntry" + (isDeprecated ? " deprecated" : "") +
                          "' href='#" + method.getMethodName() + "'>" +
                          method.getMethodName() + "</a>";
@@ -312,7 +312,7 @@ public class FileManager {
             for (MethodModel method : methods) {
                 boolean isDeprecated = !method.getDeprecated().equals("");
                 String methodSourceLink = maybeMakeSourceLink(method, outerClass, hostedSourceURL, escapeHTML(method.getNameLine()));
-                contents += "<div class='methodscope" + method.getScope() + "' >";
+                contents += "<div class='method-scope-" + method.getScope() + "' >";
                 contents += "<h2 class='methodHeader" + (isDeprecated ? " deprecated" : "") + "'>" +
                          "<a id='" + method.getMethodName() + "'/>" + method.getMethodName() + "</h2>" +
                          "<div class='methodSignature'>" + methodSourceLink + "</div>";
@@ -510,17 +510,22 @@ public class FileManager {
 
         // this is the only place we need the list of class models sorted by name.
         TreeMap<String, ClassModel> tm = new TreeMap<String, ClassModel>();
+
         for (ClassModel cm : cModels) {
             tm.put(cm.getClassName().toLowerCase(), cm);
             if (!createMiscellaneousGroup && cm.getClassGroup() == null) {
                 createMiscellaneousGroup = true;
             }
         }
+
         cModels = new ArrayList<ClassModel>(tm.values());
 
-        String links = "<td width='20%' vertical-align='top' >";
-        links += "<div class='sidebar'><div class='navbar'><nav role='navigation'><ul id='mynavbar'>";
-        links += "<li id='idMenuindex'><a href='javascript:void(0)' onclick=\"goToLocation('index.html');\" class='nav-item'>Home</a></li>";
+        String contents = "<td width='20%' vertical-align='top' >";
+        contents+= "<div class='navbar'>";
+        contents+= "<nav role='navigation'>";
+        contents+= "<a class='nav-header' id='home' href='javascript:void(0)' onclick=\"goToLocation('index.html');\">";
+        contents+= "Home";
+        contents+= "</a>";
 
         // add a bucket ClassGroup for all Classes without a ClassGroup specified
         if (createMiscellaneousGroup) {
@@ -528,51 +533,45 @@ public class FileManager {
         }
 
         // create a sorted list of ClassGroups
-        int groupIdx = 0;
         for (String group : mapGroupNameToClassGroup.keySet()) {
             ClassGroup cg = mapGroupNameToClassGroup.get(group);
-            String link = "";
+            String groupId = group.replaceAll(" ", "_");
+
+            contents+= "<details id='" + groupId + "' class='classGroup'>";
+            contents+= "<summary onclick='toggleActiveClass(this);' id='header-" + groupId + "' class='nav-header'>";
 
             if (cg.getContentFilename() != null) {
                 String destination = cg.getContentFilename() + ".html";
                 // handle both onclick and onkeydown when tabbing to link
-                link = "<a class='nav-item nav-section-title' href='javascript:void(0)'>" +
-                       "<span title='See Class Group info' onclick=\"goToLocation('" + destination + "');\"" +
-                       " onkeydown=\"handleKeydown('" + destination + "', event);\">" + group + "</span>" +
-                       "<span class='caret' /></a>";
+                contents+= "<a href='javascript:void(0)' title='See Class Group info' " +
+                           "onclick=\"goToLocation('" + destination + "');\">" +
+                           group + "</a>";
             } else {
-                link = "<span class='nav-item nav-section-title'>" + group + "<span class='caret' /></span>";
+                contents+= "<span>" + group + "</span>";
             }
 
+            contents+= "</summary>";
+            contents+= "<ul>";
 
-            String collapsed = groupIdx == 0 ? "" : " collapsed";
-            links += "<li onclick=\"toggleMenu(event);\" class='header" + collapsed +
-                     "' id='idMenu" + cg.getContentFilename() + "'>" + link +
-                     "</li><ul>";
-
-            // even though this algorithm is O(n^2), it was timed at just 12
-            // milliseconds, so not an issue!
             for (ClassModel cModel : cModels) {
-                if (group.equals(cModel.getClassGroup())
-                        || (cModel.getClassGroup() == null && group == "Miscellaneous")) {
+                // even though this algorithm is O(n^2), it was timed at just 12 milliseconds, so not an issue!
+                if (group.equals(cModel.getClassGroup()) || (cModel.getClassGroup() == null && group == "Miscellaneous")) {
                     if (cModel.getNameLine() != null && cModel.getNameLine().trim().length() > 0) {
                         String fileName = cModel.getClassName();
-                        links += "<li class='subitem classscope" + cModel.getScope() + "' id='idMenu" + fileName +
-                                "'><a href='javascript:void(0)' onclick=\"goToLocation('" + fileName + ".html');\" class='nav-item sub-nav-item scope" +
-                                cModel.getScope() + "'>" +
-                                fileName + "</a></li>";
+                        contents+= "<li id='item-" + fileName + "' class='nav-item class-scope-" +
+                                   cModel.getScope() + "' onclick=\"goToLocation('" + fileName + ".html');\">" +
+                                   "<a href='javascript:void(0)'>" + fileName + "</a></li>";
                     }
                 }
             }
 
-            links += "</ul>";
-            groupIdx++;
+            contents+= "</ul></details>";
         }
 
-        links += "</ul></nav></div></div></div>";
+        contents+= "</nav></div>";
+        contents+= "</td>";
 
-        links += "</td>";
-        return links;
+        return contents;
     }
 
     private void doCopy(String source, String target) throws Exception {
@@ -595,12 +594,8 @@ public class FileManager {
     private void  copy(String toFileName) throws IOException, Exception {
         doCopy("apex_doc_2_logo.png", toFileName);
         doCopy("favicon.png", toFileName);
-        doCopy("ApexDoc.css", toFileName);
-        doCopy("ApexDoc.js", toFileName);
-        doCopy("CollapsibleList.js", toFileName);
-        doCopy("jquery-1.11.1.js", toFileName);
-        doCopy("toggle_block_btm.gif", toFileName);
-        doCopy("toggle_block_stretch.gif", toFileName);
+        doCopy("index.css", toFileName);
+        doCopy("index.js", toFileName);
     }
 
     public ArrayList<File> getFiles(String path) {

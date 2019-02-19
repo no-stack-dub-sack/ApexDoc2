@@ -3,10 +3,8 @@ package main;
 public class HTML {
 
     public static final String HEADER_OPEN =
-        "<script type='text/javascript' src='jquery-1.11.1.js'></script>" +
-        "<script type='text/javascript' src='CollapsibleList.js'></script>" +
-        "<script type='text/javascript' src='ApexDoc.js'></script>" +
-        "<link rel='stylesheet' type='text/css' href='ApexDoc.css' /> " +
+        "<script type='text/javascript' src='index.js'></script>" +
+        "<link rel='stylesheet' type='text/css' href='index.css' /> " +
         "<link rel='shortcut icon' type='image/png' href='favicon.png'/>" +
         "</head><body>";
 
