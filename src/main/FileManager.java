@@ -521,10 +521,11 @@ public class FileManager {
         cModels = new ArrayList<ClassModel>(tm.values());
 
         String contents = "<td width='20%' vertical-align='top' >";
-        contents+= "<div class='navbar'><nav role='navigation'>";
-        contents+= "<div class='nav-header'>";
-        contents+= "<a href='javascript:void(0)' onclick=\"goToLocation('index.html');\">Home</a>";
-        contents+= "</div>";
+        contents+= "<div class='navbar'>";
+        contents+= "<nav role='navigation'>";
+        contents+= "<a class='nav-header' id='home' href='javascript:void(0)' onclick=\"goToLocation('index.html');\">";
+        contents+= "Home";
+        contents+= "</a>";
 
         // add a bucket ClassGroup for all Classes without a ClassGroup specified
         if (createMiscellaneousGroup) {
@@ -534,9 +535,10 @@ public class FileManager {
         // create a sorted list of ClassGroups
         for (String group : mapGroupNameToClassGroup.keySet()) {
             ClassGroup cg = mapGroupNameToClassGroup.get(group);
+            String groupId = group.replaceAll(" ", "_");
 
-            contents+= "<details id='" + group.replaceAll(" ", "_") + "' class='classGroup'>";
-            contents+= "<summary class='nav-header'>";
+            contents+= "<details id='" + groupId + "' class='classGroup'>";
+            contents+= "<summary onclick='toggleActiveClass(this);' id='header-" + groupId + "' class='nav-header'>";
 
             if (cg.getContentFilename() != null) {
                 String destination = cg.getContentFilename() + ".html";
@@ -556,9 +558,9 @@ public class FileManager {
                 if (group.equals(cModel.getClassGroup()) || (cModel.getClassGroup() == null && group == "Miscellaneous")) {
                     if (cModel.getNameLine() != null && cModel.getNameLine().trim().length() > 0) {
                         String fileName = cModel.getClassName();
-                        contents+= "<li class='class-scope-" + cModel.getScope() + "'>" +
-                                   "<a href='javascript:void(0)' onclick=\"goToLocation('" + fileName + ".html');\"" +
-                                   cModel.getScope() + "'>" + fileName + "</a></li>";
+                        contents+= "<li id='item-" + fileName + "' class='nav-item class-scope-" +
+                                   cModel.getScope() + "' onclick=\"goToLocation('" + fileName + ".html');\">" +
+                                   "<a href='javascript:void(0)'>" + fileName + "</a></li>";
                     }
                 }
             }
@@ -567,8 +569,8 @@ public class FileManager {
         }
 
         contents+= "</nav></div>";
-
         contents+= "</td>";
+
         return contents;
     }
 

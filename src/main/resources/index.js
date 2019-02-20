@@ -1,25 +1,31 @@
-// #region Global vars / Initialization
+// #region Global vars / Life-Cycle Functions
 /***********************************************************************
 ***********************************************************************/
-var SCOPES = ['global', 'public', 'private', 'testMethod', 'webService'];
+var SCOPES = ['global', 'public', 'private', 'protected', 'testMethod', 'webService'];
 var APEX_DOC_MENU = 'apex-doc-2-menu';
-
+var APEX_DOC_ACTIVE_EL = 'apex-doc-2-active-el';
 
 // document ready function - removes jQuery dependency
 document.addEventListener("DOMContentLoaded", function() {
 	initMenu();
 	renderMenuFromState();
+	setActiveElement();
 	readScopeCookie();
 	hideAllScopes();
 	showScopes();
 });
+
+// fire un-mounting functions
+window.onbeforeunload = function() {
+	updateMenuState();
+	updateActiveElement();
+}
 // #endregion
 
 
 // #region Menu Utils
 /***********************************************************************
 ***********************************************************************/
-
 // create session storage object for menu state
 // and/or update state with any new menu items
 function initMenu() {
@@ -109,7 +115,7 @@ function renderMenuFromState() {
 
 // save menu state before each unload so that state is
 // preserved when changing files or when reloading the page.
-window.onbeforeunload = function updateMenuState() {
+function updateMenuState() {
 	var items = document.querySelectorAll('.classGroup');
 	var state = JSON.parse(sessionStorage.getItem(APEX_DOC_MENU));
 
@@ -120,13 +126,34 @@ window.onbeforeunload = function updateMenuState() {
 
 	sessionStorage.setItem(APEX_DOC_MENU, JSON.stringify(state));
 }
+
+// preserve active menu item across loads
+function updateActiveElement() {
+	var active = document.querySelector('.active');
+	active && sessionStorage.setItem(APEX_DOC_ACTIVE_EL, active.id);
+}
+
+// set active element from storage
+function setActiveElement() {
+	var id = sessionStorage.getItem(APEX_DOC_ACTIVE_EL);
+	if (id) {
+		var item = document.getElementById(id);
+		item.classList.add('active');
+		// focus element as well so tab
+		// navigation can pick up where it left off
+		if (item.firstElementChild && item.firstElementChild.tagName === 'A') {
+			item.firstElementChild.focus();
+		} else {
+			item.focus();
+		}
+	}
+}
 // #endregion
 
 
 // #region Scope Utils
 /***********************************************************************
 ***********************************************************************/
-
 function getListScope() {
 	var list = [];
 	var checkboxes = document.querySelectorAll('input[type=checkbox]');
@@ -237,8 +264,19 @@ function toggleVisibility(elements, isShow) {
 // #region Navigation utils
 /***********************************************************************
 ***********************************************************************/
+function toggleActiveClass(elem) {
+	// remove isActive from current active element
+	var item = document.querySelector('.active');
+	item && item.classList.remove('active');
+
+	// add to new active element
+	elem.classList.add('active');
+}
+
 function goToLocation(url) {
-	event.preventDefault(); // prevent collapsing / expanding menu when clicking on Class Group link
+	// prevent collapsing / expanding menu when clicking on Class Group link
+	event.preventDefault();
+	toggleActiveClass(event.currentTarget);
 	if (document.location.href.toLowerCase().indexOf(url.toLowerCase()) === -1) {
 		document.location.href = url;
 	}

@@ -11,4 +11,4 @@ Miscelaneous:
 Menu:
     ✔ Make menu able to expand more than one section at once (and fix how this behavior ties into scope filtering) @done(19-02-18 20:13)
     ✔ Remove CollapsibleList.js and jQuery dependencies in favor of native JS and HTML5 elements @done(19-02-18 20:13)
-    ☐ Re-work menu styles based on new structure
+    ✔ Re-work menu styles based on new structure @done(19-02-19 22:12)
