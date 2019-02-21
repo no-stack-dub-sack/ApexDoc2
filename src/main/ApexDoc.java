@@ -502,7 +502,8 @@ public class ApexDoc {
 
             idxStart = comment.toLowerCase().indexOf(Tokens.PARAM);
             if (idxStart != -1) {
-                mModel.getParams().add(comment.substring(idxStart + Tokens.PARAM.length()).trim());
+                String param = comment.substring(idxStart + Tokens.PARAM.length()).trim();
+                if (param.length() > 0) mModel.getParams().add(param);
                 inDescription = false;
                 inExample = false;
                 continue;
