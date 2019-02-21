@@ -268,13 +268,33 @@ public class FileManager {
             // start Properties
             contents += "<h2 class='subsection-title'>Properties</h2>" +
                         "<div class='subsection-container'> " +
-                        "<table class='properties' > ";
+                        "<table class='properties'>";
+
+            // iterate once first to determine if we need to build the third column in the table
+            boolean hasDescription = false;
+            for (PropertyModel prop : properties) {
+                if (prop.getDescription().length() > 0) hasDescription = true;
+            }
+
+            // if any property has a description build out the third column
+            if (hasDescription) {
+                contents += "<tr><th>Name</th><th>Signature</th><th>Description</th></tr>";
+            } else {
+                contents += "<tr><th>Name</th><th>Signature</th></tr>";
+            }
 
             for (PropertyModel prop : properties) {
                 String propSourceLink = maybeMakeSourceLink(prop, outerClass, hostedSourceURL, escapeHTML(prop.getNameLine()));
-                contents += "<tr class='property-scope-" + prop.getScope() + "'><td class='clsPropertyName'>" + prop.getPropertyName() + "</td>";
-                contents += "<td><div class='clsPropertyDeclaration'>" + propSourceLink + "</div>";
-                contents += "<div class='clsPropertyDescription'>" + escapeHTML(prop.getDescription()) + "</div></tr>";
+                contents += "<tr class='property-scope-" + prop.getScope() + "'>";
+                contents += "<td class='clsPropertyName'>" + prop.getPropertyName() + "</td>";
+                contents += "<td><div class='clsPropertyDeclaration'>" + propSourceLink + "</div></td>";
+
+                // if any property has a description build out the third column
+                if (hasDescription) {
+                    contents += "<td><div class='clsPropertyDescription'>" + escapeHTML(prop.getDescription()) + "</div></td>";
+                }
+
+                contents += "</tr>";
             }
             // end Properties
             contents += "</table></div><p/>";

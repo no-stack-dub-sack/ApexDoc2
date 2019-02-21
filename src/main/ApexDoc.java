@@ -422,7 +422,7 @@ public class ApexDoc {
             int idxStart = comment.toLowerCase().indexOf(Tokens.DESCRIPTION);
             if (idxStart != -1 || i == 1) {
             	if (idxStart != -1 && comment.length() > Tokens.DESCRIPTION.length()) {
-            		propertyModel.setDescription(comment.substring(Tokens.DESCRIPTION.length()).trim());
+            		propertyModel.setDescription(comment.substring(idxStart + Tokens.DESCRIPTION.length()).trim());
                 } else {
                 	Pattern p = Pattern.compile("\\s");
                 	Matcher m = p.matcher(comment);

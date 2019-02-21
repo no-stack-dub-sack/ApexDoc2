@@ -68,8 +68,24 @@ body {
 }
 
 /* properties is used to display the table of class properties */
+.properties {
+    border-collapse: collapse;
+}
+
+.properties th {
+    text-align: left;
+    background: #003672;
+}
+
+.properties th,
 .properties td {
-    padding-right: 10px;
+    padding: 5px;
+    border: 1px solid #919191;
+    font-size: .9em;
+}
+
+.properties tr:nth-child(odd) {
+    background: #f7f7f7;
 }
 
 .clsPropertyName {
@@ -79,14 +95,20 @@ body {
 
 .clsPropertyDeclaration {
     font-family: Courier;
-    font-size: .8em;
     font-weight: normal;
     color: MediumBlue;
 }
 
 .clsPropertyDescription {
-    font-size: .9em;
     font-weight: normal;
+}
+
+.clsPropertyDescription.hasDescription {
+    height: 1em;
+}
+
+.propDescriptionWrapper {
+    margin-top: 15px;
 }
 
 /* the class's signature line */
@@ -246,7 +268,7 @@ details summary::-webkit-details-marker {
 
 .navbar .nav-item a:focus,
 .navbar .nav-item:hover a {
-    color: #2156b2;
+    color: mediumBlue;
     outline: none;
 }
 
@@ -272,7 +294,7 @@ a.nav-header {
 .nav-header a:focus,
 .nav-header:focus {
     outline: none;
-    color: #2156b2;
+    color: mediumBlue;
 }
 
 a.nav-header.active {
@@ -285,7 +307,7 @@ details[open] .nav-header.active {
 
 .nav-header:hover {
     background: #cfcdcd;
-    color: #2156b2;
+    color: mediumBlue;
 }
 
 /* accents */
