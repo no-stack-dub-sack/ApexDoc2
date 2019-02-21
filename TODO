@@ -2,7 +2,7 @@ Testing:
     ☐ Tests, tests, tests! (look into the possibility of snapshot tests to compare expected HTML output with the live output of test source files).
 
 Miscelaneous:
-    ☐ Fix issue where class docs render @description token itself when no token value is provided
+    ✔ Fix issue where class docs render @description token itself when no token value is provided @done(19-02-20 22:28)
     ✔ Fix issue where if no description is provided for a method, a blank space is shown beneath in the TOC @done(19-02-20 20:50)
     ✔ Fix issue where 'Parameters' sub-header renders when param token is provided with no value @done(19-02-20 20:34)
     ✔ Do not make class, property, and method names links unless a source url is provided @done(19-02-16 10:42)

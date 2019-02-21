@@ -503,7 +503,7 @@ public class ApexDoc {
             idxStart = comment.toLowerCase().indexOf(Tokens.PARAM);
             if (idxStart != -1) {
                 String param = comment.substring(idxStart + Tokens.PARAM.length()).trim();
-                if (param.length() > 0) mModel.getParams().add(param);
+                if (!param.isEmpty()) mModel.getParams().add(param);
                 inDescription = false;
                 inExample = false;
                 continue;
@@ -521,13 +521,16 @@ public class ApexDoc {
             if (idxStart != -1 || i == 1) {
                 int substringStart = idxStart + Tokens.DESCRIPTION.length();
                 if (idxStart != -1 && comment.length() >= substringStart) {
-                    String description = comment.substring(substringStart).trim();
-                    if (description.length() > 0) mModel.setDescription(description);
+                    String methodDescription = comment.substring(substringStart).trim();
+                    if (!methodDescription.isEmpty()) mModel.setDescription(methodDescription);
                 } else {
                     Pattern p = Pattern.compile("\\s");
                     Matcher m = p.matcher(comment);
                     if (m.find()) {
-                        mModel.setDescription(comment.substring(m.start()).trim());
+                        String methodDescription = comment.substring(m.start()).trim();
+                        if (!methodDescription.isEmpty() && !methodDescription.equalsIgnoreCase(Tokens.DESCRIPTION)) {
+                            mModel.setDescription(methodDescription);
+                        }
                     }
                 }
                 inDescription = true;
@@ -637,12 +640,18 @@ public class ApexDoc {
             if (idxStart != -1 || i == 1) {
                 int subStringStart = idxStart + Tokens.DESCRIPTION.length();
                 if (idxStart != -1 && comment.length() > subStringStart) {
-                    cModel.setDescription(comment.substring(subStringStart).trim());
+                    String classDescription = comment.substring(subStringStart).trim();
+                    System.out.println("normal: " + classDescription);
+                    if (!classDescription.isEmpty()) cModel.setDescription(classDescription);
                 } else {
                     Pattern p = Pattern.compile("\\s");
                     Matcher m = p.matcher(comment);
                     if (m.find()) {
-                        cModel.setDescription(comment.substring(m.start()).trim());
+                        String classDescription = comment.substring(m.start()).trim();
+                        System.out.println("weird: " + classDescription);
+                        if (!classDescription.isEmpty() && !classDescription.equalsIgnoreCase(Tokens.DESCRIPTION)) {
+                            cModel.setDescription(classDescription);
+                        }
                     }
                 }
                 inDescription = true;

@@ -74,7 +74,10 @@ body {
 
 .properties th {
     text-align: left;
-    background: #003672;
+    color: #003672;
+    /* OR */
+    /* background: #003672; */
+    /* color: white; */
 }
 
 .properties th,
