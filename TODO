@@ -3,7 +3,7 @@ Testing:
 
 Miscelaneous:
     ☐ Fix issue where class docs render @description token itself when no token value is provided
-    ☐ Fix issue where if no description is provided for a method, a blank space is shown beneath in the TOC
+    ✔ Fix issue where if no description is provided for a method, a blank space is shown beneath in the TOC @done(19-02-20 20:50)
     ✔ Fix issue where 'Parameters' sub-header renders when param token is provided with no value @done(19-02-20 20:34)
     ✔ Do not make class, property, and method names links unless a source url is provided @done(19-02-16 10:42)
     ✔ Fix issue where @isTest and inner classes not explicity given access modifers are ignored @done(19-02-14 22:42)

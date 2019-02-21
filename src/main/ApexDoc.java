@@ -521,7 +521,8 @@ public class ApexDoc {
             if (idxStart != -1 || i == 1) {
                 int substringStart = idxStart + Tokens.DESCRIPTION.length();
                 if (idxStart != -1 && comment.length() >= substringStart) {
-                    mModel.setDescription(comment.substring(substringStart).trim());
+                    String description = comment.substring(substringStart).trim();
+                    if (description.length() > 0) mModel.setDescription(description);
                 } else {
                     Pattern p = Pattern.compile("\\s");
                     Matcher m = p.matcher(comment);
