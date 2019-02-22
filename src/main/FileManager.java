@@ -414,83 +414,99 @@ public class FileManager {
         return contents;
     }
 
-    private String createSeeLink(ArrayList<ClassModel> classes, String qualifier) throws IllegalArgumentException {
-        String[] qualifiers = qualifier.split("\\.");
+    private String createSeeLink(ArrayList<ClassModel> classes, String qualifiersStr) throws IllegalArgumentException {
+        // the @see token may contain a comma separated list of fully qualified
+        // method or class names. Start by splitting them into individual qualifiers.
+        String[] qualifiers = qualifiersStr.split(",");
 
-        if (qualifiers.length < 0 || qualifiers.length > 3) {
-            String message = "\\nThe @see token qualifier must be a fully qualified class or method name" +
-                             ", with a minimum of 1 part and a maximum of 3. E.g. MyClassName, MyClass" +
-                             "Name.MyMethodName, MyClassName.MyInnerClassName.MyInnserClassMethodName.";
-            throw new IllegalArgumentException(message);
-        }
+        // initialize list to store created links
+        ArrayList<String> links = new ArrayList<String>();
 
-        String href = "";
-        boolean foundMatch = false;
+        // iterate over each qualifier and process
+        for (String qualifier : qualifiers) {
 
-        for (ClassModel _class : classes) {
-            // if first qualifier matches class name, begin search
-            if (_class.getClassName().equalsIgnoreCase(qualifiers[0])) {
-                // if only a single qualifier, stope here
-                if (qualifiers.length == 1) {
-                    href = _class.getClassName() + ".html";
-                    foundMatch = true;
-                    break;
-                }
+            String[] parts = qualifier.trim().split("\\.");
 
-                // otherwise keep searching for a match for the second qualifier
-                if (qualifiers.length >= 2) {
-                    ArrayList<MethodModel> methods = _class.getMethods();
-                    ArrayList<ClassModel> childClasses = _class.getChildClasses();
+            if (parts.length > 3) {
+                String message = "\\Each comma separated qualifier of the @see token must be a fully qualified class " +
+                                 "or method name, with a minimum of 1 part and a maximum of 3. E.g. MyClassName, " +
+                                 "MyClassName.MyMethodName, MyClassName.MyInnerClassName.MyInnserClassMethodName.";
+                throw new IllegalArgumentException(message);
+            }
 
-                    for (MethodModel method : methods) {
-                        if (method.getMethodName().equalsIgnoreCase(qualifiers[1])) {
-                            // use actual class/methof name to create link to avoid case issues
-                            href = _class.getClassName() + ".html#" + method.getMethodName();
-                            foundMatch = true;
-                            break;
-                        }
+            String href = "";
+            boolean foundMatch = false;
+
+            for (ClassModel _class : classes) {
+                // if first qualifier matches class name, begin search
+                if (_class.getClassName().equalsIgnoreCase(parts[0])) {
+                    // if only a single qualifier, stope here
+                    if (parts.length == 1) {
+                        href = _class.getClassName() + ".html";
+                        foundMatch = true;
+                        break;
                     }
 
-                    // if after searching methods a match hasn't been found yet
-                    // see if child class name matches the second qualifier.
-                    for (ClassModel childClass : childClasses) {
-                        // ApexDoc2 stores child class name as 'OuterClass.InnerClass'
-                        // recreate that format below to try to make the match with
-                        String childClassName = qualifiers[0] + "." + qualifiers[1];
-                        if (childClass.getClassName().equalsIgnoreCase(childClassName)) {
-                            String[] innerClass = childClass.getClassName().split("\\.");
-                            // If match, and only 2 qualifiers, stop here.
-                            if (qualifiers.length == 2) {
-                                // to ensure the link works, use actual name rather than
-                                // user provided qualifiers in case casing doesn't match
-                                href =  innerClass[0] + ".html#" + innerClass[1];
+                    // otherwise keep searching for a match for the second qualifier
+                    if (parts.length >= 2) {
+                        ArrayList<MethodModel> methods = _class.getMethods();
+                        ArrayList<ClassModel> childClasses = _class.getChildClasses();
+
+                        for (MethodModel method : methods) {
+                            if (method.getMethodName().equalsIgnoreCase(parts[1])) {
+                                // use actual class/methof name to create link to avoid case issues
+                                href = _class.getClassName() + ".html#" + method.getMethodName();
                                 foundMatch = true;
                                 break;
                             }
+                        }
 
-                            // Otherwise, there must be 3 qualifiers, attempt to match method.
-                            ArrayList<MethodModel> childMethods = childClass.getMethods();
-                            for (MethodModel method : childMethods) {
-                                if (method.getMethodName().equalsIgnoreCase(qualifiers[2])) {
-                                    // same as above, use actual name to avoid casing issues
-                                    href = innerClass[0] + ".html#" + method.getMethodName();
+                        // if after searching methods a match hasn't been found yet
+                        // see if child class name matches the second qualifier.
+                        for (ClassModel childClass : childClasses) {
+                            // ApexDoc2 stores child class name as 'OuterClass.InnerClass'
+                            // recreate that format below to try to make the match with
+                            String childClassName = parts[0] + "." + parts[1];
+                            if (childClass.getClassName().equalsIgnoreCase(childClassName)) {
+                                String[] innerClass = childClass.getClassName().split("\\.");
+                                // If match, and only 2 parts, stop here.
+                                if (parts.length == 2) {
+                                    // to ensure the link works, use actual name rather than
+                                    // user provided parts in case casing doesn't match
+                                    href =  innerClass[0] + ".html#" + innerClass[1];
                                     foundMatch = true;
                                     break;
+                                }
+
+                                // Otherwise, there must be 3 parts, attempt to match method.
+                                ArrayList<MethodModel> childMethods = childClass.getMethods();
+                                for (MethodModel method : childMethods) {
+                                    if (method.getMethodName().equalsIgnoreCase(parts[2])) {
+                                        // same as above, use actual name to avoid casing issues
+                                        href = innerClass[0] + ".html#" + method.getMethodName();
+                                        foundMatch = true;
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+
+            String link;
+            if (foundMatch) {
+                link = "<a href='javascript:void(0)' onclick=\"goToLocation" +
+                       "('" + href + "')\">" + qualifier + "</a>";
+            } else {
+                link = "<span title='A matching reference could not be found!'>" +
+                       qualifier + "</span>";
+            }
+
+            links.add(link);
         }
 
-        if (foundMatch) {
-            return "<a href='javascript:void(0)' onclick=\"goToLocation('" + href + "')\">" +
-                    qualifier + "</a>";
-        } else {
-            return "<span title='A matching reference could not be found!'>" +
-                    qualifier + "</span>";
-        }
+        return String.join(", ", links);
     }
 
     // create our Class Group content files
@@ -677,5 +693,4 @@ public class FileManager {
         }
         return "";
     }
-
 }

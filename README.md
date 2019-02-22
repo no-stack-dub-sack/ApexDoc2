@@ -61,7 +61,7 @@ Located in the lines above the class declaration.  The special tokens are all op
 | @group-content | A relative path (from the classes source directory) to a static html file that provides content about the group|
 | @description | One or more lines that provide an overview of the class|
 | @deprecated | Indicates class should no longer be used; message should indicate replacement |
-| @see | A fully qualified class or method name; creates a link to that class or method in the documentation. The name must be a fully qualified name, even if its a reference to another method in the same class, e.g. Class.Method, Class.InnerClass, Class.InnerClass.InnerClassMethod|
+| @see | A comma separated list of fully qualified class or method names; creates link(s) to that class or method in the documentation. The name must be a fully qualified name, even if its a reference to another method in the same class, e.g. Class.Method, Class.InnerClass, Class.InnerClass.InnerClassMethod|
 
 Example
 ```
@@ -103,15 +103,15 @@ In order for ApexDoc2 to identify class methods, the method line must contain an
 
 | token | description |
 |-------|-------------|
+| @author | The author of the method |
+| @date | The date the method was first implemented |
 | @description | One or more lines that provide an overview of the method|
 | @param *param name* | A description of what the parameter does|
 | @return | A description of the return value from the method|
 | @deprecated | Indicates method should no longer be used; message should indicate replacement |
-| @author | The author of the method |
-| @date | The date the method was first implemented |
 | @exception | A list of exceptions a method throws and/or description of Exception(s) that might be thrown |
 | @example | Example code usage. This will be wrapped in <code> tags to preserve whitespace|
-| @see | A fully qualified class or method name; creates a link to that class or method in the documentation. The name must be a fully qualified name, even if its a reference to another method in the same class, e.g. Class.Method, Class.InnerClass, Class.InnerClass.InnerClassMethod|
+| @see | A comma separated list of fully qualified class or method names; creates link(s) to that class or method in the documentation. The name must be a fully qualified name, even if its a reference to another method in the same class, e.g. Class.Method, Class.InnerClass, Class.InnerClass.InnerClassMethod|
 
 Example
 ```
@@ -121,7 +121,7 @@ Example
     * @param fieldName the name of the field to look up
     * @return the describe field result for the given field
     * @exception System.QueryException
-    * @see Utils.getSObjectDescribe
+    * @see Utils.getSObjectDescribe, Utils.getPicklistDescribe
     *
     * @example
     * // this is how getFieldDescribe works (the whitespace below will be preserved for complex examples)
