@@ -1,24 +1,28 @@
 package main;
 
+import java.util.ArrayList;
+
 public class ApexModel {
 
-    private String deprecated;
+    private String author = "";
+    private String date = "";
+    private String deprecated = "";
+    private String description = "";
+    private String example = "";
+    protected String exception = "";
+    protected String classGroup = "";
+    protected String classGroupContent = "";
+    protected ArrayList<String> params = new ArrayList<String>();
+    private String see = "";
+    protected String returns = "";
+
     private String nameLine;
     private int lineNum;
-    private String description;
-    private String author;
-    private String date;
-    private String returns;
     private String scope;
-    private String example;
-    private String see;
 
+    // model attribute getters / setters
     public String getNameLine() {
         return nameLine;
-    }
-
-    public int getLineNum() {
-        return lineNum;
     }
 
     public void setNameLine(String nameLine, int lineNum) {
@@ -27,60 +31,8 @@ public class ApexModel {
         parseScope();
     }
 
-    public String getDescription() {
-        return description == null ? "" : description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getAuthor() {
-        return author == null ? "" : author;
-    }
-
-    public void setAuthor(String author) {
-        this.author = author;
-    }
-
-    public void setDeprecated(String dep) {
-        this.deprecated = dep;
-    }
-
-    public String getDeprecated() {
-        return deprecated == null ? "" : deprecated;
-    }
-
-    public String getDate() {
-        return date == null ? "" : date;
-    }
-
-    public void setDate(String date) {
-        this.date = date;
-    }
-
-    public String getReturns() {
-        return returns == null ? "" : returns;
-    }
-
-    public void setReturns(String returns) {
-        this.returns = returns;
-    }
-
-    public String getExample() {
-        return example == null ? "" : example;
-    }
-
-    public void setExample(String example) {
-        this.example = example;
-    }
-
-    public String getSee() {
-        return see == null ? "" : see;
-    }
-
-    public void setSee(String see) {
-        this.see = see;
+    public int getLineNum() {
+        return lineNum;
     }
 
     public String getScope() {
@@ -99,6 +51,99 @@ public class ApexModel {
                 scope = str;
             } else {
                 scope = "private";
+            }
+        }
+    }
+
+    // common @token getters
+    public String getDescription() {
+        return description == null ? "" : description;
+    }
+
+    public String getAuthor() {
+        return author == null ? "" : author;
+    }
+
+    public String getDeprecated() {
+        return deprecated == null ? "" : deprecated;
+    }
+
+    public String getDate() {
+        return date == null ? "" : date;
+    }
+
+    public String getExample() {
+        return example == null ? "" : example;
+    }
+
+    public String getSee() {
+        return see == null ? "" : see;
+    }
+
+    public void parseComments(ArrayList<String> comments) {
+        String currBlock = null, block = null;
+        for (String comment : comments) {
+            boolean newBlock = false;
+            String lowerComment = comment.toLowerCase();
+            int i;
+
+            // if we find a tag, start a new block
+            if (((i = lowerComment.indexOf(block = Tokens.AUTHOR)) >= 0)
+            || ((i = lowerComment.indexOf(block = Tokens.DATE)) >= 0)
+                || ((i = lowerComment.indexOf(block = Tokens.SEE)) >= 0)
+                || ((i = lowerComment.indexOf(block = Tokens.RETURN)) >= 0)
+                || ((i = lowerComment.indexOf(block = Tokens.PARAM)) >= 0)
+                || ((i = lowerComment.indexOf(block = Tokens.EXCEPTION)) >= 0)
+                || ((i = lowerComment.indexOf(block = Tokens.DEPRECATED)) >= 0)
+                || ((i = lowerComment.indexOf(block = Tokens.DESCRIPTION)) >= 0)
+                || ((i = lowerComment.indexOf(block = Tokens.GROUP)) >= 0)
+                || ((i = lowerComment.indexOf(block = Tokens.GROUP_CONTENT)) >= 0)
+                || ((i = lowerComment.indexOf(block = Tokens.EXAMPLE)) >= 0)) {
+
+                    comment = comment.substring(i + block.length());
+                    currBlock = block;
+                    newBlock = true;
+                }
+
+                // get everything after first '*'
+                String line = "";
+                comment = comment.trim();
+                for (int j = 0; j < comment.length(); ++j) {
+                    char ch = comment.charAt(j);
+                    if (ch != '*') {
+                        line = comment.substring(j);
+                        break;
+                    }
+                }
+
+            // add line to appropriate block...
+            // if currBlock was not reset on this iteration we're on the next line of the last token, add line
+            // to that value. Allow empty lines in example blocks to preserve whitespace in complex examples
+            if (currBlock != null && (!line.trim().isEmpty() || line.trim().isEmpty() && currBlock.equals(Tokens.EXAMPLE))) {
+                if (currBlock.equals(Tokens.AUTHOR)) {
+                    author += (!author.isEmpty() ? " " : "") + line.trim();
+                } else if (currBlock.equals(Tokens.DATE)) {
+                    date += (!date.isEmpty() ? " " : "") + line.trim();
+                } else if (currBlock.equals(Tokens.SEE)) {
+                    see += (!see.isEmpty() ? " " : "") + line.trim();
+                } else if (currBlock.equals(Tokens.RETURN)) {
+                    returns += (!returns.isEmpty() ? " " : "") + line.trim();
+                } else if (currBlock.equals(Tokens.PARAM)) {
+                    String p = (newBlock ? "" : params.remove(params.size() - 1));
+                    params.add(p + (!p.isEmpty() ? " " : "") + line.trim());
+                } else if (currBlock.equals(Tokens.EXCEPTION)) {
+                    exception += (!exception.isEmpty() ? " " : "") + line.trim();
+                } else if (currBlock.equals(Tokens.DEPRECATED)) {
+                    deprecated += (!deprecated.isEmpty() ? " " : "") + line.trim();
+                } else if (currBlock.equals(Tokens.DESCRIPTION)) {
+                    description += (!description.isEmpty() ? " " : "") + line.trim();
+                } else if (currBlock.equals(Tokens.GROUP)) {
+                    classGroup += (!classGroup.isEmpty() ? " " : "") + line.trim();
+                } else if (currBlock.equals(Tokens.GROUP_CONTENT)) {
+                    classGroupContent += (!classGroupContent.isEmpty() ? " " : "") + line.trim();
+                } else if (currBlock.equals(Tokens.EXAMPLE)) {
+                    example += (!example.isEmpty() ? "\n" : "") + line;
+                }
             }
         }
     }

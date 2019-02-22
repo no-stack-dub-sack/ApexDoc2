@@ -4,13 +4,6 @@ import java.util.ArrayList;
 
 public class MethodModel extends ApexModel {
 
-    private ArrayList<String> params;
-    private String exceptions;
-
-    public MethodModel() {
-        params = new ArrayList<String>();
-    }
-
     public void setNameLine(String nameLine, int lineNum) {
         // remove anything after the parameter list
         if (nameLine != null) {
@@ -26,16 +19,12 @@ public class MethodModel extends ApexModel {
         return params;
     }
 
-    public void setException(String exceptions) {
-        this.exceptions = exceptions;
-    }
-
     public String getException() {
-        return exceptions == null ? "" : exceptions;
+        return exception == null ? "" : exception;
     }
 
-    public void setParams(ArrayList<String> params) {
-        this.params = params;
+    public String getReturns() {
+        return returns == null ? "" : returns;
     }
 
     public String getMethodName() {
