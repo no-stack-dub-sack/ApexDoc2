@@ -4,6 +4,19 @@ import java.util.ArrayList;
 
 public class ApexModel {
 
+    // token constants
+    private static final String AUTHOR = "@author";
+    private static final String DATE = "@date";
+    private static final String DEPRECATED = "@deprecated";
+    private static final String DESCRIPTION = "@description";
+    private static final String EXAMPLE = "@example";
+    private static final String EXCEPTION = "@exception";
+    private static final String GROUP = "@group "; // needed to include space to not match group-content
+    private static final String GROUP_CONTENT = "@group-content";
+    private static final String PARAM = "@param";
+    private static final String RETURN = "@return";
+    private static final String SEE = "@see";
+
     private String author = "";
     private String date = "";
     private String deprecated = "";
@@ -88,17 +101,17 @@ public class ApexModel {
             int i;
 
             // if we find a tag, start a new block
-            if (((i = lowerComment.indexOf(block = Tokens.AUTHOR)) >= 0)
-            || ((i = lowerComment.indexOf(block = Tokens.DATE)) >= 0)
-                || ((i = lowerComment.indexOf(block = Tokens.SEE)) >= 0)
-                || ((i = lowerComment.indexOf(block = Tokens.RETURN)) >= 0)
-                || ((i = lowerComment.indexOf(block = Tokens.PARAM)) >= 0)
-                || ((i = lowerComment.indexOf(block = Tokens.EXCEPTION)) >= 0)
-                || ((i = lowerComment.indexOf(block = Tokens.DEPRECATED)) >= 0)
-                || ((i = lowerComment.indexOf(block = Tokens.DESCRIPTION)) >= 0)
-                || ((i = lowerComment.indexOf(block = Tokens.GROUP)) >= 0)
-                || ((i = lowerComment.indexOf(block = Tokens.GROUP_CONTENT)) >= 0)
-                || ((i = lowerComment.indexOf(block = Tokens.EXAMPLE)) >= 0)) {
+            if (((i = lowerComment.indexOf(block = AUTHOR)) >= 0)
+                || ((i = lowerComment.indexOf(block = DATE)) >= 0)
+                || ((i = lowerComment.indexOf(block = SEE)) >= 0)
+                || ((i = lowerComment.indexOf(block = RETURN)) >= 0)
+                || ((i = lowerComment.indexOf(block = PARAM)) >= 0)
+                || ((i = lowerComment.indexOf(block = EXCEPTION)) >= 0)
+                || ((i = lowerComment.indexOf(block = DEPRECATED)) >= 0)
+                || ((i = lowerComment.indexOf(block = DESCRIPTION)) >= 0)
+                || ((i = lowerComment.indexOf(block = GROUP)) >= 0)
+                || ((i = lowerComment.indexOf(block = GROUP_CONTENT)) >= 0)
+                || ((i = lowerComment.indexOf(block = EXAMPLE)) >= 0)) {
 
                     comment = comment.substring(i + block.length());
                     currBlock = block;
@@ -119,29 +132,29 @@ public class ApexModel {
             // add line to appropriate block...
             // if currBlock was not reset on this iteration we're on the next line of the last token, add line
             // to that value. Allow empty lines in example blocks to preserve whitespace in complex examples
-            if (currBlock != null && (!line.trim().isEmpty() || line.trim().isEmpty() && currBlock.equals(Tokens.EXAMPLE))) {
-                if (currBlock.equals(Tokens.AUTHOR)) {
+            if (currBlock != null && (!line.trim().isEmpty() || line.trim().isEmpty() && currBlock.equals(EXAMPLE))) {
+                if (currBlock.equals(AUTHOR)) {
                     author += (!author.isEmpty() ? " " : "") + line.trim();
-                } else if (currBlock.equals(Tokens.DATE)) {
+                } else if (currBlock.equals(DATE)) {
                     date += (!date.isEmpty() ? " " : "") + line.trim();
-                } else if (currBlock.equals(Tokens.SEE)) {
+                } else if (currBlock.equals(SEE)) {
                     see += (!see.isEmpty() ? " " : "") + line.trim();
-                } else if (currBlock.equals(Tokens.RETURN)) {
+                } else if (currBlock.equals(RETURN)) {
                     returns += (!returns.isEmpty() ? " " : "") + line.trim();
-                } else if (currBlock.equals(Tokens.PARAM)) {
+                } else if (currBlock.equals(PARAM)) {
                     String p = (newBlock ? "" : params.remove(params.size() - 1));
                     params.add(p + (!p.isEmpty() ? " " : "") + line.trim());
-                } else if (currBlock.equals(Tokens.EXCEPTION)) {
+                } else if (currBlock.equals(EXCEPTION)) {
                     exception += (!exception.isEmpty() ? " " : "") + line.trim();
-                } else if (currBlock.equals(Tokens.DEPRECATED)) {
+                } else if (currBlock.equals(DEPRECATED)) {
                     deprecated += (!deprecated.isEmpty() ? " " : "") + line.trim();
-                } else if (currBlock.equals(Tokens.DESCRIPTION)) {
+                } else if (currBlock.equals(DESCRIPTION)) {
                     description += (!description.isEmpty() ? " " : "") + line.trim();
-                } else if (currBlock.equals(Tokens.GROUP)) {
+                } else if (currBlock.equals(GROUP)) {
                     classGroup += (!classGroup.isEmpty() ? " " : "") + line.trim();
-                } else if (currBlock.equals(Tokens.GROUP_CONTENT)) {
+                } else if (currBlock.equals(GROUP_CONTENT)) {
                     classGroupContent += (!classGroupContent.isEmpty() ? " " : "") + line.trim();
-                } else if (currBlock.equals(Tokens.EXAMPLE)) {
+                } else if (currBlock.equals(EXAMPLE)) {
                     example += (!example.isEmpty() ? "\n" : "") + line;
                 }
             }
