@@ -85,7 +85,10 @@ public class ApexModel {
     }
 
     public String getExample() {
-        return example == null ? "" : example;
+        // return example and remove trailing white space which
+        // may have built up due to the allowance of preserving
+        // white pace in complex code example blocks for methods
+        return example == null ? "" : example.replace("\\s+$", "");
     }
 
     public String getSee() {
@@ -96,7 +99,7 @@ public class ApexModel {
     private void parseComments(ArrayList<String> comments) {
         String currBlock = null, block = null;
         for (String comment : comments) {
-            boolean newBlock = false;
+            boolean newBlock = false, isBreak = false;
             String lowerComment = comment.toLowerCase();
             int i;
 
@@ -129,6 +132,14 @@ public class ApexModel {
                     }
                 }
 
+            // replace docBlock break marker and indicate we should break after
+            // this round. Otherwise we may get some strange behavior due to
+            // multi-line support and this common parser for all models
+            if (line.contains(ApexDoc.DOC_BLOCK_BREAK)) {
+                line = line.replace(ApexDoc.DOC_BLOCK_BREAK, "");
+                isBreak = true;
+            };
+
             // add line to appropriate block...
             // if currBlock was not reset on this iteration we're on the next line of the last token, add line
             // to that value. Allow empty lines in example blocks to preserve whitespace in complex examples
@@ -158,6 +169,8 @@ public class ApexModel {
                     example += (!example.isEmpty() ? "\n" : "") + line;
                 }
             }
+
+            if (isBreak) break;
         }
     }
 }

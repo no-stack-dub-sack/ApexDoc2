@@ -24,6 +24,14 @@ public class ApexDoc {
     public static final String COMMENT_CLOSE = "*/";
     public static final String COMMENT_OPEN = "/**";
 
+    // use special token for marking the end of a doc block
+    // comment. Now that we're supporting multi-line for all
+    // tokens and using a common comment parser, the parser
+    // must know when a block ends in order to prevent weird
+    // behavior when lesser scopes than available are indicated
+    // e.g. private;public when there are protected methods
+    public static final String DOC_BLOCK_BREAK = "@@BREAK@@";
+
     public static FileManager fm;
     public static String[] rgstrScope;
 
@@ -240,7 +248,7 @@ public class ApexDoc {
                     boolean commentEnded = false;
                     if (line.startsWith(COMMENT_OPEN)) {
                     	if (line.endsWith(COMMENT_CLOSE)) {
-                            line = line.replace(COMMENT_CLOSE, "");
+                            line = line.replace(COMMENT_CLOSE, DOC_BLOCK_BREAK);
                             commentEnded = true;
                     	}
                     	comments.add(line);
@@ -254,7 +262,7 @@ public class ApexDoc {
                 }
 
                 if (commentsStarted && line.endsWith(COMMENT_CLOSE)) {
-                    line = line.replace(COMMENT_CLOSE, "");
+                    line = line.replace(COMMENT_CLOSE, DOC_BLOCK_BREAK);
                     if (docBlockStarted) {
                     	comments.add(line);
                     	docBlockStarted = false;
