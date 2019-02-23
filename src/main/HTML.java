@@ -36,11 +36,11 @@ public class HTML {
         "0 0 0 16.97-7.029l16-16C376.089 89.851 365.381 64 344 64H48C21.49 64 0 85.49 0 112v352c0 26.51 21.49 48 48 48h352c26.51 " +
         "0 48-21.49 48-48V287.764c0-21.382-25.852-32.09-40.971-16.97z' class='externalLink'></path></svg>";
 
-    public static String getHeader(String projectDetail, String documentTitle) {
+    public static String getHeader(String bannerPage, String documentTitle) {
         String header =  "<html><head><title>" + documentTitle + "</title>";
 
-        if (projectDetail != null && projectDetail.trim().length() > 0) {
-            header += HEADER_OPEN + projectDetail;
+        if (bannerPage != null && bannerPage.trim().length() > 0) {
+            header += HEADER_OPEN + bannerPage;
         } else {
             header += HEADER_OPEN + PROJECT_DETAIL + HEADER_CLOSE;
         }

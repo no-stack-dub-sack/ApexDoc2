@@ -18,15 +18,15 @@ As the Salesforce Foundation was [no longer able to offer direct support for rep
 ## Command Line Parameters
 | parameter | description |
 |-------------------------- | ---------------------|
-| -s *source_directory* | The folder location which contains your apex .cls classes.|
-| -t *target_directory* | The folder location where documentation will be generated to.|
-| -g *source_url* | A URL where the source is hosted (so ApexDoc2 can provide links to your source). Optional.|
-| -h *home_page* | The full path to an html file that contains the contents for the home page's content area. Optional.|
-| -a *banner_page* | The full path to an html file that contains the content for the banner section of each generated page. Optional.|
-| -p *scope* | A semicolon separated list of scopes to document.  Defaults to 'global;public;webService'. Optional.|
-| -d *doc_title* | The value for the document's &lt;title&gt; attribute.  Defaults to 'ApexDocs'. Optional.|
-| -n *toc_desc* | If 'true', will hide the method's description snippet in the class's table of contents. Defaults to 'false'. Optional.|
-| -o *sort_order* | The order in which class methods, properties, and inner classes are presented. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. Optional.|
+| -s *(s)ource_directory* | The folder location which contains your apex .cls classes.|
+| -t *(t)arget_directory* | The folder location where documentation will be generated to.|
+| -u *source_(u)rl* | A URL where the source is hosted (so ApexDoc2 can provide links to your source). Optional.|
+| -h *(h)ome_page* | The full path to an html file that contains the contents for the home page's content area. Optional.|
+| -b *(b)anner_page* | The full path to an html file that contains the content for the banner section of each generated page. Optional.|
+| -p *sco(p)e* | A semicolon separated list of scopes to document.  Defaults to 'global;public;webService'. Optional.|
+| -d *(d)oc_title* | The value for the document's &lt;title&gt; attribute.  Defaults to 'ApexDocs'. Optional.|
+| -c *to(c)_descriptions* | If 'true', will hide the method's description snippet in the class's table of contents. Defaults to 'false'. Optional.|
+| -o *sort_(o)rder* | The order in which class methods, properties, and inner classes are presented. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. Optional.|
 
 ## Usage
 Copy apexdoc.jar file to your local machine, somewhere on your path.  Each release tag in gitHub has the matching apexdoc.jar attached to it.  Make sure that java is on your path.  Invoke ApexDoc2 like this example:
@@ -36,11 +36,11 @@ java -jar apexdoc.jar
     -t C:\Users\pweinberg\Dropbox\Cumulus\ApexDoc2
     -p global;public;private;testmethod;webService
     -h C:\Users\pweinberg\Dropbox\Cumulus\ApexDoc2\homepage.htm
-    -a C:\Users\pweinberg\Dropbox\Cumulus\ApexDoc2\projectheader.htm
-    -g http://github.com/SalesforceFoundation/Cumulus/blob/dev/src/classes/
+    -b C:\Users\pweinberg\Dropbox\Cumulus\ApexDoc2\projectheader.htm
+    -u http://github.com/SalesforceFoundation/Cumulus/blob/dev/src/classes/
     -d "My Docs Title"
     -o logical
-    -n false
+    -c false
 ```
 
 A favicon has been added with ApexDoc2, so if you'd like to use your own favicon, simply replace the favicon png in the output directory with your own favicon. It must be a PNG and named favicon.png.

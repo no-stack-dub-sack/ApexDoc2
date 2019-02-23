@@ -88,7 +88,7 @@ public class FileManager {
         return wrapInlineCode(out.toString());
     }
 
-    private boolean createHTML(TreeMap<String, String> mapFNameToContent, IProgressMonitor monitor) {
+    private boolean createHTML(TreeMap<String, String> mapFNameToContent) {
         try {
             if (path.endsWith("/") || path.endsWith("\\")) {
                 path += HTML.ROOT_DIRECTORY; // + "/" + fileName + ".html";
@@ -110,8 +110,7 @@ public class FileManager {
                 fileOutputStream.close();
                 infoMessages.append(fileName + " Processed...\n");
                 // prepend \n on 1st iteration for space between cmd line input & output
-                System.out.println((i == 0 ? "\n" : "") + fileName + " Processed...");
-                if (monitor != null) monitor.worked(1);
+                ApexDoc.log((i == 0 ? "\n" : "") + fileName + " Processed...");
                 i++;
             }
             copy(path);
@@ -152,13 +151,12 @@ public class FileManager {
      * @description main routine that creates an HTML file for each class specified
      * @param mapGroupNameToClassGroup
      * @param cModels
-     * @param projectDetail
+     * @param bannerPage
      * @param homeContents
      * @param hostedSourceURL
-     * @param monitor
      */
-    public void createDoc(TreeMap<String, ClassGroup> mapGroupNameToClassGroup, ArrayList<ClassModel> cModels,
-                          String projectDetail, String homeContents, String hostedSourceURL, IProgressMonitor monitor) {
+    public void createDocs(TreeMap<String, ClassGroup> mapGroupNameToClassGroup, ArrayList<ClassModel> cModels,
+                          String bannerPage, String homeContents, String hostedSourceURL) {
 
         String links = "<table width='100%'>";
         links += makeHTMLScopingPanel();
@@ -167,11 +165,11 @@ public class FileManager {
 
         if (homeContents != null && homeContents.trim().length() > 0) {
             homeContents = links + "<td class='contentTD'>" + "<h2 class='section-title'>Home</h2>" + homeContents + "</td>";
-            homeContents = HTML.getHeader(projectDetail, this.documentTitle) + homeContents + HTML.FOOTER;
+            homeContents = HTML.getHeader(bannerPage, this.documentTitle) + homeContents + HTML.FOOTER;
         } else {
             homeContents = HTML.DEFAULT_HOME_CONTENTS;
             homeContents = links + "<td class='contentTD'>" + "<h2 class='section-title'>Home</h2>" + homeContents + "</td>";
-            homeContents = HTML.getHeader(projectDetail, this.documentTitle) + homeContents + HTML.FOOTER;
+            homeContents = HTML.getHeader(bannerPage, this.documentTitle) + homeContents + HTML.FOOTER;
         }
 
         String fileName = "";
@@ -179,7 +177,7 @@ public class FileManager {
         mapFNameToContent.put("index", homeContents);
 
         // create our Class Group content files
-        createClassGroupContent(mapFNameToContent, links, projectDetail, mapGroupNameToClassGroup, cModels, monitor);
+        createClassGroupContent(mapFNameToContent, links, bannerPage, mapGroupNameToClassGroup, cModels);
 
         for (ClassModel cModel : cModels) {
             String contents = links;
@@ -205,13 +203,10 @@ public class FileManager {
             }
             contents += "</div>";
 
-            contents = HTML.getHeader(projectDetail, this.documentTitle) + contents + HTML.FOOTER;
+            contents = HTML.getHeader(bannerPage, this.documentTitle) + contents + HTML.FOOTER;
             mapFNameToContent.put(fileName, contents);
-            if (monitor != null) {
-                monitor.worked(1);
-            }
         }
-        createHTML(mapFNameToContent, monitor);
+        createHTML(mapFNameToContent);
     }
 
     /**
@@ -428,7 +423,8 @@ public class FileManager {
             String[] parts = qualifier.trim().split("\\.");
 
             if (parts.length > 3) {
-                String message = "\\Each comma separated qualifier of the @see token must be a fully qualified class " +
+                ApexDoc.log(qualifiersStr);
+                String message = "Each comma separated qualifier of the @see token must be a fully qualified class " +
                                  "or method name, with a minimum of 1 part and a maximum of 3. E.g. MyClassName, " +
                                  "MyClassName.MyMethodName, MyClassName.MyInnerClassName.MyInnserClassMethodName.";
                 throw new IllegalArgumentException(message);
@@ -510,9 +506,8 @@ public class FileManager {
     }
 
     // create our Class Group content files
-    private void createClassGroupContent(TreeMap<String, String> mapFNameToContent, String links, String projectDetail,
-            TreeMap<String, ClassGroup> mapGroupNameToClassGroup,
-            ArrayList<ClassModel> cModels, IProgressMonitor monitor) {
+    private void createClassGroupContent(TreeMap<String, String> mapFNameToContent, String links, String bannerPage,
+            TreeMap<String, ClassGroup> mapGroupNameToClassGroup, ArrayList<ClassModel> cModels) {
 
         for (String group : mapGroupNameToClassGroup.keySet()) {
             ClassGroup cg = mapGroupNameToClassGroup.get(group);
@@ -520,16 +515,13 @@ public class FileManager {
                 String cgContent = parseHTMLFile(cg.getContentSource());
                 if (cgContent != "") {
 
-                    String html = HTML.getHeader(projectDetail, this.documentTitle) + links +
+                    String html = HTML.getHeader(bannerPage, this.documentTitle) + links +
                                      "<td class='contentTD'>" + "<h2 class='section-title'>" +
                                      escapeHTML(cg.getName()) + "</h2>" + cgContent + "</td>";
 
                     html += HTML.FOOTER;
 
                     mapFNameToContent.put(cg.getContentFilename(), html);
-                    if (monitor != null) {
-                        monitor.worked(1);
-                    }
                 }
             }
         }

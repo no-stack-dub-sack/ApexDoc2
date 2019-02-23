@@ -7,7 +7,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Stack;
 import java.util.TreeMap;
@@ -45,29 +44,21 @@ public class ApexDoc {
     // public entry point when called from the command line.
     public static void main(String[] args) {
         try {
-            RunApexDoc(args, null);
+            RunApexDoc(args);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            System.out.println(ex.getMessage() + "\n");
+            log(ex);
             printHelp();
             System.exit(-1);
         }
     }
 
-    // TODO: REMOVE ME!
-    // public entry point when called from the Eclipse PlugIn.
-    // assumes PlugIn previously sets rgstrArgs before calling run.
-    public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-        RunApexDoc(rgstrArgs, monitor);
-    }
-
     // public main routine which is used by both command line invocation and
     // Eclipse PlugIn invocation
-    public static void RunApexDoc(String[] args, IProgressMonitor monitor) throws IllegalArgumentException {
+    public static void RunApexDoc(String[] args) throws IllegalArgumentException {
         String sourceDirectory = "";
         String targetDirectory = "";
         String homefilepath = "";
-        String authorfilepath = "";
+        String bannerFilePath = "";
         String hostedSourceURL = "";
         String documentTitle = "";
         String sortOrder = "";
@@ -80,20 +71,20 @@ public class ApexDoc {
                 continue;
             } else if (args[i].equalsIgnoreCase("-s")) {
                 sourceDirectory = args[++i];
-            } else if (args[i].equalsIgnoreCase("-g")) {
+            } else if (args[i].equalsIgnoreCase("-u")) {
                 hostedSourceURL = args[++i];
             } else if (args[i].equalsIgnoreCase("-t")) {
                 targetDirectory = args[++i];
             } else if (args[i].equalsIgnoreCase("-h")) {
                 homefilepath = args[++i];
-            } else if (args[i].equalsIgnoreCase("-a")) {
-                authorfilepath = args[++i];
+            } else if (args[i].equalsIgnoreCase("-b")) {
+                bannerFilePath = args[++i];
             } else if (args[i].equalsIgnoreCase("-p")) {
                 String scope = args[++i];
                 rgstrScope = scope.split(";");
             } else if (args[i].equalsIgnoreCase("-d")) {
                 documentTitle = args[++i];
-            } else if (args[i].equalsIgnoreCase("-n")) {
+            } else if (args[i].equalsIgnoreCase("-c")) {
                 showMethodTOCDescription = Boolean.valueOf(args[++i]);
             } else if (args[i].equalsIgnoreCase("-o")) {
                 sortOrder = args[++i].trim();
@@ -133,13 +124,6 @@ public class ApexDoc {
         fm.setShowMethodTOCDescription(showMethodTOCDescription);
         fm.setSortOrderStyle(sortOrder);
 
-
-        if (monitor != null) {
-            // each file is parsed, html created, written to disk.
-            // but for each class file, there is an xml file we'll ignore.
-            // plus we add 2 for the author file and home file loading.
-            monitor.beginTask("ApexDoc2 - documenting your Apex Class files.", (files.size() / 2) * 3 + 2);
-        }
         // parse each file, creating a class model for it
         for (File fromFile : files) {
             String fromFileName = fromFile.getAbsolutePath();
@@ -149,47 +133,35 @@ public class ApexDoc {
                     cModels.add(cModel);
                 }
             }
-            if (monitor != null) {
-                monitor.worked(1);
-            }
         }
 
         // create our Groups
         TreeMap<String, ClassGroup> classGroupMap = createGroupNameToClassGroupMap(cModels, sourceDirectory);
 
         // load up optional specified file templates
-        String projectDetail = fm.parseHTMLFile(authorfilepath);
-        if (monitor != null) {
-            monitor.worked(1);
-        }
+        String bannerContents = fm.parseHTMLFile(bannerFilePath);
         String homeContents = fm.parseHTMLFile(homefilepath);
-        if (monitor != null) {
-            monitor.worked(1);
-        }
 
         // create our set of HTML files
-        fm.createDoc(classGroupMap, cModels, projectDetail, homeContents, hostedSourceURL, monitor);
-        if (monitor != null) {
-            monitor.done();
-        }
+        fm.createDocs(classGroupMap, cModels, bannerContents, homeContents, hostedSourceURL);
 
         // we are done!
-        System.out.println("ApexDoc2 has completed!");
+        log("ApexDoc2 has completed!");
     }
 
     private static void printHelp() {
-        System.out.println("ApexDoc2 - a tool for generating documentation from Salesforce Apex code class files.\n");
-        System.out.println("    Invalid Arguments detected.  The correct syntax is:\n");
-        System.out.println("apexdoc -s <source_directory> [-t <target_directory>] [-g <source_url>] [-h <homefile>] [-a <authorfile>] [-p <scope>] [-o <sort_order>] [-n <toc_desc>] [-d <doc_title>]\n");
-        System.out.println("<source_directory> - The folder location which contains your apex .cls classes");
-        System.out.println("<target_directory> - Optional. Specifies your target folder where documentation will be generated.");
-        System.out.println("<source_url> - Optional. Specifies a URL where the source is hosted (so ApexDoc2 can provide links to your source).");
-        System.out.println("<homefile> - Optional. Specifies the html file that contains the contents for the home page\'s content area.");
-        System.out.println("<authorfile> - Optional. Specifies the text file that contains project information for the documentation header.");
-        System.out.println("<scope> - Optional. Semicolon seperated list of scopes to document.  Defaults to 'global;public'. ");
-        System.out.println("<doc_title> - Optional. The value for the document's <title> attribute.  Defaults to 'ApexDocs'. ");
-        System.out.println("<toc_desc> - Optional. If 'false', will hide the method's description in the class's TOC. Defaults to 'true'.");
-        System.out.println("<sort_order> - Optional. The order in which class methods, properties, and inner classes are presented. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. ");
+        log("\nApexDoc2 - a tool for generating documentation from Salesforce Apex code class files.\n");
+        log("    Invalid Arguments detected.  The correct syntax is:\n");
+        log("apexdoc2 -s <source_directory> [-t <target_directory>] [-u <source_url>] [-h <home_page>] [-b <banner_page>] [-p <scope>] [-d <document_title>] [-c <toc_descriptions>] [-o <sort_order>]\n");
+        log("(S)ource Directory  - The folder location which contains your Apex .cls classes");
+        log("(T)arget_directory  - Optional. Specifies your target folder where documentation will be generated.");
+        log("Source (U)RL        - Optional. Specifies a URL where the source is hosted (so ApexDoc2 can provide links to your source).");
+        log("(H)ome Page         - Optional. Specifies the html file that contains the contents for the home page\'s content area.");
+        log("(B)anner Page       - Optional. Specifies the text file that contains project information for the documentation header.");
+        log("Sco(p)e             - Optional. Semicolon seperated list of scopes to document. Defaults to 'global;public'. ");
+        log("(D)ocument Title    - Optional. The value for the document's <title> attribute. Defaults to 'ApexDocs'. ");
+        log("TO(C) Descriptions  - Optional. If 'false', will hide the method's description in the class's TOC. Defaults to 'true'.");
+        log("Sort (O)rder        - Optional. The order in which class methods, properties, and inner classes are presented. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. ");
     }
 
     private static TreeMap<String, ClassGroup> createGroupNameToClassGroupMap(ArrayList<ClassModel> cModels, String sourceDirectory) {
@@ -388,8 +360,8 @@ public class ApexDoc {
             inputStream.close();
             // we only want to return the parent class
             return cModelParent;
-        } catch (Exception e) { // Catch exception if any
-            System.err.println("Error: " + e.getMessage());
+        } catch (Exception ex) { // Catch exception if any
+            log(ex);
             return null;
         }
     }
@@ -477,33 +449,13 @@ public class ApexDoc {
         return count;
     }
 
-    // TODO: REMOVE ME!!!
-    /*
-     * private static void debug(ClassModel cModel){ try{
-     * System.out.println("Class::::::::::::::::::::::::");
-     * if(cModel.getClassName() != null)
-     * System.out.println(cModel.getClassName()); if(cModel.getNameLine() !=
-     * null) System.out.println(cModel.getNameLine());
-     * System.out.println(cModel.getAuthor());
-     * System.out.println(cModel.getDescription());
-     * System.out.println(cModel.getDate());
-     *
-     * System.out.println("Properties::::::::::::::::::::::::"); for
-     * (PropertyModel property : cModel.getProperties()) {
-     * System.out.println(property.getNameLine());
-     * System.out.println(property.getDescription()); }
-     *
-     * System.out.println("Methods::::::::::::::::::::::::"); for (MethodModel
-     * method : cModel.getMethods()) {
-     * System.out.println(method.getMethodName());
-     * System.out.println(method.getAuthor());
-     * System.out.println(method.getDescription());
-     * System.out.println(method.getDate()); for (String param :
-     * method.getParams()) { System.out.println(param); }
-     *
-     * }
-     *
-     * }catch (Exception e){ e.printStackTrace(); } }
-     */
+    public static void log(Exception ex) {
+        log("");
+        ex.printStackTrace();
+        System.out.println("\n" + ex.getMessage());
+    }
 
+    public static void log(String message) {
+        System.out.println(message);
+    }
 }
