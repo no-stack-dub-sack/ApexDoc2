@@ -11,9 +11,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Stack;
 import java.util.TreeMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 
 public class ApexDoc {
 
@@ -185,7 +182,7 @@ public class ApexDoc {
         for (ClassModel cmodel : cModels) {
             String group = cmodel.getClassGroup();
             String groupContent = cmodel.getClassGroupContent();
-            if (groupContent != null) {
+            if (groupContent != null && !groupContent.isEmpty()) {
                 groupContent = sourceDirectory + "/" + groupContent;
             }
 
@@ -321,8 +318,7 @@ public class ApexDoc {
                 if ((line.toLowerCase().matches(".*\\bclass\\b.*") || line.toLowerCase().contains(" interface "))) {
 
                     // create the new class
-                    ClassModel cModelNew = new ClassModel(cModelParent);
-                    fillClassModel(cModelParent, cModelNew, line, comments, lineNum);
+                    ClassModel cModelNew = createClass(cModelParent, line, comments, lineNum);
                     comments.clear();
 
                     // keep track of the new class, as long as it wasn't a single liner {}
@@ -349,8 +345,7 @@ public class ApexDoc {
                         line += bufferReader.readLine();
                         lineNum++;
                     }
-                    MethodModel mModel = new MethodModel();
-                    fillMethodModel(mModel, line, comments, lineNum);
+                    MethodModel mModel = createMethod(line, comments, lineNum);
                     cModel.getMethods().add(mModel);
                     comments.clear();
                     continue;
@@ -367,9 +362,8 @@ public class ApexDoc {
                 }
 
                 // must be a property
-                PropertyModel propertyModel = new PropertyModel();
-                fillPropertyModel(propertyModel, line, comments, lineNum);
-                cModel.getProperties().add(propertyModel);
+                PropertyModel pModel = createProperty(line, comments, lineNum);
+                cModel.getProperties().add(pModel);
                 comments.clear();
                 continue;
 
@@ -412,267 +406,29 @@ public class ApexDoc {
         return null;
     }
 
-    private static void fillPropertyModel(PropertyModel propertyModel, String name, ArrayList<String> comments, int lineNum) {
-        propertyModel.setNameLine(name, lineNum);
-        boolean inDescription = false;
-        int i = 0;
-        for (String comment : comments) {
-        	i++;
-            comment = comment.trim();
-            int idxStart = comment.toLowerCase().indexOf(Tokens.DESCRIPTION);
-            if (idxStart != -1 || i == 1) {
-            	if (idxStart != -1 && comment.length() > Tokens.DESCRIPTION.length()) {
-            		propertyModel.setDescription(comment.substring(idxStart + Tokens.DESCRIPTION.length()).trim());
-                } else {
-                	Pattern p = Pattern.compile("\\s");
-                	Matcher m = p.matcher(comment);
-                	if (m.find()) {
-                		propertyModel.setDescription(comment.substring(m.start()).trim());
-                	}
-                }
-                inDescription = true;
-                continue;
-            }
-
-            // handle multiple lines for description.
-            if (inDescription) {
-                int j;
-                for (j = 0; j < comment.length(); j++) {
-                    char ch = comment.charAt(j);
-                    if (ch != '*' && ch != ' ') {
-                        break;
-                    }
-                }
-                if (j < comment.length()) {
-                    propertyModel.setDescription(propertyModel.getDescription() + ' ' + comment.substring(j));
-                }
-                continue;
-            }
-        }
-    }
-
-    private static void fillMethodModel(MethodModel mModel, String name, ArrayList<String> comments, int lineNum) {
-        mModel.setNameLine(name, lineNum);
-        boolean inDescription = false;
-        boolean inExample = false;
-        int i = 0;
-        for (String comment : comments) {
-            i++;
-            comment = comment.trim();
-
-            int idxStart = comment.toLowerCase().indexOf(Tokens.AUTHOR);
-            if (idxStart != -1) {
-                mModel.setAuthor(comment.substring(idxStart + Tokens.AUTHOR.length()).trim());
-                inDescription = false;
-                inExample = false;
-                continue;
-            }
-
-            idxStart = comment.toLowerCase().indexOf(Tokens.EXCEPTION);
-            if (idxStart != -1) {
-                mModel.setException(comment.substring(idxStart + Tokens.EXCEPTION.length()).trim());
-                inDescription = false;
-                inExample = false;
-                continue;
-            }
-
-            idxStart = comment.toLowerCase().indexOf(Tokens.DEPRECATED);
-            if (idxStart != -1) {
-                mModel.setDeprecated(comment.substring(idxStart + Tokens.DEPRECATED.length()).trim());
-                inDescription = false;
-                inExample = false;
-                continue;
-            }
-
-            idxStart = comment.toLowerCase().indexOf(Tokens.DATE);
-            if (idxStart != -1) {
-                mModel.setDate(comment.substring(idxStart + Tokens.DATE.length()).trim());
-                inDescription = false;
-                inExample = false;
-                continue;
-            }
-
-            idxStart = comment.toLowerCase().indexOf(Tokens.RETURN);
-            if (idxStart != -1) {
-                mModel.setReturns(comment.substring(idxStart + Tokens.RETURN.length()).trim());
-                inDescription = false;
-                inExample = false;
-                continue;
-            }
-
-            idxStart = comment.toLowerCase().indexOf(Tokens.PARAM);
-            if (idxStart != -1) {
-                String param = comment.substring(idxStart + Tokens.PARAM.length()).trim();
-                if (!param.isEmpty()) mModel.getParams().add(param);
-                inDescription = false;
-                inExample = false;
-                continue;
-            }
-
-            idxStart = comment.toLowerCase().indexOf(Tokens.SEE);
-            if (idxStart != -1) {
-                mModel.setSee(comment.substring(idxStart + Tokens.SEE.length()).trim());
-                inDescription = false;
-                inExample = false;
-                continue;
-            }
-
-            idxStart = comment.toLowerCase().indexOf(Tokens.DESCRIPTION);
-            if (idxStart != -1 || i == 1) {
-                int substringStart = idxStart + Tokens.DESCRIPTION.length();
-                if (idxStart != -1 && comment.length() >= substringStart) {
-                    String methodDescription = comment.substring(substringStart).trim();
-                    if (!methodDescription.isEmpty()) mModel.setDescription(methodDescription);
-                } else {
-                    Pattern p = Pattern.compile("\\s");
-                    Matcher m = p.matcher(comment);
-                    if (m.find()) {
-                        String methodDescription = comment.substring(m.start()).trim();
-                        if (!methodDescription.isEmpty() && !methodDescription.equalsIgnoreCase(Tokens.DESCRIPTION)) {
-                            mModel.setDescription(methodDescription);
-                        }
-                    }
-                }
-                inDescription = true;
-                inExample = false;
-                continue;
-            }
-
-            idxStart = comment.toLowerCase().indexOf(Tokens.EXAMPLE);
-            if (idxStart != -1 || i == 1) {
-                int substringStart = idxStart + Tokens.EXAMPLE.length();
-                if (idxStart != -1 && comment.length() >= substringStart) {
-                    mModel.setExample(comment.substring(substringStart).trim());
-                } else {
-                    Pattern p = Pattern.compile("\\s");
-                    Matcher m = p.matcher(comment.substring(substringStart));
-
-                    if (m.find()) {
-                        mModel.setExample(comment.substring(m.start()).trim());
-                    }
-                }
-                inDescription = false;
-                inExample = true;
-                continue;
-            }
-
-            // handle multiple lines for @description and @example.
-            if (inDescription || inExample) {
-                int j;
-                for (j = 0; j < comment.length(); j++) {
-                    char ch = comment.charAt(j);
-                    if (ch != '*' && ch != ' ') {
-                        break;
-                    }
-                }
-
-                boolean isBlank = comment.equals("*");
-                if (j < comment.length() || isBlank) {
-                    if (inDescription && !isBlank) {
-                        mModel.setDescription(mModel.getDescription() + ' ' + comment.substring(j));
-                    } else if (inExample) {
-                        // preserve whitespace in @example blocks using isBlank flag
-                        String prepend = mModel.getExample().trim().length() == 0 ? "" : "\n";
-                        String exampleLine = prepend + (isBlank ? "\n" : comment.substring(2));
-
-                        mModel.setExample(mModel.getExample() + exampleLine);
-                    }
-                }
-                continue;
-            }
-        }
-    }
-
-    private static void fillClassModel(ClassModel cModelParent, ClassModel cModel, String name, ArrayList<String> comments, int lineNum) {
+    private static ClassModel createClass(ClassModel parent, String name, ArrayList<String> comments, int lineNum) {
+        ClassModel cModel = new ClassModel(parent);
         cModel.setNameLine(name, lineNum);
         if (name.toLowerCase().contains(" interface ")) {
             cModel.setIsInterface(true);
         }
-        boolean inDescription = false;
-        int i = 0;
-        for (String comment : comments) {
-            i++;
-            comment = comment.trim();
 
-            int idxStart = comment.toLowerCase().indexOf(Tokens.AUTHOR);
-            if (idxStart != -1) {
-                cModel.setAuthor(comment.substring(idxStart + Tokens.AUTHOR.length()).trim());
-                inDescription = false;
-                continue;
-            }
+        cModel.parseComments(comments);
+        return cModel;
+    }
 
-            idxStart = comment.toLowerCase().indexOf(Tokens.DATE);
-            if (idxStart != -1) {
-                cModel.setDate(comment.substring(idxStart + Tokens.DATE.length()).trim());
-                inDescription = false;
-                continue;
-            }
+    private static MethodModel createMethod(String name, ArrayList<String> comments, int lineNum) {
+        MethodModel mModel = new MethodModel();
+        mModel.setNameLine(name, lineNum);
+        mModel.parseComments(comments);
+        return mModel;
+    }
 
-            idxStart = comment.toLowerCase().indexOf(Tokens.DEPRECATED);
-            if (idxStart != -1) {
-                cModel.setDeprecated(comment.substring(idxStart + Tokens.DEPRECATED.length()).trim());
-                inDescription = false;
-                continue;
-            }
-
-            idxStart = comment.toLowerCase().indexOf(Tokens.GROUP);
-            if (idxStart != -1) {
-                cModel.setClassGroup(comment.substring(idxStart + Tokens.GROUP.length()).trim());
-                inDescription = false;
-                continue;
-            }
-
-            idxStart = comment.toLowerCase().indexOf(Tokens.GROUP_CONTENT);
-            if (idxStart != -1) {
-                cModel.setClassGroupContent(comment.substring(idxStart + Tokens.GROUP_CONTENT.length()).trim());
-                inDescription = false;
-                continue;
-            }
-
-            idxStart = comment.toLowerCase().indexOf(Tokens.SEE);
-            if (idxStart != -1) {
-                cModel.setSee(comment.substring(idxStart + Tokens.SEE.length()).trim());
-                inDescription = false;
-                continue;
-            }
-
-            idxStart = comment.toLowerCase().indexOf(Tokens.DESCRIPTION);
-            if (idxStart != -1 || i == 1) {
-                int subStringStart = idxStart + Tokens.DESCRIPTION.length();
-                if (idxStart != -1 && comment.length() > subStringStart) {
-                    String classDescription = comment.substring(subStringStart).trim();
-                    System.out.println("normal: " + classDescription);
-                    if (!classDescription.isEmpty()) cModel.setDescription(classDescription);
-                } else {
-                    Pattern p = Pattern.compile("\\s");
-                    Matcher m = p.matcher(comment);
-                    if (m.find()) {
-                        String classDescription = comment.substring(m.start()).trim();
-                        System.out.println("weird: " + classDescription);
-                        if (!classDescription.isEmpty() && !classDescription.equalsIgnoreCase(Tokens.DESCRIPTION)) {
-                            cModel.setDescription(classDescription);
-                        }
-                    }
-                }
-                inDescription = true;
-                continue;
-            }
-
-            // handle multiple lines for description.
-            if (inDescription) {
-                int j;
-                for (j = 0; j < comment.length(); j++) {
-                    char ch = comment.charAt(j);
-                    if (ch != '*' && ch != ' ') {
-                        break;
-                    }
-                }
-                if (j < comment.length()) {
-                    cModel.setDescription(cModel.getDescription() + ' ' + comment.substring(j));
-                }
-                continue;
-            }
-        }
+    private static PropertyModel createProperty(String name, ArrayList<String> comments, int lineNum) {
+        PropertyModel pModel = new PropertyModel();
+        pModel.setNameLine(name, lineNum);
+        pModel.parseComments(comments);
+        return pModel;
     }
 
     /**

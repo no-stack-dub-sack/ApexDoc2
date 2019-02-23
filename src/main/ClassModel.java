@@ -10,8 +10,6 @@ public class ClassModel extends ApexModel {
 
     private ArrayList<MethodModel> methods;
     private ArrayList<PropertyModel> properties;
-    private String classGroup;
-    private String classGroupContent;
     private ClassModel cmodelParent;
     private ArrayList<ClassModel> childClasses;
     private boolean isInterface;
@@ -142,16 +140,8 @@ public class ClassModel extends ApexModel {
         }
     }
 
-    public void setClassGroup(String group) {
-        this.classGroup = group;
-    }
-
     public String getClassGroupContent() {
         return classGroupContent;
-    }
-
-    public void setClassGroupContent(String groupContent) {
-        this.classGroupContent = groupContent;
     }
 
     public boolean getIsInterface() {
