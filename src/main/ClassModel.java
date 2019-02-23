@@ -8,17 +8,24 @@ import java.util.Comparator;
 
 public class ClassModel extends ApexModel {
 
+    private boolean isInterface;
+    private ClassModel cmodelParent;
     private ArrayList<MethodModel> methods;
     private ArrayList<PropertyModel> properties;
-    private ClassModel cmodelParent;
     private ArrayList<ClassModel> childClasses;
-    private boolean isInterface;
 
-    public ClassModel(ClassModel cmodelParent) {
+    public ClassModel(ClassModel cmodelParent, ArrayList<String> comments, String nameLine, int lineNum) {
+        super(comments);
+        super.setNameLine(nameLine, lineNum);
+
         this.cmodelParent = cmodelParent;
         this.childClasses = new ArrayList<ClassModel>();
         this.methods = new ArrayList<MethodModel>();
         this.properties = new ArrayList<PropertyModel>();
+
+        if (nameLine.toLowerCase().contains(" interface ")) {
+            this.isInterface = true;
+        }
     }
 
     public ArrayList<PropertyModel> getProperties() {
@@ -146,9 +153,5 @@ public class ClassModel extends ApexModel {
 
     public boolean getIsInterface() {
         return isInterface;
-    }
-
-    public void setIsInterface(boolean isInterface) {
-        this.isInterface = isInterface;
     }
 }

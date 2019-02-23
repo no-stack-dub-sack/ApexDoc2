@@ -318,7 +318,7 @@ public class ApexDoc {
                 if ((line.toLowerCase().matches(".*\\bclass\\b.*") || line.toLowerCase().contains(" interface "))) {
 
                     // create the new class
-                    ClassModel cModelNew = createClass(cModelParent, line, comments, lineNum);
+                    ClassModel cModelNew = new ClassModel(cModelParent, comments, line, lineNum);
                     comments.clear();
 
                     // keep track of the new class, as long as it wasn't a single liner {}
@@ -345,7 +345,7 @@ public class ApexDoc {
                         line += bufferReader.readLine();
                         lineNum++;
                     }
-                    MethodModel mModel = createMethod(line, comments, lineNum);
+                    MethodModel mModel = new MethodModel(comments, line, lineNum);
                     cModel.getMethods().add(mModel);
                     comments.clear();
                     continue;
@@ -362,7 +362,7 @@ public class ApexDoc {
                 }
 
                 // must be a property
-                PropertyModel pModel = createProperty(line, comments, lineNum);
+                PropertyModel pModel = new PropertyModel(comments, line, lineNum);
                 cModel.getProperties().add(pModel);
                 comments.clear();
                 continue;
@@ -414,31 +414,6 @@ public class ApexDoc {
             }
         }
         return null;
-    }
-
-    private static ClassModel createClass(ClassModel parent, String name, ArrayList<String> comments, int lineNum) {
-        ClassModel cModel = new ClassModel(parent);
-        cModel.setNameLine(name, lineNum);
-        if (name.toLowerCase().contains(" interface ")) {
-            cModel.setIsInterface(true);
-        }
-
-        cModel.parseComments(comments);
-        return cModel;
-    }
-
-    private static MethodModel createMethod(String name, ArrayList<String> comments, int lineNum) {
-        MethodModel mModel = new MethodModel();
-        mModel.setNameLine(name, lineNum);
-        mModel.parseComments(comments);
-        return mModel;
-    }
-
-    private static PropertyModel createProperty(String name, ArrayList<String> comments, int lineNum) {
-        PropertyModel pModel = new PropertyModel();
-        pModel.setNameLine(name, lineNum);
-        pModel.parseComments(comments);
-        return pModel;
     }
 
     /**

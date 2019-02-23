@@ -4,7 +4,12 @@ import java.util.ArrayList;
 
 public class MethodModel extends ApexModel {
 
-    public void setNameLine(String nameLine, int lineNum) {
+    public MethodModel(ArrayList<String> comments, String nameLine, int lineNum) {
+        super(comments);
+        this.setNameLine(nameLine, lineNum);
+    }
+
+    protected void setNameLine(String nameLine, int lineNum) {
         // remove anything after the parameter list
         if (nameLine != null) {
             int i = nameLine.lastIndexOf(")");

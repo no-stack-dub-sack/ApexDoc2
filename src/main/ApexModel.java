@@ -33,15 +33,19 @@ public class ApexModel {
     private int lineNum;
     private String scope;
 
-    // model attribute getters / setters
-    public String getNameLine() {
-        return nameLine;
+    public ApexModel(ArrayList<String> comments) {
+        this.parseComments(comments);
     }
 
-    public void setNameLine(String nameLine, int lineNum) {
+    // model attribute getters / setters
+    protected void setNameLine(String nameLine, int lineNum) {
         this.nameLine = nameLine.trim();
         this.lineNum = lineNum;
         parseScope();
+    }
+
+    public String getNameLine() {
+        return nameLine;
     }
 
     public int getLineNum() {
@@ -52,12 +56,7 @@ public class ApexModel {
         return scope == null ? "" : scope;
     }
 
-    public void setScope(String scope) {
-        this.scope = scope;
-    }
-
     private void parseScope() {
-        scope = null;
         if (nameLine != null) {
             String str = ApexDoc.containsScope(nameLine);
             if (str != null) {
@@ -93,14 +92,15 @@ public class ApexModel {
         return see == null ? "" : see;
     }
 
-    public void parseComments(ArrayList<String> comments) {
+    // comment parser
+    private void parseComments(ArrayList<String> comments) {
         String currBlock = null, block = null;
         for (String comment : comments) {
             boolean newBlock = false;
             String lowerComment = comment.toLowerCase();
             int i;
 
-            // if we find a tag, start a new block
+            // if we find a token, start a new block
             if (((i = lowerComment.indexOf(block = AUTHOR)) >= 0)
                 || ((i = lowerComment.indexOf(block = DATE)) >= 0)
                 || ((i = lowerComment.indexOf(block = SEE)) >= 0)
