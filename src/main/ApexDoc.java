@@ -14,10 +14,24 @@ import java.util.TreeMap;
 
 public class ApexDoc {
 
+    public static final String CLASS = "class";
+    public static final String FINAL = "final";
+    public static final String GLOBAL = "global";
+    public static final String INTERFACE = " interface ";
+    public static final String PRIVATE = "private";
+    public static final String PUBLIC = "public";
+    public static final String STATIC = "static";
+    public static final String WEB_SERVICE = "webService";
+    public static final String COMMENT_CLOSE = "*/";
+    public static final String COMMENT_OPEN = "/**";
+
     public static FileManager fm;
     public static String[] rgstrScope;
+
+    // TODO: REMOVE ME!!
     public static String[] rgstrArgs;
 
+    // TODO: REMOVE ME!!!
     public ApexDoc() {
         try {
             File file = new File("apex_doc_log.txt");
@@ -40,6 +54,7 @@ public class ApexDoc {
         }
     }
 
+    // TODO: REMOVE ME!
     // public entry point when called from the Eclipse PlugIn.
     // assumes PlugIn previously sets rgstrArgs before calling run.
     public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
@@ -101,9 +116,9 @@ public class ApexDoc {
         // default scope to global and public if not specified
         if (rgstrScope == null || rgstrScope.length == 0) {
             rgstrScope = new String[3];
-            rgstrScope[0] = "global";
-            rgstrScope[1] = "public";
-            rgstrScope[2] = "webService";
+            rgstrScope[0] = GLOBAL;
+            rgstrScope[1] = PUBLIC;
+            rgstrScope[2] = WEB_SERVICE;
         }
 
         // find all the files to parse
@@ -251,23 +266,23 @@ public class ApexDoc {
                 if (line.startsWith("/*")) {
                     commentsStarted = true;
                     boolean commentEnded = false;
-                    if (line.startsWith("/**")) {
-                    	if (line.endsWith("*/")) {
-                            line = line.replace("*/", "");
+                    if (line.startsWith(COMMENT_OPEN)) {
+                    	if (line.endsWith(COMMENT_CLOSE)) {
+                            line = line.replace(COMMENT_CLOSE, "");
                             commentEnded = true;
                     	}
                     	comments.add(line);
                     	docBlockStarted = true;
                     }
-                    if (line.endsWith("*/") || commentEnded) {
+                    if (line.endsWith(COMMENT_CLOSE) || commentEnded) {
                         commentsStarted = false;
                         docBlockStarted = false;
                     }
                     continue;
                 }
 
-                if (commentsStarted && line.endsWith("*/")) {
-                    line = line.replace("*/", "");
+                if (commentsStarted && line.endsWith(COMMENT_CLOSE)) {
+                    line = line.replace(COMMENT_CLOSE, "");
                     if (docBlockStarted) {
                     	comments.add(line);
                     	docBlockStarted = false;
@@ -315,7 +330,7 @@ public class ApexDoc {
 
                 // look for a class. Use regexp to match class since we might be dealing with an inner
                 // class or @isTest class without an explicit access modifier (in other words, private)
-                if ((line.toLowerCase().matches(".*\\bclass\\b.*") || line.toLowerCase().contains(" interface "))) {
+                if ((line.toLowerCase().matches(".*\\bclass\\b.*") || line.toLowerCase().contains(INTERFACE))) {
 
                     // create the new class
                     ClassModel cModelNew = new ClassModel(cModelParent, comments, line, lineNum);
@@ -375,9 +390,8 @@ public class ApexDoc {
             return cModelParent;
         } catch (Exception e) { // Catch exception if any
             System.err.println("Error: " + e.getMessage());
+            return null;
         }
-
-        return null;
     }
 
     /**
@@ -389,7 +403,7 @@ public class ApexDoc {
      */
     private static boolean shouldSkipLine(String line, ClassModel cModel) {
         if (containsScope(line) == null &&
-            !line.toLowerCase().startsWith("class ") &&
+            !line.toLowerCase().startsWith(CLASS + " ") &&
                 !(cModel != null && cModel.getIsInterface() && line.contains("("))) {
                     return true;
         }
@@ -408,8 +422,8 @@ public class ApexDoc {
             // not, and current scope is private see if line starts
             // with static or final which are implicitly private
             if (str.startsWith(scope + " ") ||
-                    (scope.equals("private") && (str.startsWith("static ") ||
-                        str.startsWith("final ")))) {
+                    (scope.equals(PRIVATE) && (str.startsWith(STATIC + " ") ||
+                        str.startsWith(FINAL + " ")))) {
                 return scope;
             }
         }
@@ -463,6 +477,7 @@ public class ApexDoc {
         return count;
     }
 
+    // TODO: REMOVE ME!!!
     /*
      * private static void debug(ClassModel cModel){ try{
      * System.out.println("Class::::::::::::::::::::::::");

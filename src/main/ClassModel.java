@@ -23,7 +23,7 @@ public class ClassModel extends ApexModel {
         this.methods = new ArrayList<MethodModel>();
         this.properties = new ArrayList<PropertyModel>();
 
-        if (nameLine.toLowerCase().contains(" interface ")) {
+        if (nameLine.toLowerCase().contains(ApexDoc.INTERFACE)) {
             this.isInterface = true;
         }
     }
