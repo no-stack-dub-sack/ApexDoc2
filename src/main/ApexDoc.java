@@ -399,8 +399,18 @@ public class ApexDoc {
 
     public static String containsScope(String str) {
         for (int i = 0; i < rgstrScope.length; i++) {
-            if (str.toLowerCase().contains(rgstrScope[i].toLowerCase() + " ")) {
-                return rgstrScope[i];
+            String scope = rgstrScope[i].toLowerCase();
+            // if line starts with annotation, replace it so
+            //  we can accurately use startsWith to match scope.
+            str = str.toLowerCase().trim();
+            str = str.replaceFirst("@\\w+\\b\\s{0,1}", "");
+            // see if line starts with registered scopes. If it does
+            // not, and current scope is private see if line starts
+            // with static or final which are implicitly private
+            if (str.startsWith(scope + " ") ||
+                    (scope.equals("private") && (str.startsWith("static ") ||
+                        str.startsWith("final ")))) {
+                return scope;
             }
         }
         return null;
