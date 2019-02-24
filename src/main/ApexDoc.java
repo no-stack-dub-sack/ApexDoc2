@@ -4,9 +4,7 @@ import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Stack;
 import java.util.TreeMap;
@@ -34,20 +32,6 @@ public class ApexDoc {
 
     public static FileManager fm;
     public static String[] rgstrScope;
-
-    // TODO: REMOVE ME!!
-    public static String[] rgstrArgs;
-
-    // TODO: REMOVE ME!!!
-    public ApexDoc() {
-        try {
-            File file = new File("apex_doc_log.txt");
-            FileOutputStream fos = new FileOutputStream(file);
-            PrintStream ps = new PrintStream(fos);
-            System.setOut(ps);
-        } catch (Exception ex) {
-        }
-    }
 
     // public entry point when called from the command line.
     public static void main(String[] args) {

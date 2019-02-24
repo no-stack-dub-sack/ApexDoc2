@@ -280,7 +280,7 @@ public class FileManager {
 
             for (PropertyModel prop : properties) {
                 String propSourceLink = maybeMakeSourceLink(prop, outerClass, hostedSourceURL, escapeHTML(prop.getNameLine()));
-                contents += "<tr class='property-scope-" + prop.getScope() + "'>";
+                contents += "<tr class='property " + prop.getScope() + "'>";
                 contents += "<td class='clsPropertyName'>" + prop.getPropertyName() + "</td>";
                 contents += "<td><div class='clsPropertyDeclaration'>" + propSourceLink + "</div></td>";
 
@@ -309,7 +309,7 @@ public class FileManager {
             for (MethodModel method : methods) {
                 boolean isDeprecated = method.getDeprecated() != "";
 
-                contents += "<li class='method-scope-" + method.getScope() + "' >";
+                contents += "<li class='method " + method.getScope() + "' >";
                 contents += "<a class='methodTOCEntry" + (isDeprecated ? " deprecated" : "") +
                          "' href='#" + method.getMethodName() + "'>" +
                          method.getMethodName() + "</a>";
@@ -327,7 +327,7 @@ public class FileManager {
             for (MethodModel method : methods) {
                 boolean isDeprecated = !method.getDeprecated().equals("");
                 String methodSourceLink = maybeMakeSourceLink(method, outerClass, hostedSourceURL, escapeHTML(method.getNameLine()));
-                contents += "<div class='method-scope-" + method.getScope() + "' >";
+                contents += "<div class='method " + method.getScope() + "' >";
                 contents += "<h2 class='methodHeader" + (isDeprecated ? " deprecated" : "") + "'>" +
                          "<a id='" + method.getMethodName() + "'/>" + method.getMethodName() + "</h2>" +
                          "<div class='methodSignature'>" + methodSourceLink + "</div>";
@@ -586,7 +586,7 @@ public class FileManager {
                 if (group.equals(cModel.getClassGroup()) || (cModel.getClassGroup() == null && group == "Miscellaneous")) {
                     if (cModel.getNameLine() != null && cModel.getNameLine().trim().length() > 0) {
                         String fileName = cModel.getClassName();
-                        contents+= "<li id='item-" + fileName + "' class='nav-item class-scope-" +
+                        contents+= "<li id='item-" + fileName + "' class='nav-item class " +
                                    cModel.getScope() + "' onclick=\"goToLocation('" + fileName + ".html');\">" +
                                    "<a href='javascript:void(0)'>" + fileName + "</a></li>";
                     }

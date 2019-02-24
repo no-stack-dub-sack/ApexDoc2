@@ -232,13 +232,14 @@ function getCookie(cname) {
 
 function toggleScope(scope, isShow) {
 	setScopeCookie();
-
-	var props = document.querySelectorAll('.property-scope-' + scope);
-	var methods = document.querySelectorAll('.method-scope-' + scope);
-	var classes = document.querySelectorAll('.class-scope-' + scope);
-	// show or hide all properties, classes,
-	// and methods of the given scope
+	var propsTable = document.querySelectorAll('.properties');
+	var props = document.querySelectorAll('.property.' + scope);
+	var methods = document.querySelectorAll('.method.' + scope);
+	var classes = document.querySelectorAll('.class.' + scope);
+	// show or hide all props, classes, & methods of a given scope
 	if (isShow === true) {
+		// show props table if its been hidden
+		toggleVisibility(propsTable, true);
 		toggleVisibility(props, true);
 		toggleVisibility(methods, true);
 		toggleVisibility(classes, true);
@@ -246,6 +247,8 @@ function toggleScope(scope, isShow) {
 		toggleVisibility(props, false);
 		toggleVisibility(methods, false);
 		toggleVisibility(classes, false);
+		// hide props table if there all props have been hidden
+		hidePropsTableIfNoProps(propsTable);
 	}
 }
 
@@ -256,6 +259,18 @@ function toggleVisibility(elements, isShow) {
 		} else {
 			elem.classList.add('hide');
 		}
+	}
+}
+
+function hidePropsTableIfNoProps(propsTable) {
+	var props;
+	if (props = document.querySelectorAll('.property')) {
+		for (var prop of props) {
+			if (!prop.classList.contains('hide')) {
+				return;
+			}
+		}
+		toggleVisibility(propsTable, false);
 	}
 }
 // #endregion
