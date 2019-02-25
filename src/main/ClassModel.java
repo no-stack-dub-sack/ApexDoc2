@@ -13,6 +13,7 @@ public class ClassModel extends ApexModel {
     private ArrayList<MethodModel> methods;
     private ArrayList<PropertyModel> properties;
     private ArrayList<ClassModel> childClasses;
+    private ArrayList<EnumModel> enums;
 
     public ClassModel(ClassModel cmodelParent, ArrayList<String> comments, String nameLine, int lineNum) {
         super(comments);
@@ -26,6 +27,10 @@ public class ClassModel extends ApexModel {
         if (nameLine.toLowerCase().contains(ApexDoc.INTERFACE)) {
             this.isInterface = true;
         }
+    }
+
+    public ArrayList<EnumModel> getEnums() {
+        return enums;
     }
 
     public ArrayList<PropertyModel> getProperties() {

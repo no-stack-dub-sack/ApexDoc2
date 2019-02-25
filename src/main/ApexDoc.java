@@ -14,6 +14,7 @@ public class ApexDoc {
     private static final String CLASS = "class";
     private static final String COMMENT_CLOSE = "*/";
     private static final String COMMENT_OPEN = "/**";
+    private static final String ENUM = "enum";
     private static final String GLOBAL = "global";
     private static final String PRIVATE = "private";
     private static final String PUBLIC = "public";
@@ -349,6 +350,57 @@ public class ApexDoc {
                     else {
                         cModelParent = cModelNew;
                     }
+                    continue;
+                }
+
+                // look for an enum
+                if (line.matches("^(public\\s|private\\s)?enum\\b.*")) {
+                    EnumModel eModel = new EnumModel(comments, line, lineNum);
+                    // one-liner enum
+                    if (line.endsWith("}")) {
+                        line = line.replace("}", "");
+                        line = line.replace("{", "");
+                        // isolate values of one-liner, split at comma & add to model
+                        line = line.substring(line.indexOf(ENUM) + ENUM.length());
+                        String[] values = line.trim().split(",");
+                        for (String value : values) {
+                            eModel.getValues().add(value);
+                        }
+                    }
+                    // enum is over multiple lines
+                    else {
+                        // handle fist line, there may be multiple values on it
+                        line = line.replace("{", "");
+                        line = line.substring(line.indexOf(ENUM) + ENUM.length());
+                        String[] values = line.trim().split(",");
+                        for (String value : values) {
+                            eModel.getValues().add(value);
+                        }
+                        // handle each additional line of enum
+                        while (!line.contains("}")) {
+                            // in case opening curly is on the second line
+                            line = bufferReader.readLine();
+                            line = line.replace("{", "");
+                            lineNum++;
+
+                            String[] lineValues = line.trim().split(",");
+                            for (String value : lineValues) {
+                                eModel.getValues().add(value);
+                            }
+                        }
+
+                        // handle last line
+                        if (line.contains("}")) {
+                            line = line.replace("}", "");
+                            String[] lineValues = line.trim().split(",");
+                            for (String value : lineValues) {
+                                eModel.getValues().add(value);
+                            }
+                        }
+                    }
+
+                    cModel.getEnums().add(eModel);
+                    comments.clear();
                     continue;
                 }
 
