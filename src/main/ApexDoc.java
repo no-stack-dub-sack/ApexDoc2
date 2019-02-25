@@ -22,31 +22,40 @@ public class ApexDoc {
 
     // any word that a method or property might start with
     // which would make the method or prop implicitly private
-    private static final String[] KEYWORDS = new String[] {
-        // keywords
-        "abstract",
-        "final",
-        "static",
-        "virtual",
-        // void / primitives
-        "void",
-        "blob",
-        "boolean",
-        "date",
-        "datetime",
-        "decimal",
-        "double",
-        "id",
-        "integer",
-        "long",
-        "object",
-        "string",
-        "time",
-        // collections
-        "list",
-        "map",
-        "set"
-    };
+    private static final String[] KEYWORDS;
+    private static final String[] COLLECTIONS;
+
+    static {
+
+        KEYWORDS = new String[] {
+            // keywords
+            "abstract",
+            "final",
+            "static",
+            "virtual",
+            "override",
+            // void / primitives
+            "void",
+            "blob",
+            "boolean",
+            "date",
+            "datetime",
+            "decimal",
+            "double",
+            "id",
+            "integer",
+            "long",
+            "object",
+            "string",
+            "time"
+        };
+
+        COLLECTIONS = new String[] {
+            "list",
+            "set",
+            "map"
+        };
+    }
 
     // use special token for marking the end of a doc block
     // comment. Now that we're supporting multi-line for all
@@ -404,24 +413,35 @@ public class ApexDoc {
     public static String containsScope(String str) {
         for (int i = 0; i < rgstrScope.length; i++) {
             String scope = rgstrScope[i].toLowerCase();
+
             // if line starts with annotation, replace it so
             //  we can accurately use startsWith to match scope.
             str = str.toLowerCase().trim();
             str = str.replaceFirst("^@\\w+\\b\\s{0,1}", "");
-            // see if line starts with registered scopes. If it does not, and
-            // current scope is private, see if line starts with keyword or
-            // primitive data type, or collection which would mean it is
-            // implicitly private. unfortunately, we cannot check for all
-            // data types, so if a method or property is not given an explicit
-            // access modifier & it doesnt start with these keywords, it will
-            // be undetectable by ApexDoc2.
+
+            // see if line starts with registered scopes.
             if (str.startsWith(scope + " ")) {
                 return scope;
-            } else if (scope.equals(PRIVATE)) {
+            }
+
+            // If it does not, and current scope is private, see if line
+            // starts with keyword or primitive data type, or collection
+            // which would mean it is implicitly private. unfortunately,
+            // we cannot check for all data types, so if a method or property
+            // is not given an explicit access modifier & it doesnt start
+            // with these keywords, it will be undetectable by ApexDoc2.
+            else if (scope.equals(PRIVATE)) {
                 for (String keyword : KEYWORDS) {
-                    if (str.startsWith(keyword)) {
+                    if (str.startsWith(keyword + " ")) {
                         return PRIVATE;
                     }
+                }
+
+                // match implicitly private collections
+                for (String collection : COLLECTIONS) {
+                    if(str.matches("^" + collection + "<.+>\\s.*")) {
+                        return PRIVATE;
+                    };
                 }
             }
         }

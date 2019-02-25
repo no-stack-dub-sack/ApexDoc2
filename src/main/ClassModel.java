@@ -42,11 +42,15 @@ public class ClassModel extends ApexModel {
         return new ArrayList<PropertyModel>(tm.values());
     }
 
-    public void setProperties(ArrayList<PropertyModel> properties) {
-        this.properties = properties;
-    }
-
     public ArrayList<MethodModel> getMethods() {
+        // ensure interface methods take the
+        // scope of their defining type
+        if (this.isInterface) {
+            for (MethodModel method : methods) {
+                method.scope = this.getScope();
+            }
+        }
+
         return methods;
     }
 
@@ -140,11 +144,14 @@ public class ClassModel extends ApexModel {
     }
 
     public String getClassGroup() {
+        String group;
         if (this.cmodelParent != null) {
-            return cmodelParent.getClassGroup();
+            group = cmodelParent.getClassGroup();
         } else {
-            return classGroup;
+            group = classGroup;
         }
+
+        return group.isEmpty() ? null : group;
     }
 
     public String getClassGroupContent() {

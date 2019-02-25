@@ -300,15 +300,17 @@ a.nav-header {
     color: mediumBlue;
 }
 
-a.nav-header.active {
+/* Hmm not sure if we want this anymore... */
+/* a.nav-header.active {
     background: #cfcdcd;
 }
 
 details[open] .nav-header.active {
     background: #cfcdcd;
-}
+} */
 
-.nav-header:hover {
+.nav-header:hover,
+.nav-header:hover a {
     background: #cfcdcd;
     color: mediumBlue;
 }

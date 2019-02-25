@@ -31,7 +31,7 @@ public class ApexModel {
 
     private String nameLine;
     private int lineNum;
-    private String scope;
+    protected String scope;
 
     public ApexModel(ArrayList<String> comments) {
         this.parseComments(comments);
@@ -56,12 +56,14 @@ public class ApexModel {
         return scope == null ? "" : scope;
     }
 
-    private void parseScope() {
+    protected void parseScope() {
         if (nameLine != null) {
             String str = ApexDoc.containsScope(nameLine);
             if (str != null) {
                 scope = str;
             } else {
+                // this must be an inner class
+                // or an @IsTest class
                 scope = "private";
             }
         }
