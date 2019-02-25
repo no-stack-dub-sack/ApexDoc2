@@ -230,6 +230,13 @@ public class FileManager {
 
         contents += "<div class='classSignature'>" + classSourceLink + "</div>";
 
+        if (cModel.getEnums().size() > 0) {
+            for (EnumModel enum_ : cModel.getEnums()) {
+                System.out.println(enum_.getValues());
+                System.out.println(enum_.getNameLine());
+            }
+        }
+
         if (!cModel.getDescription().equals("")) {
             contents += "<div class='classDetails'>" + escapeHTML(cModel.getDescription());
         }
@@ -619,7 +626,7 @@ public class FileManager {
         is.close();
     }
 
-    private void  copy(String toFileName) throws IOException, Exception {
+    private void copy(String toFileName) throws IOException, Exception {
         doCopy("apex_doc_2_logo.png", toFileName);
         doCopy("favicon.png", toFileName);
         doCopy("index.css", toFileName);
@@ -671,7 +678,6 @@ public class FileManager {
     }
 
     public String parseHTMLFile(String filePath) {
-
         String contents = (parseFile(filePath)).trim();
         if (contents != null && contents.length() > 0) {
             int startIndex = contents.indexOf("<body>");

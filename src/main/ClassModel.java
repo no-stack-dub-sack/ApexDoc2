@@ -23,6 +23,7 @@ public class ClassModel extends ApexModel {
         this.childClasses = new ArrayList<ClassModel>();
         this.methods = new ArrayList<MethodModel>();
         this.properties = new ArrayList<PropertyModel>();
+        this.enums = new ArrayList<EnumModel>();
 
         if (nameLine.toLowerCase().contains(ApexDoc.INTERFACE)) {
             this.isInterface = true;

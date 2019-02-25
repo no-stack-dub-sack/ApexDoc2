@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Stack;
 import java.util.TreeMap;
 
@@ -353,49 +354,43 @@ public class ApexDoc {
                     continue;
                 }
 
-                // look for an enum
+                // look for an enum inside a class
                 if (line.matches("^(public\\s|private\\s)?enum\\b.*")) {
                     EnumModel eModel = new EnumModel(comments, line, lineNum);
+                    ArrayList<String> values = new ArrayList<String>();
+                    String nameLine = eModel.getNameLine();
                     // one-liner enum
                     if (line.endsWith("}")) {
                         line = line.replace("}", "");
                         line = line.replace("{", "");
-                        // isolate values of one-liner, split at comma & add to model
-                        line = line.substring(line.indexOf(ENUM) + ENUM.length());
-                        String[] values = line.trim().split(",");
-                        for (String value : values) {
-                            eModel.getValues().add(value);
-                        }
+                        // isolate values of one-liner, split at comma & add to list
+                        line = line.substring(line.indexOf(nameLine) + nameLine.length());
+                        values.addAll(Arrays.asList(line.trim().split(",")));
                     }
                     // enum is over multiple lines
                     else {
                         // handle fist line, there may be multiple values on it
                         line = line.replace("{", "");
-                        line = line.substring(line.indexOf(ENUM) + ENUM.length());
-                        String[] values = line.trim().split(",");
-                        for (String value : values) {
-                            eModel.getValues().add(value);
-                        }
+                        line = line.substring(line.indexOf(nameLine) + nameLine.length());
+                        values.addAll(Arrays.asList(line.trim().split(",")));
+
                         // handle each additional line of enum
                         while (!line.contains("}")) {
-                            // in case opening curly is on the second line
                             line = bufferReader.readLine();
-                            line = line.replace("{", "");
                             lineNum++;
-
-                            String[] lineValues = line.trim().split(",");
-                            for (String value : lineValues) {
-                                eModel.getValues().add(value);
-                            }
+                            System.out.println("in while: " + line);
+                            // in case opening curly is on the second line
+                            // also handle replacing closing curly for last line
+                            String valLine = line.replace("{", "");
+                            valLine = valLine.replace("}", "");
+                            values.addAll(Arrays.asList(valLine.trim().split(",")));
                         }
+                    }
 
-                        // handle last line
-                        if (line.contains("}")) {
-                            line = line.replace("}", "");
-                            String[] lineValues = line.trim().split(",");
-                            for (String value : lineValues) {
-                                eModel.getValues().add(value);
-                            }
+                    // add all enum values to model
+                    for (String value : values) {
+                        if (!value.trim().isEmpty()) {
+                            eModel.getValues().add(value);
                         }
                     }
 

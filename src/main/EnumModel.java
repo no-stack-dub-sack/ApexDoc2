@@ -14,7 +14,7 @@ public class EnumModel extends ApexModel {
         if (nameLine != null) {
             // remove any trailing stuff after property name. { =
             int i = nameLine.indexOf('{');
-            nameLine = nameLine.substring(0, i);
+            if (i > 0) nameLine = nameLine.substring(0, i);
         }
 
         super.setNameLine(nameLine, lineNum);
