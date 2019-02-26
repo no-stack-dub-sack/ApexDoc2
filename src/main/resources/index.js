@@ -29,7 +29,7 @@ window.onbeforeunload = function() {
 // create session storage object for menu state
 // and/or update state with any new menu items
 function initMenu() {
-	var items = document.querySelectorAll('.classGroup');
+	var items = document.querySelectorAll('.groupName');
 	var hasState = sessionStorage.getItem(APEX_DOC_MENU);
 	var state = !hasState ? {} : JSON.parse(hasState);
 
@@ -63,7 +63,7 @@ function updateMenuModel(items, state) {
 	// 1) get keys currently in state object
 	var keys = Object.keys(state);
 
-	// 2) get ids from each .classGroup <details> element
+	// 2) get ids from each .groupName <details> element
 	var groups = Array.prototype.map.call(items, function(item) {
 		return {
 			id: item.id,
@@ -116,7 +116,7 @@ function renderMenuFromState() {
 // save menu state before each unload so that state is
 // preserved when changing files or when reloading the page.
 function updateMenuState() {
-	var items = document.querySelectorAll('.classGroup');
+	var items = document.querySelectorAll('.groupName');
 	var state = JSON.parse(sessionStorage.getItem(APEX_DOC_MENU));
 
 	items.forEach(function(item) {

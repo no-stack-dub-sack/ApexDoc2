@@ -6,7 +6,7 @@ import java.util.TreeMap;
 import java.util.Collections;
 import java.util.Comparator;
 
-public class ClassModel extends ApexModel {
+public class ClassModel extends OuterModel {
 
     private boolean isInterface;
     private ClassModel cmodelParent;
@@ -16,7 +16,7 @@ public class ClassModel extends ApexModel {
     private ArrayList<EnumModel> enums;
 
     public ClassModel(ClassModel cmodelParent, ArrayList<String> comments, String nameLine, int lineNum) {
-        super(comments);
+        super(comments, ModelType.CLASS);
         super.setNameLine(nameLine, lineNum);
 
         this.cmodelParent = cmodelParent;
@@ -25,9 +25,20 @@ public class ClassModel extends ApexModel {
         this.properties = new ArrayList<PropertyModel>();
         this.enums = new ArrayList<EnumModel>();
 
-        if (nameLine.toLowerCase().contains(ApexDoc.INTERFACE)) {
+        if (nameLine.toLowerCase().contains(" " + ApexDoc.INTERFACE + " ")) {
             this.isInterface = true;
         }
+    }
+
+    public String getExample() {
+        // return example and remove trailing white space which
+        // may have built up due to the allowance of preserving
+        // white pace in complex code example blocks for methods
+        return example == null ? "" : example.replace("\\s+$", "");
+    }
+
+    public String getSee() {
+        return see == null ? "" : see;
     }
 
     public ArrayList<EnumModel> getEnums() {
@@ -67,7 +78,7 @@ public class ClassModel extends ApexModel {
             public int compare(MethodModel o1, MethodModel o2) {
                 String methodName1 = o1.getMethodName();
                 String methodName2 = o2.getMethodName();
-                String className = getClassName();
+                String className = getName();
 
                 if (methodName1.equals(className)) {
                     return Integer.MIN_VALUE;
@@ -93,7 +104,7 @@ public class ClassModel extends ApexModel {
         TreeMap<String, ClassModel> tm = new TreeMap<String, ClassModel>();
 
         for (ClassModel cm : childClasses) {
-            tm.put(cm.getClassName().toLowerCase(), cm);
+            tm.put(cm.getName().toLowerCase(), cm);
         }
 
         return new ArrayList<ClassModel>(tm.values());
@@ -103,20 +114,20 @@ public class ClassModel extends ApexModel {
         childClasses.add(child);
     }
 
-    public String getClassName() {
+    public String getName() {
         String nameLine = getNameLine();
-        String parent = cmodelParent == null ? "" : cmodelParent.getClassName() + ".";
+        String parent = cmodelParent == null ? "" : cmodelParent.getName() + ".";
 
         if (nameLine != null) {
             nameLine = nameLine.trim();
         }
 
         if (nameLine != null && nameLine.trim().length() > 0) {
-            int keywordAt = nameLine.toLowerCase().indexOf("class ");
+            int keywordAt = nameLine.toLowerCase().indexOf(ApexDoc.CLASS + " ");
 
             int offset = 6;
             if (keywordAt == -1) {
-                keywordAt = nameLine.toLowerCase().indexOf("interface ");
+                keywordAt = nameLine.toLowerCase().indexOf(ApexDoc.INTERFACE + " ");
                 offset = 10;
             }
 
@@ -143,25 +154,21 @@ public class ClassModel extends ApexModel {
 
     public String getTopmostClassName() {
         if (cmodelParent != null) {
-            return cmodelParent.getClassName();
+            return cmodelParent.getName();
         } else {
-            return getClassName();
+            return getName();
         }
     }
 
-    public String getClassGroup() {
+    public String getGroupName() {
         String group;
         if (this.cmodelParent != null) {
-            group = cmodelParent.getClassGroup();
+            group = cmodelParent.getGroupName();
         } else {
-            group = classGroup;
+            group = groupName;
         }
 
         return group.isEmpty() ? null : group;
-    }
-
-    public String getClassGroupContent() {
-        return classGroupContent;
     }
 
     public boolean getIsInterface() {

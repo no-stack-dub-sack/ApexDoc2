@@ -21,12 +21,12 @@ public class ApexModel {
     private String date = "";
     private String deprecated = "";
     private String description = "";
-    private String example = "";
+    protected String example = "";
     protected String exception = "";
-    protected String classGroup = "";
-    protected String classGroupContent = "";
+    protected String groupName = "";
+    protected String groupContentPath = "";
     protected ArrayList<String> params = new ArrayList<String>();
-    private String see = "";
+    protected String see = "";
     protected String returns = "";
 
     private String nameLine;
@@ -61,7 +61,12 @@ public class ApexModel {
             String str = ApexDoc.containsScope(nameLine);
             if (str != null) {
                 scope = str;
-            } else {
+            }
+
+            // TODO: perhaps this branch of control flow should
+            // be present only in a class override method
+            else {
+
                 // this must be an inner class
                 // or an @IsTest class
                 scope = "private";
@@ -164,9 +169,9 @@ public class ApexModel {
                 } else if (currBlock.equals(DESCRIPTION)) {
                     description += (!description.isEmpty() ? " " : "") + line.trim();
                 } else if (currBlock.equals(GROUP)) {
-                    classGroup += (!classGroup.isEmpty() ? " " : "") + line.trim();
+                    groupName += (!groupName.isEmpty() ? " " : "") + line.trim();
                 } else if (currBlock.equals(GROUP_CONTENT)) {
-                    classGroupContent += (!classGroupContent.isEmpty() ? " " : "") + line.trim();
+                    groupContentPath += (!groupContentPath.isEmpty() ? " " : "") + line.trim();
                 } else if (currBlock.equals(EXAMPLE)) {
                     example += (!example.isEmpty() ? "\n" : "") + line;
                 }

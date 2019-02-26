@@ -150,18 +150,18 @@ public class FileManager {
     /**
      * @description main routine that creates an HTML file for each class specified
      * @param mapGroupNameToClassGroup
-     * @param cModels
+     * @param models
      * @param bannerPage
      * @param homeContents
      * @param hostedSourceURL
      */
-    public void createDocs(TreeMap<String, ClassGroup> mapGroupNameToClassGroup, ArrayList<ClassModel> cModels,
+    public void createDocs(TreeMap<String, ClassGroup> groupNameMap, ArrayList<OuterModel> models,
                           String bannerPage, String homeContents, String hostedSourceURL) {
 
         String links = "<table width='100%'>";
         links += makeHTMLScopingPanel();
         links += "<tr style='vertical-align:top;' >";
-        links += getPageLinks(mapGroupNameToClassGroup, cModels);
+        links += getPageLinks(groupNameMap, models);
 
         if (homeContents != null && homeContents.trim().length() > 0) {
             homeContents = links + "<td class='contentTD'>" + "<h2 class='section-title'>Home</h2>" + homeContents + "</td>";
@@ -173,29 +173,33 @@ public class FileManager {
         }
 
         String fileName = "";
-        TreeMap<String, String> mapFNameToContent = new TreeMap<String, String>();
-        mapFNameToContent.put("index", homeContents);
+        TreeMap<String, String> fileMap = new TreeMap<String, String>();
+        fileMap.put("index", homeContents);
 
         // create our Class Group content files
-        createClassGroupContent(mapFNameToContent, links, bannerPage, mapGroupNameToClassGroup, cModels);
+        createClassGroupContent(fileMap, links, bannerPage, groupNameMap);
 
-        for (ClassModel cModel : cModels) {
+        for (OuterModel model : models) {
             String contents = links;
-            if (cModel.getNameLine() != null && cModel.getNameLine().length() > 0) {
-                fileName = cModel.getClassName();
+            if (model.getNameLine() != null && model.getNameLine().length() > 0) {
+                fileName = model.getName();
                 contents += "<td class='contentTD'>";
 
-                contents += htmlForClassModel(cModel, hostedSourceURL, cModels);
+                if (model.getModelType() == OuterModel.ModelType.CLASS) {
 
-                // get child classes to work with in the order user specifies
-                ArrayList<ClassModel> childClasses = this.sortOrderStyle.equals(this.ALPHABETICAL)
-                    ? cModel.getChildClassesSorted()
-                    : cModel.getChildClasses();
+                    ClassModel cModel = (ClassModel) model;
+                    contents += htmlForClassModel(cModel, hostedSourceURL, models);
 
-                // deal with any nested classes
-                for (ClassModel cmChild : childClasses) {
-                    contents += "<p/>";
-                    contents += htmlForClassModel(cmChild, hostedSourceURL, cModels);
+                    // get child classes to work with in the order user specifies
+                    ArrayList<ClassModel> childClasses = this.sortOrderStyle.equals(this.ALPHABETICAL)
+                        ? cModel.getChildClassesSorted()
+                        : cModel.getChildClasses();
+
+                    // deal with any nested classes
+                    for (ClassModel cmChild : childClasses) {
+                        contents += "<p/>";
+                        contents += htmlForClassModel(cmChild, hostedSourceURL, models);
+                    }
                 }
 
             } else {
@@ -204,9 +208,10 @@ public class FileManager {
             contents += "</div>";
 
             contents = HTML.getHeader(bannerPage, this.documentTitle) + contents + HTML.FOOTER;
-            mapFNameToContent.put(fileName, contents);
+            fileMap.put(fileName, contents);
         }
-        createHTML(mapFNameToContent);
+
+        createHTML(fileMap);
     }
 
     /**
@@ -216,26 +221,19 @@ public class FileManager {
      * @param hostedSourceURL
      * @return html string
      */
-    private String htmlForClassModel(ClassModel cModel, String hostedSourceURL, ArrayList<ClassModel> cModels) {
+    private String htmlForClassModel(ClassModel cModel, String hostedSourceURL, ArrayList<OuterModel> models) {
         String contents = "";
         hostedSourceURL = hostedSourceURL.trim();
         String outerClass = cModel.getTopmostClassName();
         boolean hasSource = hostedSourceURL != null && !hostedSourceURL.equals("");
 
-        String sectionSourceLink = maybeMakeSourceLink(cModel, outerClass, hostedSourceURL, escapeHTML(cModel.getClassName()));
+        String sectionSourceLink = maybeMakeSourceLink(cModel, outerClass, hostedSourceURL, escapeHTML(cModel.getName()));
         String classSourceLink = maybeMakeSourceLink(cModel, outerClass, hostedSourceURL, escapeHTML(cModel.getNameLine()));
 
         contents += "<h2 class='section-title'>" + sectionSourceLink +
                  (hasSource ? "<span>" + HTML.EXTERNAL_LINK + "</span>" : "") +"</h2>";
 
         contents += "<div class='classSignature'>" + classSourceLink + "</div>";
-
-        if (cModel.getEnums().size() > 0) {
-            for (EnumModel enum_ : cModel.getEnums()) {
-                System.out.println(enum_.getValues());
-                System.out.println(enum_.getNameLine());
-            }
-        }
 
         if (!cModel.getDescription().equals("")) {
             contents += "<div class='classDetails'>" + escapeHTML(cModel.getDescription());
@@ -248,7 +246,7 @@ public class FileManager {
 
         if (!cModel.getSee().equals("")) {
             contents += "<div class='classSubtitle'>See</div>";
-            contents += "<div class='classSubDescription'>" + createSeeLink(cModels, cModel.getSee()) + "</div>";
+            contents += "<div class='classSubDescription'>" + createSeeLink(models, cModel.getSee()) + "</div>";
         }
 
         if (!cModel.getAuthor().equals("")) {
@@ -300,6 +298,37 @@ public class FileManager {
             }
             // end Properties
             contents += "</table></div><p/>";
+        }
+
+        if (cModel.getEnums().size() > 0) {
+            for (EnumModel enum_ : cModel.getEnums()) {
+                System.out.println(enum_.getValues());
+                System.out.println(enum_.getNameLine());
+            }
+
+            ArrayList<EnumModel> enums = cModel.getEnums();
+
+            // start Methods
+            contents += "<h2 class='subsection-title'>Enums</h2><div>";
+
+            // method Table of Contents (TOC)
+            contents += "<ul class='methodTOC'>";
+            for (EnumModel _enum : enums) {
+                boolean isDeprecated = _enum.getDeprecated() != "";
+
+                contents += "<li class='method " + _enum.getScope() + "' >";
+                contents += "<a class='methodTOCEntry" + (isDeprecated ? " deprecated" : "") +
+                         "' href='#" + _enum.getName() + "'>" +
+                         _enum.getName() + "</a>";
+
+                // do not render description in TOC if user has indicated to hide
+                if (this.showMethodTOCDescription && _enum.getDescription() != "") {
+                    contents += "<div class='methodTOCDescription'>" + _enum.getDescription() + "</div>";
+                }
+
+                contents += "</li>";
+            }
+            contents += "</ul></div>";
         }
 
         if (cModel.getMethods().size() > 0) {
@@ -388,7 +417,7 @@ public class FileManager {
 
                 if (!method.getSee().equals("")) {
                     contents += "<div class='methodSubTitle'>See</div>";
-                    contents += "<div class='methodSubDescription'>" + createSeeLink(cModels, method.getSee()) + "</div>";
+                    contents += "<div class='methodSubDescription'>" + createSeeLink(models, method.getSee()) + "</div>";
                 }
 
                 if (!method.getAuthor().equals("")) {
@@ -416,7 +445,7 @@ public class FileManager {
         return contents;
     }
 
-    private String createSeeLink(ArrayList<ClassModel> classes, String qualifiersStr) throws IllegalArgumentException {
+    private String createSeeLink(ArrayList<OuterModel> models, String qualifiersStr) throws IllegalArgumentException {
         // the @see token may contain a comma separated list of fully qualified
         // method or class names. Start by splitting them into individual qualifiers.
         String[] qualifiers = qualifiersStr.split(",");
@@ -440,25 +469,27 @@ public class FileManager {
             String href = "";
             boolean foundMatch = false;
 
-            for (ClassModel _class : classes) {
+            for (OuterModel model : models) {
                 // if first qualifier matches class name, begin search
-                if (_class.getClassName().equalsIgnoreCase(parts[0])) {
+                if (model.getName().equalsIgnoreCase(parts[0])) {
                     // if only a single qualifier, stope here
                     if (parts.length == 1) {
-                        href = _class.getClassName() + ".html";
+                        href = model.getName() + ".html";
                         foundMatch = true;
                         break;
                     }
 
-                    // otherwise keep searching for a match for the second qualifier
-                    if (parts.length >= 2) {
+                    // otherwise keep searching for a match for the second qualifier as long as our
+                    // model is not an enum model, in which case there is no searching left to do
+                    if (parts.length >= 2 && model.getModelType() != OuterModel.ModelType.ENUM) {
+                        ClassModel _class = (ClassModel) model;
                         ArrayList<MethodModel> methods = _class.getMethods();
                         ArrayList<ClassModel> childClasses = _class.getChildClasses();
 
                         for (MethodModel method : methods) {
                             if (method.getMethodName().equalsIgnoreCase(parts[1])) {
                                 // use actual class/methof name to create link to avoid case issues
-                                href = _class.getClassName() + ".html#" + method.getMethodName();
+                                href = _class.getName() + ".html#" + method.getMethodName();
                                 foundMatch = true;
                                 break;
                             }
@@ -470,8 +501,8 @@ public class FileManager {
                             // ApexDoc2 stores child class name as 'OuterClass.InnerClass'
                             // recreate that format below to try to make the match with
                             String childClassName = parts[0] + "." + parts[1];
-                            if (childClass.getClassName().equalsIgnoreCase(childClassName)) {
-                                String[] innerClass = childClass.getClassName().split("\\.");
+                            if (childClass.getName().equalsIgnoreCase(childClassName)) {
+                                String[] innerClass = childClass.getName().split("\\.");
                                 // If match, and only 2 parts, stop here.
                                 if (parts.length == 2) {
                                     // to ensure the link works, use actual name rather than
@@ -514,7 +545,7 @@ public class FileManager {
 
     // create our Class Group content files
     private void createClassGroupContent(TreeMap<String, String> mapFNameToContent, String links, String bannerPage,
-            TreeMap<String, ClassGroup> mapGroupNameToClassGroup, ArrayList<ClassModel> cModels) {
+            TreeMap<String, ClassGroup> mapGroupNameToClassGroup) {
 
         for (String group : mapGroupNameToClassGroup.keySet()) {
             ClassGroup cg = mapGroupNameToClassGroup.get(group);
@@ -537,23 +568,23 @@ public class FileManager {
     /**
      * @description generate the HTML string for the Class Menu to display on each page.
      * @param mapGroupNameToClassGroup map that holds all the Class names, and their respective Class Group.
-     * @param cModels list of ClassModels
+     * @param models list of ClassModels
      * @return String of HTML
      */
-    private String getPageLinks(TreeMap<String, ClassGroup> mapGroupNameToClassGroup, ArrayList<ClassModel> cModels) {
+    private String getPageLinks(TreeMap<String, ClassGroup> mapGroupNameToClassGroup, ArrayList<OuterModel> models) {
         boolean createMiscellaneousGroup = false;
 
         // this is the only place we need the list of class models sorted by name.
-        TreeMap<String, ClassModel> tm = new TreeMap<String, ClassModel>();
+        TreeMap<String, OuterModel> tm = new TreeMap<String, OuterModel>();
 
-        for (ClassModel cm : cModels) {
-            tm.put(cm.getClassName().toLowerCase(), cm);
-            if (!createMiscellaneousGroup && cm.getClassGroup() == null) {
+        for (OuterModel model : models) {
+            tm.put(model.getName().toLowerCase(), model);
+            if (!createMiscellaneousGroup && model.getGroupName() == null) {
                 createMiscellaneousGroup = true;
             }
         }
 
-        cModels = new ArrayList<ClassModel>(tm.values());
+        models = new ArrayList<OuterModel>(tm.values());
 
         String contents = "<td width='20%' vertical-align='top' >";
         contents+= "<div class='navbar'>";
@@ -572,7 +603,7 @@ public class FileManager {
             ClassGroup cg = mapGroupNameToClassGroup.get(group);
             String groupId = group.replaceAll(" ", "_");
 
-            contents+= "<details id='" + groupId + "' class='classGroup'>";
+            contents+= "<details id='" + groupId + "' class='groupName'>";
             contents+= "<summary onclick='toggleActiveClass(this);' id='header-" + groupId + "' class='nav-header'>";
 
             if (cg.getContentFilename() != null) {
@@ -588,13 +619,13 @@ public class FileManager {
             contents+= "</summary>";
             contents+= "<ul>";
 
-            for (ClassModel cModel : cModels) {
+            for (OuterModel model : models) {
                 // even though this algorithm is O(n^2), it was timed at just 12 milliseconds, so not an issue!
-                if (group.equals(cModel.getClassGroup()) || (cModel.getClassGroup() == null && group == "Miscellaneous")) {
-                    if (cModel.getNameLine() != null && cModel.getNameLine().trim().length() > 0) {
-                        String fileName = cModel.getClassName();
+                if (group.equals(model.getGroupName()) || (model.getGroupName() == null && group == "Miscellaneous")) {
+                    if (model.getNameLine() != null && model.getNameLine().trim().length() > 0) {
+                        String fileName = model.getName();
                         contents+= "<li id='item-" + fileName + "' class='nav-item class " +
-                                   cModel.getScope() + "' onclick=\"goToLocation('" + fileName + ".html');\">" +
+                                   model.getScope() + "' onclick=\"goToLocation('" + fileName + ".html');\">" +
                                    "<a href='javascript:void(0)'>" + fileName + "</a></li>";
                     }
                 }

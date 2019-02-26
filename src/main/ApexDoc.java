@@ -12,15 +12,18 @@ import java.util.TreeMap;
 
 public class ApexDoc {
 
-    private static final String CLASS = "class";
     private static final String COMMENT_CLOSE = "*/";
     private static final String COMMENT_OPEN = "/**";
-    private static final String ENUM = "enum";
     private static final String GLOBAL = "global";
     private static final String PRIVATE = "private";
     private static final String PUBLIC = "public";
     private static final String WEB_SERVICE = "webService";
-    public static final String INTERFACE = " interface ";
+
+    private static final String ENUM_REGEXP = "^(global\\s+|public\\s+|private\\s+)?enum\\b.*";
+
+    public static final String CLASS = "class";
+    public static final String ENUM = "enum";
+    public static final String INTERFACE = "interface";
 
     // any word that a method or property might start with
     // which would make the method or prop implicitly private
@@ -67,7 +70,7 @@ public class ApexDoc {
     // e.g. private;public when there are protected methods
     public static final String DOC_BLOCK_BREAK = "@@BREAK@@";
 
-    public static FileManager fm;
+    public static FileManager fileManager;
     public static String[] rgstrScope;
 
     // public entry point when called from the command line.
@@ -142,37 +145,37 @@ public class ApexDoc {
         }
 
         // find all the files to parse
-        fm = new FileManager(targetDirectory);
-        ArrayList<File> files = fm.getFiles(sourceDirectory);
-        ArrayList<ClassModel> cModels = new ArrayList<ClassModel>();
+        fileManager = new FileManager(targetDirectory);
+        ArrayList<File> files = fileManager.getFiles(sourceDirectory);
+        ArrayList<OuterModel> models = new ArrayList<OuterModel>();
 
         // set document title & favicon
-        fm.setDocumentTitle(documentTitle);
+        fileManager.setDocumentTitle(documentTitle);
         // set property to determine method sort style and
         // whether or not to hide method descriptions in TOC
-        fm.setShowMethodTOCDescription(showMethodTOCDescription);
-        fm.setSortOrderStyle(sortOrder);
+        fileManager.setShowMethodTOCDescription(showMethodTOCDescription);
+        fileManager.setSortOrderStyle(sortOrder);
 
-        // parse each file, creating a class model for it
+        // parse each file, creating a class or enum model for it
         for (File fromFile : files) {
             String fromFileName = fromFile.getAbsolutePath();
             if (fromFileName.endsWith(".cls")) {
-                ClassModel cModel = parseFileContents(fromFileName);
-                if (cModel != null) {
-                    cModels.add(cModel);
+                OuterModel model = parseFileContents(fromFileName);
+                if (model != null) {
+                    models.add(model);
                 }
             }
         }
 
         // create our Groups
-        TreeMap<String, ClassGroup> classGroupMap = createGroupNameToClassGroupMap(cModels, sourceDirectory);
+        TreeMap<String, ClassGroup> classGroupMap = createGroupNameMap(models, sourceDirectory);
 
         // load up optional specified file templates
-        String bannerContents = fm.parseHTMLFile(bannerFilePath);
-        String homeContents = fm.parseHTMLFile(homefilepath);
+        String bannerContents = fileManager.parseHTMLFile(bannerFilePath);
+        String homeContents = fileManager.parseHTMLFile(homefilepath);
 
         // create our set of HTML files
-        fm.createDocs(classGroupMap, cModels, bannerContents, homeContents, hostedSourceURL);
+        fileManager.createDocs(classGroupMap, models, bannerContents, homeContents, hostedSourceURL);
 
         // we are done!
         log("ApexDoc2 has completed!");
@@ -193,22 +196,22 @@ public class ApexDoc {
         log("Sort (O)rder        - Optional. The order in which class methods, properties, and inner classes are presented. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. ");
     }
 
-    private static TreeMap<String, ClassGroup> createGroupNameToClassGroupMap(ArrayList<ClassModel> cModels, String sourceDirectory) {
+    private static TreeMap<String, ClassGroup> createGroupNameMap(ArrayList<OuterModel> models, String sourceDirectory) {
         TreeMap<String, ClassGroup> map = new TreeMap<String, ClassGroup>();
-        for (ClassModel cmodel : cModels) {
-            String group = cmodel.getClassGroup();
-            String groupContent = cmodel.getClassGroupContent();
-            if (groupContent != null && !groupContent.isEmpty()) {
-                groupContent = sourceDirectory + "/" + groupContent;
+        for (OuterModel model : models) {
+            String group = model.getGroupName();
+            String contentPath = model.getGroupContentPath();
+            if (contentPath != null && !contentPath.isEmpty()) {
+                contentPath = sourceDirectory + "/" + contentPath;
             }
 
             ClassGroup cg;
             if (group != null) {
                 cg = map.get(group);
                 if (cg == null) {
-                    cg = new ClassGroup(group, groupContent);
+                    cg = new ClassGroup(group, contentPath);
                 } else if (cg.getContentSource() == null) {
-                    cg.setContentSource(groupContent);
+                    cg.setContentSource(contentPath);
                 }
                 // put the new or potentially modified ClassGroup back in the map
                 map.put(group, cg);
@@ -258,9 +261,9 @@ public class ApexDoc {
                 // ignore anything after // style comments. this allows hiding
                 //  of tokens from ApexDoc. However, don't ignore when line
                 // doesn't start with //, we want to preserver @example comments
-                int shouldIgnore = line.indexOf("//");
-                if (shouldIgnore == 0) {
-                    line = line.substring(0, shouldIgnore);
+                int offset = line.indexOf("//");
+                if (offset == 0) {
+                    line = line.substring(0, offset);
                 }
 
                 // gather up our comments
@@ -314,15 +317,19 @@ public class ApexDoc {
                 }
 
                 // ignore anything after an =. this avoids confusing properties with methods.
-                shouldIgnore = line.indexOf("=");
-                if (shouldIgnore > -1) {
-                    line = line.substring(0, shouldIgnore);
+                offset = line.indexOf("=");
+                if (offset > -1) {
+                    line = line.substring(0, offset);
                 }
 
-                // ignore anything after an {. this avoids confusing properties with methods.
-                shouldIgnore = line.indexOf("{");
-                if (shouldIgnore > -1) {
-                    line = line.substring(0, shouldIgnore);
+                // ignore anything after an '{' (if we're not dealing with an enum)
+                // this avoids confusing properties with methods.
+                offset = !line.matches(ENUM_REGEXP)
+                    ? line.indexOf("{")
+                    : -1;
+
+                if (offset > -1) {
+                    line = line.substring(0, offset);
                 }
 
                 // skip lines not dealing with scope that are not inner
@@ -331,7 +338,7 @@ public class ApexDoc {
 
                 // look for a class. Use regexp to match class since we might be dealing with an inner
                 // class or @isTest class without an explicit access modifier (in other words, private)
-                if ((line.toLowerCase().matches(".*\\bclass\\b.*") || line.toLowerCase().contains(INTERFACE))) {
+                if ((line.toLowerCase().matches(".*\\bclass\\b.*") || line.toLowerCase().contains(" " + INTERFACE + " "))) {
 
                     // create the new class
                     ClassModel cModelNew = new ClassModel(cModelParent, comments, line, lineNum);
@@ -355,10 +362,11 @@ public class ApexDoc {
                 }
 
                 // look for an enum inside a class
-                if (line.matches("^(public\\s|private\\s)?enum\\b.*")) {
+                if (line.matches(ENUM_REGEXP)) {
                     EnumModel eModel = new EnumModel(comments, line, lineNum);
                     ArrayList<String> values = new ArrayList<String>();
                     String nameLine = eModel.getNameLine();
+                    System.out.println("enum detected: " + line);
                     // one-liner enum
                     if (line.endsWith("}")) {
                         line = line.replace("}", "");
@@ -390,7 +398,7 @@ public class ApexDoc {
                     // add all enum values to model
                     for (String value : values) {
                         if (!value.trim().isEmpty()) {
-                            eModel.getValues().add(value);
+                            eModel.getValues().add(value.trim());
                         }
                     }
 
