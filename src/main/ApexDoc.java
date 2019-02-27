@@ -147,7 +147,7 @@ public class ApexDoc {
         // find all the files to parse
         fileManager = new FileManager(targetDirectory);
         ArrayList<File> files = fileManager.getFiles(sourceDirectory);
-        ArrayList<OuterModel> models = new ArrayList<OuterModel>();
+        ArrayList<TopLevelModel> models = new ArrayList<TopLevelModel>();
 
         // set document title & favicon
         fileManager.setDocumentTitle(documentTitle);
@@ -160,7 +160,7 @@ public class ApexDoc {
         for (File fromFile : files) {
             String fromFileName = fromFile.getAbsolutePath();
             if (fromFileName.endsWith(".cls")) {
-                OuterModel model = parseFileContents(fromFileName);
+                TopLevelModel model = parseFileContents(fromFileName);
                 if (model != null) {
                     models.add(model);
                 }
@@ -196,9 +196,9 @@ public class ApexDoc {
         log("Sort (O)rder        - Optional. The order in which class methods, properties, and inner classes are presented. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. ");
     }
 
-    private static TreeMap<String, ClassGroup> createGroupNameMap(ArrayList<OuterModel> models, String sourceDirectory) {
+    private static TreeMap<String, ClassGroup> createGroupNameMap(ArrayList<TopLevelModel> models, String sourceDirectory) {
         TreeMap<String, ClassGroup> map = new TreeMap<String, ClassGroup>();
-        for (OuterModel model : models) {
+        for (TopLevelModel model : models) {
             String group = model.getGroupName();
             String contentPath = model.getGroupContentPath();
             if (contentPath != null && !contentPath.isEmpty()) {
@@ -338,7 +338,7 @@ public class ApexDoc {
 
                 // look for a class. Use regexp to match class since we might be dealing with an inner
                 // class or @isTest class without an explicit access modifier (in other words, private)
-                if ((line.toLowerCase().matches(".*\\bclass\\b.*") || line.toLowerCase().contains(" " + INTERFACE + " "))) {
+                if ((line.toLowerCase().matches(".*\\bclass\\b.*") || line.toLowerCase().contains(INTERFACE + " "))) {
 
                     // create the new class
                     ClassModel cModelNew = new ClassModel(cModelParent, comments, line, lineNum);
@@ -450,14 +450,16 @@ public class ApexDoc {
 
     /**
      * @description Helper method to determine if a line being parsed should be skipped.
-     * Ignore lines not dealing with scope unless they start with the class keyword. If
-     * so, must be an @isTest class or inner class since Apex does not otherwise allow
-     * classes without access modifiers. Also, interface methods don't have scope, so
-     * don't skip those lines either.
+     * Ignore lines not dealing with scope unless they start with the certain keywords:
+     * We do not want to skip @isTest classes, inner classes, inner interfaces, or innter
+     * enums defined without without explicit access modifiers. These are assumed to be
+     * private. Also, interface methods don't have scope, so don't skip those lines either.
      */
     private static boolean shouldSkipLine(String line, ClassModel cModel) {
         if (containsScope(line) == null &&
+            !line.toLowerCase().startsWith(ENUM + " ") &&
             !line.toLowerCase().startsWith(CLASS + " ") &&
+            !line.toLowerCase().startsWith(INTERFACE + " ") &&
                 !(cModel != null && cModel.getIsInterface() && line.contains("("))) {
                     return true;
         }

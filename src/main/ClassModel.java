@@ -6,7 +6,7 @@ import java.util.TreeMap;
 import java.util.Collections;
 import java.util.Comparator;
 
-public class ClassModel extends OuterModel {
+public class ClassModel extends TopLevelModel {
 
     private boolean isInterface;
     private ClassModel cmodelParent;
@@ -43,6 +43,16 @@ public class ClassModel extends OuterModel {
 
     public ArrayList<EnumModel> getEnums() {
         return enums;
+    }
+
+    public ArrayList<EnumModel> getEnumsSorted() {
+        TreeMap<String, EnumModel> tm = new TreeMap<String, EnumModel>();
+
+        for (EnumModel _enum : enums) {
+            tm.put(_enum.getName().toLowerCase(), _enum);
+        }
+
+        return new ArrayList<EnumModel>(tm.values());
     }
 
     public ArrayList<PropertyModel> getProperties() {

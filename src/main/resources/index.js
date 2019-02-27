@@ -232,23 +232,29 @@ function getCookie(cname) {
 
 function toggleScope(scope, isShow) {
 	setScopeCookie();
-	var propsTable = document.querySelectorAll('.properties');
+	var enumTable = document.querySelectorAll('.properties');
+	var propTable = document.querySelectorAll('.enums');
 	var props = document.querySelectorAll('.property.' + scope);
+	var enums = document.querySelectorAll('.enum.' + scope);
 	var methods = document.querySelectorAll('.method.' + scope);
 	var classes = document.querySelectorAll('.class.' + scope);
 	// show or hide all props, classes, & methods of a given scope
 	if (isShow === true) {
 		// show props table if its been hidden
-		toggleVisibility(propsTable, true);
+		toggleVisibility(enumTable, true);
+		toggleVisibility(propTable, true);
 		toggleVisibility(props, true);
+		toggleVisibility(enums, true);
 		toggleVisibility(methods, true);
 		toggleVisibility(classes, true);
 	} else {
 		toggleVisibility(props, false);
+		toggleVisibility(enums, false);
 		toggleVisibility(methods, false);
 		toggleVisibility(classes, false);
 		// hide props table if there all props have been hidden
-		hidePropsTableIfNoProps(propsTable);
+		maybeHideTable('.properties', '.property');
+		maybeHideTable('.enums', '.enum');
 	}
 }
 
@@ -262,15 +268,15 @@ function toggleVisibility(elements, isShow) {
 	}
 }
 
-function hidePropsTableIfNoProps(propsTable) {
-	var props;
-	if (props = document.querySelectorAll('.property')) {
+function maybeHideTable(tableSelector, itemSelector) {
+	var props, table = document.querySelectorAll(tableSelector);
+	if (props = document.querySelectorAll(itemSelector)) {
 		for (var prop of props) {
 			if (!prop.classList.contains('hide')) {
 				return;
 			}
 		}
-		toggleVisibility(propsTable, false);
+		toggleVisibility(table, false);
 	}
 }
 // #endregion

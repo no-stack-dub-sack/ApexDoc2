@@ -1,7 +1,7 @@
 package main;
 import java.util.ArrayList;
 
-public class EnumModel extends OuterModel {
+public class EnumModel extends TopLevelModel {
 
     private ArrayList<String> values = new ArrayList<String>();
 
@@ -12,9 +12,9 @@ public class EnumModel extends OuterModel {
 
     public String getName() {
         // public enum YEM
-        String nameLine = this.getNameLine().trim();
+        String nameLine = this.getNameLine();
         int i = nameLine.indexOf(ApexDoc.ENUM);
-        return nameLine.substring(i);
+        return nameLine.substring(i + ApexDoc.ENUM.length()).trim();
     }
 
     public String getGroupName() {

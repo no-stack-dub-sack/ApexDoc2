@@ -2,7 +2,7 @@ package main;
 
 import java.util.ArrayList;
 
-public abstract class OuterModel extends ApexModel {
+public abstract class TopLevelModel extends ApexModel {
     public enum ModelType {
         CLASS,
         ENUM
@@ -10,7 +10,7 @@ public abstract class OuterModel extends ApexModel {
 
     public ModelType modelType;
 
-    OuterModel(ArrayList<String> comments, ModelType modelType) {
+    TopLevelModel(ArrayList<String> comments, ModelType modelType) {
         super(comments);
         this.modelType = modelType;
     }
