@@ -1,5 +1,6 @@
 package main;
 
+import main.models.*;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

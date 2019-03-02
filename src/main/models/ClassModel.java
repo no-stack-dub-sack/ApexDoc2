@@ -1,5 +1,6 @@
-package main;
+package main.models;
 
+import main.ApexDoc;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.TreeMap;

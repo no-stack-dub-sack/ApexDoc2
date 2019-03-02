@@ -1,5 +1,6 @@
-package main;
+package main.models;
 
+import main.ApexDoc;
 import java.util.ArrayList;
 
 public class ApexModel {

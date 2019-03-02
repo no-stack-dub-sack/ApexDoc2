@@ -1,4 +1,4 @@
-package main;
+package main.models;
 
 import java.util.ArrayList;
 
@@ -37,7 +37,7 @@ public class MethodModel extends ApexModel {
         if (nameLine != null && nameLine.length() > 0) {
             int lastindex = nameLine.indexOf("(");
             if (lastindex >= 0) {
-                String methodName = ApexDoc.previousWord(nameLine, lastindex);
+                String methodName = main.ApexDoc.previousWord(nameLine, lastindex);
                 return methodName;
             }
         }

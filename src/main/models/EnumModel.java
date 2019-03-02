@@ -1,11 +1,13 @@
-package main;
+package main.models;
+
+import main.ApexDoc;
 import java.util.ArrayList;
 
 public class EnumModel extends TopLevelModel {
 
     private ArrayList<String> values = new ArrayList<String>();
 
-    EnumModel(ArrayList<String> comments, String nameLine, int lineNum) {
+    public EnumModel(ArrayList<String> comments, String nameLine, int lineNum) {
         super(comments, ModelType.ENUM);
         this.setNameLine(nameLine, lineNum);
     }

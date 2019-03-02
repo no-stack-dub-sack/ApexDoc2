@@ -1,5 +1,7 @@
 package main;
 
+import main.models.*;
+import main.models.EnumModel;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.File;
@@ -367,10 +369,6 @@ public class ApexDoc {
                     eModel = new EnumModel(comments, line, lineNum);
                     ArrayList<String> values = new ArrayList<String>();
                     String nameLine = eModel.getNameLine();
-                    System.out.println("enum detected: " + line); // TODO: REMOVE!
-                    System.out.println("open curlies: " + openCurlies);
-                    System.out.println("close curlies: " + closeCurlies);
-                    System.out.println("nestedDepth: " + nestedCurlyBraceDepth);
                     // one-liner enum
                     if (line.endsWith("}")) {
                         line = line.replace("}", "");
@@ -390,7 +388,6 @@ public class ApexDoc {
                         while (!line.contains("}")) {
                             line = reader.readLine();
                             lineNum++;
-                            // System.out.println("in while: " + line); TODO: REMOVE!
                             // in case opening curly is on the second line
                             // also handle replacing closing curly for last line
                             String valLine = line.replace("{", "");
