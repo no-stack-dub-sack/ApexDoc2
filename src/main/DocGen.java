@@ -12,12 +12,6 @@ public class DocGen {
     public static boolean showMethodTOCDescription;
     public static final String ALPHABETICAL = "alpha";
 
-        /**
-     * @description creates the HTML for the provided class, including its
-     *              property and methods
-     * @param cModel
-     * @return html string
-     */
     public static String documentClass(ClassModel cModel, ArrayList<TopLevelModel> models) {
         String contents = "";
 
@@ -110,12 +104,6 @@ public class DocGen {
         return String.join(" ", words);
     }
 
-    /**
-     * @description generate the HTML string for the Class Menu to display on each page.
-     * @param mapGroupNameToClassGroup map that holds all the Class names, and their respective Class Group.
-     * @param models list of ClassModels
-     * @return String of HTML
-     */
     public static String makeMenu(TreeMap<String, ClassGroup> mapGroupNameToClassGroup, ArrayList<TopLevelModel> models) {
         boolean createMiscellaneousGroup = false;
 

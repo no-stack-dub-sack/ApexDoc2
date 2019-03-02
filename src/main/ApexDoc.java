@@ -17,52 +17,14 @@ public class ApexDoc {
     private static final String COMMENT_CLOSE = "*/";
     private static final String COMMENT_OPEN = "/**";
     private static final String GLOBAL = "global";
-    private static final String PRIVATE = "private";
     private static final String PUBLIC = "public";
     private static final String WEB_SERVICE = "webService";
 
-    private static final String ENUM_REGEXP = "^(global\\s+|public\\s+|private\\s+)?enum\\b.*";
-
+    public static final String PRIVATE = "private";
     public static final String CLASS = "class";
     public static final String ENUM = "enum";
     public static final String INTERFACE = "interface";
 
-    // any word that a method or property might start with
-    // which would make the method or prop implicitly private
-    private static final String[] KEYWORDS;
-    private static final String[] COLLECTIONS;
-
-    static {
-
-        KEYWORDS = new String[] {
-            // keywords
-            "abstract",
-            "final",
-            "static",
-            "virtual",
-            "override",
-            // void / primitives
-            "void",
-            "blob",
-            "boolean",
-            "date",
-            "datetime",
-            "decimal",
-            "double",
-            "id",
-            "integer",
-            "long",
-            "object",
-            "string",
-            "time"
-        };
-
-        COLLECTIONS = new String[] {
-            "list",
-            "set",
-            "map"
-        };
-    }
 
     // use special token for marking the end of a doc block
     // comment. Now that we're supporting multi-line for all
@@ -80,8 +42,8 @@ public class ApexDoc {
         try {
             RunApexDoc(args);
         } catch (Exception ex) {
-            log(ex);
-            printHelp();
+            Utils.log(ex);
+            Utils.printHelp();
             System.exit(-1);
         }
     }
@@ -123,16 +85,17 @@ public class ApexDoc {
             } else if (args[i].equalsIgnoreCase("-o")) {
                 sortOrder = args[++i].trim();
             } else {
-                printHelp();
+                Utils.printHelp();
                 System.exit(-1);
             }
         }
 
-        // validate sortOrder argument, throw if invalid default to 'alpha' if not specified
+        // validate sortOrder argument, throw if invalid default to 'alpha' if not
+        // specified
         if (!sortOrder.isEmpty()) {
-            if (!sortOrder.equalsIgnoreCase("logical") && !sortOrder.equalsIgnoreCase("alpha")) {
-                throw new IllegalArgumentException("Value for <sort_order> argument '" + sortOrder +
-                    "' is invalid. Options for this argument are: 'logical' or 'alpha'.");
+            if (!sortOrder.equalsIgnoreCase("Utils.logical") && !sortOrder.equalsIgnoreCase("alpha")) {
+                throw new IllegalArgumentException("Value for <sort_order> argument '" + sortOrder
+                        + "' is invalid. Options for this argument are: 'Utils.logical' or 'alpha'.");
             }
         } else {
             sortOrder = "alpha";
@@ -180,25 +143,11 @@ public class ApexDoc {
         fileManager.createDocs(classGroupMap, models, bannerContents, homeContents);
 
         // we are done!
-        log("ApexDoc2 has completed!");
+        Utils.log("ApexDoc2 has completed!");
     }
 
-    private static void printHelp() {
-        log("\nApexDoc2 - a tool for generating documentation from Salesforce Apex code class files.\n");
-        log("    Invalid Arguments detected.  The correct syntax is:\n");
-        log("apexdoc2 -s <source_directory> [-t <target_directory>] [-u <source_url>] [-h <home_page>] [-b <banner_page>] [-p <scope>] [-d <document_title>] [-c <toc_descriptions>] [-o <sort_order>]\n");
-        log("(S)ource Directory  - The folder location which contains your Apex .cls classes");
-        log("(T)arget_directory  - Optional. Specifies your target folder where documentation will be generated.");
-        log("Source (U)RL        - Optional. Specifies a URL where the source is hosted (so ApexDoc2 can provide links to your source).");
-        log("(H)ome Page         - Optional. Specifies the html file that contains the contents for the home page\'s content area.");
-        log("(B)anner Page       - Optional. Specifies the text file that contains project information for the documentation header.");
-        log("Sco(p)e             - Optional. Semicolon seperated list of scopes to document. Defaults to 'global;public'. ");
-        log("(D)ocument Title    - Optional. The value for the document's <title> attribute. Defaults to 'ApexDocs'. ");
-        log("TO(C) Descriptions  - Optional. If 'false', will hide the method's description in the class's TOC. Defaults to 'true'.");
-        log("Sort (O)rder        - Optional. The order in which class methods, properties, and inner classes are presented. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. ");
-    }
-
-    private static TreeMap<String, ClassGroup> createGroupNameMap(ArrayList<TopLevelModel> models, String sourceDirectory) {
+    private static TreeMap<String, ClassGroup> createGroupNameMap(ArrayList<TopLevelModel> models,
+            String sourceDirectory) {
         TreeMap<String, ClassGroup> map = new TreeMap<String, ClassGroup>();
         for (TopLevelModel model : models) {
             String group = model.getGroupName();
@@ -255,14 +204,18 @@ public class ApexDoc {
             //
 
             int lineNum = 0;
+            String previousLine;
+
             while ((line = reader.readLine()) != null) {
                 lineNum++;
-
                 line = line.trim();
-                if (line.length() == 0) continue;
+
+                if (line.length() == 0) {
+                    continue;
+                }
 
                 // ignore anything after // style comments. this allows hiding
-                //  of tokens from ApexDoc. However, don't ignore when line
+                // of tokens from ApexDoc. However, don't ignore when line
                 // doesn't start with //, we want to preserver @example comments
                 int offset = line.indexOf("//");
                 if (offset == 0) {
@@ -274,12 +227,12 @@ public class ApexDoc {
                     commentsStarted = true;
                     boolean commentEnded = false;
                     if (line.startsWith(COMMENT_OPEN)) {
-                    	if (line.endsWith(COMMENT_CLOSE)) {
+                        if (line.endsWith(COMMENT_CLOSE)) {
                             line = line.replace(COMMENT_CLOSE, DOC_BLOCK_BREAK);
                             commentEnded = true;
-                    	}
-                    	comments.add(line);
-                    	docBlockStarted = true;
+                        }
+                        comments.add(line);
+                        docBlockStarted = true;
                     }
                     if (line.endsWith(COMMENT_CLOSE) || commentEnded) {
                         commentsStarted = false;
@@ -291,23 +244,23 @@ public class ApexDoc {
                 if (commentsStarted && line.endsWith(COMMENT_CLOSE)) {
                     line = line.replace(COMMENT_CLOSE, DOC_BLOCK_BREAK);
                     if (docBlockStarted) {
-                    	comments.add(line);
-                    	docBlockStarted = false;
+                        comments.add(line);
+                        docBlockStarted = false;
                     }
                     commentsStarted = false;
                     continue;
                 }
 
                 if (commentsStarted) {
-                	if (docBlockStarted) {
-                		comments.add(line);
-                	}
+                    if (docBlockStarted) {
+                        comments.add(line);
+                    }
                     continue;
                 }
 
                 // keep track of our nesting so we know which class we are in
-                int openCurlies = countChars(line, '{');
-                int closeCurlies = countChars(line, '}');
+                int openCurlies = Utils.countChars(line, '{');
+                int closeCurlies = Utils.countChars(line, '}');
                 nestedCurlyBraceDepth += openCurlies;
                 nestedCurlyBraceDepth -= closeCurlies;
 
@@ -327,9 +280,7 @@ public class ApexDoc {
 
                 // ignore anything after an '{' (if we're not dealing with an enum)
                 // this avoids confusing properties with methods.
-                offset = !line.matches(ENUM_REGEXP)
-                    ? line.indexOf("{")
-                    : -1;
+                offset = !Utils.isEnum(line) ? line.indexOf("{") : -1;
 
                 if (offset > -1) {
                     line = line.substring(0, offset);
@@ -337,11 +288,11 @@ public class ApexDoc {
 
                 // skip lines not dealing with scope that are not inner
                 // classes, interface methods, or (assumed to be) @isTest
-                if (shouldSkipLine(line, cModel)) continue;
+                if (Utils.shouldSkipLine(line, cModel))
+                    continue;
 
-                // look for a class. Use regexp to match class since we might be dealing with an inner
-                // class or @isTest class without an explicit access modifier (in other words, private)
-                if ((line.toLowerCase().matches(".*\\bclass\\b.*") || line.toLowerCase().contains(INTERFACE + " "))) {
+                // look for a class.
+                if (Utils.isClass(line)) {
 
                     // create the new class
                     ClassModel cModelNew = new ClassModel(cModelParent, comments, line, lineNum);
@@ -357,15 +308,14 @@ public class ApexDoc {
                     // add it to its parent (or track the parent)
                     if (cModelParent != null) {
                         cModelParent.addChildClass(cModelNew);
-                    }
-                    else {
+                    } else {
                         cModelParent = cModelNew;
                     }
                     continue;
                 }
 
-                // look for an enum inside a class
-                if (line.matches(ENUM_REGEXP)) {
+                // look for an enum
+                if (Utils.isEnum(line)) {
                     eModel = new EnumModel(comments, line, lineNum);
                     ArrayList<String> values = new ArrayList<String>();
                     String nameLine = eModel.getNameLine();
@@ -446,7 +396,6 @@ public class ApexDoc {
                 cModel.getProperties().add(pModel);
                 comments.clear();
                 continue;
-
             }
 
             // Close the input stream
@@ -454,122 +403,8 @@ public class ApexDoc {
             // we only want to return the parent class
             return cModelParent;
         } catch (Exception ex) { // Catch exception if any
-            log(ex);
+            Utils.log(ex);
             return null;
         }
-    }
-
-    /**
-     * @description Helper method to determine if a line being parsed should be skipped.
-     * Ignore lines not dealing with scope unless they start with the certain keywords:
-     * We do not want to skip @isTest classes, inner classes, inner interfaces, or innter
-     * enums defined without without explicit access modifiers. These are assumed to be
-     * private. Also, interface methods don't have scope, so don't skip those lines either.
-     */
-    private static boolean shouldSkipLine(String line, ClassModel cModel) {
-        if (containsScope(line) == null &&
-            !line.toLowerCase().startsWith(ENUM + " ") &&
-            !line.toLowerCase().startsWith(CLASS + " ") &&
-            !line.toLowerCase().startsWith(INTERFACE + " ") &&
-                !(cModel != null && cModel.getIsInterface() && line.contains("("))) {
-                    return true;
-        }
-
-        return false;
-    }
-
-    public static String containsScope(String str) {
-        for (int i = 0; i < rgstrScope.length; i++) {
-            String scope = rgstrScope[i].toLowerCase();
-
-            // if line starts with annotation, replace it so
-            //  we can accurately use startsWith to match scope.
-            str = str.toLowerCase().trim();
-            str = str.replaceFirst("^@\\w+\\b\\s{0,1}", "");
-
-            // see if line starts with registered scopes.
-            if (str.startsWith(scope + " ")) {
-                return scope;
-            }
-
-            // If it does not, and current scope is private, see if line
-            // starts with keyword or primitive data type, or collection
-            // which would mean it is implicitly private. unfortunately,
-            // we cannot check for all data types, so if a method or property
-            // is not given an explicit access modifier & it doesnt start
-            // with these keywords, it will be undetectable by ApexDoc2.
-            else if (scope.equals(PRIVATE)) {
-                for (String keyword : KEYWORDS) {
-                    if (str.startsWith(keyword + " ")) {
-                        return PRIVATE;
-                    }
-                }
-
-                // match implicitly private collections
-                for (String collection : COLLECTIONS) {
-                    if(str.matches("^" + collection + "<.+>\\s.*")) {
-                        return PRIVATE;
-                    };
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * @description returns the previous word in a string
-     * @param str string to search
-     * @param searchIdx where to start searching backwards from
-     * @return the previous word, or null if none found.
-     */
-    public static String previousWord(String str, int searchIdx) {
-        if (str == null) return null;
-        if (searchIdx >= str.length()) return null;
-
-        int idxStart;
-        int idxEnd;
-        for (idxStart = searchIdx - 1, idxEnd = 0; idxStart >= 0; idxStart--) {
-            if (idxEnd == 0) {
-                if (str.charAt(idxStart) == ' ') {
-                    continue;
-                }
-                idxEnd = idxStart + 1;
-            } else if (str.charAt(idxStart) == ' ') {
-                idxStart++;
-                break;
-            }
-        }
-
-        if (idxStart == -1) {
-            return null;
-        } else {
-            return str.substring(idxStart, idxEnd);
-        }
-    }
-
-    /**
-     * @description Count the number of occurrences of character in the string
-     * @param str
-     * @param ch
-     * @return int
-     */
-    private static int countChars(String str, char ch) {
-        int count = 0;
-        for (int i = 0; i < str.length(); ++i) {
-            if (str.charAt(i) == ch) {
-                ++count;
-            }
-        }
-        return count;
-    }
-
-    public static void log(Exception ex) {
-        log("");
-        ex.printStackTrace();
-        System.out.println("\n" + ex.getMessage());
-    }
-
-    public static void log(String message) {
-        System.out.println(message);
     }
 }

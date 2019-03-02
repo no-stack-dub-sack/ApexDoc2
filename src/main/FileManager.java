@@ -58,7 +58,7 @@ public class FileManager {
                 fileOutputStream.close();
                 infoMessages.append(fileName + " Processed...\n");
                 // prepend \n on 1st iteration for space between cmd line input & output
-                ApexDoc.log((i == 0 ? "\n" : "") + fileName + " Processed...");
+                Utils.log((i == 0 ? "\n" : "") + fileName + " Processed...");
                 i++;
             }
             copy(path);

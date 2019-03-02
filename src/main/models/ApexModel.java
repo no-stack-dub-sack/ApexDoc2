@@ -1,6 +1,7 @@
 package main.models;
 
 import main.ApexDoc;
+import main.Utils;
 import java.util.ArrayList;
 
 public class ApexModel {
@@ -59,7 +60,7 @@ public class ApexModel {
 
     protected void parseScope() {
         if (nameLine != null) {
-            String str = ApexDoc.containsScope(nameLine);
+            String str = Utils.containsScope(nameLine);
             if (str != null) {
                 scope = str;
             }
