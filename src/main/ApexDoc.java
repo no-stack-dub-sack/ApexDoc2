@@ -149,11 +149,12 @@ public class ApexDoc {
         ArrayList<File> files = fileManager.getFiles(sourceDirectory);
         ArrayList<TopLevelModel> models = new ArrayList<TopLevelModel>();
 
-        // set file manager props
         fileManager.setDocumentTitle(documentTitle);
-        fileManager.setShowMethodTOCDescription(showMethodTOCDescription);
-        fileManager.setSortOrderStyle(sortOrder);
-        fileManager.setHostedSourceURL(hostedSourceURL);
+
+        // set up document generator
+        DocGen.sortOrderStyle = sortOrder;
+        DocGen.hostedSourceURL = hostedSourceURL;
+        DocGen.showMethodTOCDescription = showMethodTOCDescription;
 
         // parse each file, creating a class or enum model for it
         for (File fromFile : files) {
@@ -224,7 +225,7 @@ public class ApexDoc {
             // Get the object of DataInputStream
             FileInputStream fileStream = new FileInputStream(filePath);
             DataInputStream inputStream = new DataInputStream(fileStream);
-            BufferedReader bufferReader = new BufferedReader(new InputStreamReader(inputStream));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
 
             String line;
             boolean commentsStarted = false;
@@ -252,7 +253,7 @@ public class ApexDoc {
             //
 
             int lineNum = 0;
-            while ((line = bufferReader.readLine()) != null) {
+            while ((line = reader.readLine()) != null) {
                 lineNum++;
 
                 line = line.trim();
@@ -387,7 +388,7 @@ public class ApexDoc {
 
                         // handle each additional line of enum
                         while (!line.contains("}")) {
-                            line = bufferReader.readLine();
+                            line = reader.readLine();
                             lineNum++;
                             // System.out.println("in while: " + line); TODO: REMOVE!
                             // in case opening curly is on the second line
@@ -410,6 +411,8 @@ public class ApexDoc {
                     // should return early, otherwise we're dealing with
                     // an inner enum and should add to our class model.
                     if (cModel == null && cModels.size() == 0) {
+                        reader.close();
+                        inputStream.close();
                         return eModel;
                     } else {
                         cModel.getEnums().add(eModel);
@@ -422,7 +425,7 @@ public class ApexDoc {
                 if (line.contains("(")) {
                     // deal with a method over multiple lines.
                     while (!line.contains(")")) {
-                        line += bufferReader.readLine();
+                        line += reader.readLine();
                         lineNum++;
                     }
                     MethodModel mModel = new MethodModel(comments, line, lineNum);

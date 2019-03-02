@@ -35,16 +35,4 @@ public class HTML {
         "0H552c13.255 0 24 10.745 24 24zM407.029 270.794l-16 16A23.999 23.999 0 0 0 384 303.765V448H64V128h264a24.003 24.003 " +
         "0 0 0 16.97-7.029l16-16C376.089 89.851 365.381 64 344 64H48C21.49 64 0 85.49 0 112v352c0 26.51 21.49 48 48 48h352c26.51 " +
         "0 48-21.49 48-48V287.764c0-21.382-25.852-32.09-40.971-16.97z' class='externalLink'></path></svg>";
-
-    public static String getHeader(String bannerPage, String documentTitle) {
-        String header =  "<html><head><title>" + documentTitle + "</title>";
-
-        if (bannerPage != null && bannerPage.trim().length() > 0) {
-            header += HEADER_OPEN + bannerPage;
-        } else {
-            header += HEADER_OPEN + PROJECT_DETAIL + HEADER_CLOSE;
-        }
-
-        return header;
-    }
 }
