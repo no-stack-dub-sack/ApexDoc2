@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 public class FileManager {
     private String path;
     private String sortOrderStyle;
+    private String hostedSourceURL;
     private StringBuffer infoMessages;
     private boolean showMethodTOCDescription;
     private String documentTitle = "ApexDocs";
@@ -41,7 +42,11 @@ public class FileManager {
 
     // private field setters
     public void setSortOrderStyle(String sortOrder) {
-        this.sortOrderStyle = sortOrder;
+        this.sortOrderStyle = sortOrder.trim();
+    }
+
+    public void setHostedSourceURL(String sourceUrl) {
+        this.hostedSourceURL = sourceUrl.trim();
     }
 
     public void setShowMethodTOCDescription(boolean isShow) {
@@ -122,7 +127,7 @@ public class FileManager {
         return false;
     }
 
-    private String maybeMakeSourceLink(ApexModel model, String className, String hostedSourceURL, String modelName) {
+    private String maybeMakeSourceLink(ApexModel model, String className, String modelName) {
         if (hostedSourceURL != null && !hostedSourceURL.equals("")) {
             // if user leaves off trailing slash, save the day!
             if (!hostedSourceURL.endsWith("/")) hostedSourceURL += "/";
@@ -156,7 +161,7 @@ public class FileManager {
      * @param hostedSourceURL
      */
     public void createDocs(TreeMap<String, ClassGroup> groupNameMap, ArrayList<TopLevelModel> models,
-                          String bannerPage, String homeContents, String hostedSourceURL) {
+                          String bannerPage, String homeContents) {
 
         String links = "<table width='100%'>";
         links += makeHTMLScopingPanel();
@@ -188,7 +193,7 @@ public class FileManager {
                 if (model.getModelType() == TopLevelModel.ModelType.CLASS) {
 
                     ClassModel cModel = (ClassModel) model;
-                    contents += htmlForClassModel(cModel, hostedSourceURL, models);
+                    contents += createHTMLForClassModel(cModel, models);
 
                     // get child classes to work with in the order user specifies
                     ArrayList<ClassModel> childClasses = this.sortOrderStyle.equals(this.ALPHABETICAL)
@@ -198,8 +203,11 @@ public class FileManager {
                     // deal with any nested classes
                     for (ClassModel cmChild : childClasses) {
                         contents += "<p/>";
-                        contents += htmlForClassModel(cmChild, hostedSourceURL, models);
+                        contents += createHTMLForClassModel(cmChild, models);
                     }
+                } else if (model.getModelType() == TopLevelModel.ModelType.ENUM) {
+                    EnumModel eModel = (EnumModel) model;
+                    contents += createHTMLForEnumModel(eModel, models);
                 }
 
             } else {
@@ -214,248 +222,290 @@ public class FileManager {
         createHTML(fileMap);
     }
 
-    /**
-     * @description creates the HTML for the provided class, including its
-     *              property and methods
-     * @param cModel
-     * @param hostedSourceURL
-     * @return html string
-     */
-    private String htmlForClassModel(ClassModel cModel, String hostedSourceURL, ArrayList<TopLevelModel> models) {
-        String contents = "";
-        hostedSourceURL = hostedSourceURL.trim();
-        String outerClass = cModel.getTopmostClassName();
+    private String documentClassLevel(TopLevelModel model, ArrayList<TopLevelModel> models, String className, String additionalContent) {
+        String sectionSourceLink = maybeMakeSourceLink(model, className, escapeHTML(model.getName()));
+        String classSourceLink = maybeMakeSourceLink(model, className, escapeHTML(model.getNameLine()));
         boolean hasSource = hostedSourceURL != null && !hostedSourceURL.equals("");
-
-        String sectionSourceLink = maybeMakeSourceLink(cModel, outerClass, hostedSourceURL, escapeHTML(cModel.getName()));
-        String classSourceLink = maybeMakeSourceLink(cModel, outerClass, hostedSourceURL, escapeHTML(cModel.getNameLine()));
+        String contents = "";
 
         contents += "<h2 class='sectionTitle'>" + sectionSourceLink +
-                 (hasSource ? "<span>" + HTML.EXTERNAL_LINK + "</span>" : "") +"</h2>";
+        (hasSource ? "<span>" + HTML.EXTERNAL_LINK + "</span>" : "") +"</h2>";
 
         contents += "<div class='classSignature'>" + classSourceLink + "</div>";
 
-        if (!cModel.getDescription().equals("")) {
-            contents += "<div class='classDetails'>" + escapeHTML(cModel.getDescription());
+        if (!model.getDescription().equals("")) {
+            contents += "<div class='classDetails'>" + escapeHTML(model.getDescription());
         }
 
-        if (!cModel.getDeprecated().equals("")) {
+        if (additionalContent != null) {
+            contents += additionalContent;
+        }
+
+        if (!model.getDeprecated().equals("")) {
             contents +="<div class='classSubtitle deprecated'>Deprecated</div>";
-            contents += "<div class='classSubDescription'>" + escapeHTML(cModel.getDeprecated()) + "</div>";
+            contents += "<div class='classSubDescription'>" + escapeHTML(model.getDeprecated()) + "</div>";
         }
 
-        if (!cModel.getSee().equals("")) {
+        if (!model.getSee().equals("")) {
             contents += "<div class='classSubtitle'>See</div>";
-            contents += "<div class='classSubDescription'>" + createSeeLink(models, cModel.getSee()) + "</div>";
+            contents += "<div class='classSubDescription'>" + createSeeLink(models, model.getSee()) + "</div>";
         }
 
-        if (!cModel.getAuthor().equals("")) {
-            contents += "<br/>" + escapeHTML(cModel.getAuthor());
+        if (!model.getAuthor().equals("")) {
+            contents += "<br/>" + escapeHTML(model.getAuthor());
         }
 
-        if (!cModel.getDate().equals("")) {
-            contents += "<br/>" + escapeHTML(cModel.getDate());
+        if (!model.getDate().equals("")) {
+            contents += "<br/>" + escapeHTML(model.getDate());
         }
 
         contents += "</div><p/>";
 
-        if (cModel.getProperties().size() > 0) {
-            // retrieve properties to work with in the order user specifies
-            ArrayList<PropertyModel> properties = this.sortOrderStyle.equals(this.ALPHABETICAL)
-                ? cModel.getPropertiesSorted()
-                : cModel.getProperties();
+        return contents;
+    }
 
-            // start Properties
-            contents += "<h2 class='subsectionTitle properties'>Properties</h2>" +
-                        "<div class='subsectionContainer'> " +
-                        "<table class='attrTable properties'>";
+    private String documentProperties(ClassModel cModel) {
+        String contents = "";
+        // retrieve properties to work with in the order user specifies
+        ArrayList<PropertyModel> properties = this.sortOrderStyle.equals(this.ALPHABETICAL)
+            ? cModel.getPropertiesSorted()
+            : cModel.getProperties();
 
-            // iterate once first to determine if we need to build the third column in the table
-            boolean hasDescription = false;
-            for (PropertyModel prop : properties) {
-                if (prop.getDescription().length() > 0) hasDescription = true;
-            }
+        // start Properties
+        contents += "<h2 class='subsectionTitle properties'>Properties</h2>" +
+                    "<div class='subsectionContainer'> " +
+                    "<table class='attrTable properties'>";
+
+        // iterate once first to determine if we need to build the third column in the table
+        boolean hasDescription = false;
+        for (PropertyModel prop : properties) {
+            if (prop.getDescription().length() > 0) hasDescription = true;
+        }
+
+        // if any property has a description build out the third column
+        if (hasDescription) {
+            contents += "<tr><th>Name</th><th>Signature</th><th>Description</th></tr>";
+        } else {
+            contents += "<tr><th>Name</th><th>Signature</th></tr>";
+        }
+
+        for (PropertyModel prop : properties) {
+            String propSourceLink = maybeMakeSourceLink(prop, cModel.getTopmostClassName(), escapeHTML(prop.getNameLine()));
+            contents += "<tr class='property " + prop.getScope() + "'>";
+            contents += "<td class='attrName'>" + prop.getPropertyName() + "</td>";
+            contents += "<td><div class='attrDeclaration'>" + propSourceLink + "</div></td>";
 
             // if any property has a description build out the third column
             if (hasDescription) {
-                contents += "<tr><th>Name</th><th>Signature</th><th>Description</th></tr>";
-            } else {
-                contents += "<tr><th>Name</th><th>Signature</th></tr>";
+                contents += "<td><div class='attrDescription'>" + escapeHTML(prop.getDescription()) + "</div></td>";
             }
 
-            for (PropertyModel prop : properties) {
-                String propSourceLink = maybeMakeSourceLink(prop, outerClass, hostedSourceURL, escapeHTML(prop.getNameLine()));
-                contents += "<tr class='property " + prop.getScope() + "'>";
-                contents += "<td class='clsAttrName'>" + prop.getPropertyName() + "</td>";
-                contents += "<td><div class='clsAttrDeclaration'>" + propSourceLink + "</div></td>";
+            contents += "</tr>";
+        }
+        // end Properties
+        contents += "</table></div><p/>";
+        return contents;
+    }
 
-                // if any property has a description build out the third column
-                if (hasDescription) {
-                    contents += "<td><div class='clsAttrDescription'>" + escapeHTML(prop.getDescription()) + "</div></td>";
+    private String documentInnerEnums(ClassModel cModel) {
+        String contents = "";
+
+        for (EnumModel enum_ : cModel.getEnums()) {
+            System.out.println(enum_.getValues());
+            System.out.println(enum_.getNameLine());
+        }
+
+        ArrayList<EnumModel> enums = this.sortOrderStyle.equals(this.ALPHABETICAL)
+            ? cModel.getEnumsSorted()
+            : cModel.getEnums();
+
+        // start Properties
+        contents += "<h2 class='subsectionTitle enums'>Enums</h2>" +
+                    "<div class='subsectionContainer'> " +
+                    "<table class='attrTable enums'>";
+
+        // iterate once first to determine if we need to build the third column in the table
+        boolean hasDescription = false;
+        for (EnumModel _enum : enums) {
+            if (_enum.getDescription().length() > 0) hasDescription = true;
+        }
+
+        // if any property has a description build out the third column
+        if (hasDescription) {
+            contents += "<tr><th>Name</th><th>Signature</th><th>Values</th><th>Description</th></tr>";
+        } else {
+            contents += "<tr><th>Name</th><th>Signature</th><th>Values</th></tr>";
+        }
+
+        for (EnumModel _enum : enums) {
+            String propSourceLink = maybeMakeSourceLink(_enum, cModel.getTopmostClassName(), escapeHTML(_enum.getNameLine()));
+            contents += "<tr class='enum " + _enum.getScope() + "'>";
+            contents += "<td class='attrName'>" + _enum.getName() + "</td>";
+            contents += "<td><div class='attrDeclaration'>" + propSourceLink + "</div></td>";
+            contents += "<td class='enumValues'>" + String.join(", ", _enum.getValues()) + "</td>";
+
+            // if any property has a description build out the third column
+            if (hasDescription) {
+                contents += "<td><div class='attrDescription'>" + escapeHTML(_enum.getDescription()) + "</div></td>";
+            }
+
+            contents += "</tr>";
+        }
+        // end Properties
+        contents += "</table></div><p/>";
+
+        return contents;
+    }
+
+    private String documentMethods(ClassModel cModel, ArrayList<TopLevelModel> models) {
+        String contents = "";
+        // retrieve methods to work with in the order user specifies
+        ArrayList<MethodModel> methods = this.sortOrderStyle.equals(this.ALPHABETICAL)
+            ? cModel.getMethodsSorted()
+            : cModel.getMethods();
+
+        // start Methods
+        contents += "<h2 class='subsectionTitle'>Methods</h2><div>";
+
+        // method Table of Contents (TOC)
+        contents += "<ul class='methodTOC'>";
+        for (MethodModel method : methods) {
+            boolean isDeprecated = method.getDeprecated() != "";
+
+            contents += "<li class='method " + method.getScope() + "' >";
+            contents += "<a class='methodTOCEntry" + (isDeprecated ? " deprecated" : "") +
+                        "' href='#" + method.getMethodName() + "'>" +
+                        method.getMethodName() + "</a>";
+
+            // do not render description in TOC if user has indicated to hide
+            if (this.showMethodTOCDescription && method.getDescription() != "") {
+                contents += "<div class='methodTOCDescription'>" + method.getDescription() + "</div>";
+            }
+
+            contents += "</li>";
+        }
+        contents += "</ul>";
+
+        // full method display
+        for (MethodModel method : methods) {
+            boolean isDeprecated = !method.getDeprecated().equals("");
+            String methodSourceLink = maybeMakeSourceLink(method, cModel.getTopmostClassName(), escapeHTML(method.getNameLine()));
+            contents += "<div class='method " + method.getScope() + "' >";
+            contents += "<h2 class='methodHeader" + (isDeprecated ? " deprecated" : "") + "'>" +
+                        "<a id='" + method.getMethodName() + "'/>" + method.getMethodName() + "</h2>" +
+                        "<div class='methodSignature'>" + methodSourceLink + "</div>";
+
+            if (!method.getDescription().equals("")) {
+                contents += "<div class='methodDescription'>" + escapeHTML(method.getDescription()) + "</div>";
+            }
+
+            if (isDeprecated) {
+                contents +="<div class='methodSubTitle deprecated'>Deprecated</div>";
+                contents += "<div class='methodSubDescription'>" + escapeHTML(method.getDeprecated()) + "</div>";
+            }
+
+            if (method.getParams().size() > 0) {
+                contents += "<div class='methodSubTitle'>Parameters</div>";
+                for (String param : method.getParams()) {
+                    param = escapeHTML(param);
+                    if (param != null && param.trim().length() > 0) {
+                        Pattern p = Pattern.compile("\\s");
+                        Matcher m = p.matcher(param);
+
+                        String paramName;
+                        String paramDescription;
+                        if (m.find()) {
+                            int ich = m.start();
+                            paramName = param.substring(0, ich);
+                            paramDescription = param.substring(ich + 1);
+                        } else {
+                            paramName = param;
+                            paramDescription = null;
+                        }
+                        contents += "<div class='paramName'>" + paramName + "</div>";
+
+                        if (paramDescription != null) {
+                            contents += "<div class='paramDescription'>" + paramDescription + "</div>";
+                        }
+                    }
                 }
-
-                contents += "</tr>";
+                // end Parameters
             }
-            // end Properties
-            contents += "</table></div><p/>";
+
+            if (!method.getReturns().equals("")) {
+                contents += "<div class='methodSubTitle'>Return Value</div>";
+                contents += "<div class='methodSubDescription'>" + escapeHTML(method.getReturns()) + "</div>";
+            }
+
+            if (!method.getException().equals("")) {
+                contents += "<div class='methodSubTitle'>Exceptions</div>";
+                contents += "<div class='methodSubDescription'>" + escapeHTML(method.getException()) + "</div>";
+            }
+
+            if (!method.getSee().equals("")) {
+                contents += "<div class='methodSubTitle'>See</div>";
+                contents += "<div class='methodSubDescription'>" + createSeeLink(models, method.getSee()) + "</div>";
+            }
+
+            if (!method.getAuthor().equals("")) {
+                contents += "<div class='methodSubTitle'>Author</div>";
+                contents += "<div class='methodSubDescription'>" + escapeHTML(method.getAuthor()) + "</div>";
+            }
+
+            if (!method.getDate().equals("")) {
+                contents += "<div class='methodSubTitle'>Date</div>";
+                contents += "<div class='methodSubDescription'>" + escapeHTML(method.getDate()) + "</div>";
+            }
+
+            if (!method.getExample().equals("")) {
+                contents += "<div class='methodSubTitle'>Example</div>";
+                contents += "<code class='methodExample'>" + escapeHTML(method.getExample()) + "</code>";
+            }
+
+            // end current method
+            contents += "</div>";
+        }
+        // end all methods
+        contents += "</div>";
+
+        return contents;
+    }
+    /**
+     * @description creates the HTML for the provided class, including its
+     *              property and methods
+     * @param cModel
+     * @return html string
+     */
+    private String createHTMLForClassModel(ClassModel cModel, ArrayList<TopLevelModel> models) {
+        String contents = "";
+
+        contents += documentClassLevel(cModel, models, cModel.getTopmostClassName(), null);
+
+        if (cModel.getProperties().size() > 0) {
+            contents += documentProperties(cModel);
         }
 
         if (cModel.getEnums().size() > 0) {
-            for (EnumModel enum_ : cModel.getEnums()) {
-                System.out.println(enum_.getValues());
-                System.out.println(enum_.getNameLine());
-            }
-
-            ArrayList<EnumModel> enums = this.sortOrderStyle.equals(this.ALPHABETICAL)
-                ? cModel.getEnumsSorted()
-                : cModel.getEnums();
-
-            // start Properties
-            contents += "<h2 class='subsectionTitle enums'>Enums</h2>" +
-                        "<div class='subsectionContainer'> " +
-                        "<table class='attrTable enums'>";
-
-            // iterate once first to determine if we need to build the third column in the table
-            boolean hasDescription = false;
-            for (EnumModel _enum : enums) {
-                if (_enum.getDescription().length() > 0) hasDescription = true;
-            }
-
-            // if any property has a description build out the third column
-            if (hasDescription) {
-                contents += "<tr><th>Name</th><th>Signature</th><th>Values</th><th>Description</th></tr>";
-            } else {
-                contents += "<tr><th>Name</th><th>Signature</th><th>Values</th></tr>";
-            }
-
-            for (EnumModel _enum : enums) {
-                String propSourceLink = maybeMakeSourceLink(_enum, outerClass, hostedSourceURL, escapeHTML(_enum.getNameLine()));
-                contents += "<tr class='enum " + _enum.getScope() + "'>";
-                contents += "<td class='clsAttrName'>" + _enum.getName() + "</td>";
-                contents += "<td><div class='clsAttrDeclaration'>" + propSourceLink + "</div></td>";
-                contents += "<td>" + String.join(", ", _enum.getValues()) + "</td>";
-
-                // if any property has a description build out the third column
-                if (hasDescription) {
-                    contents += "<td><div class='clsAttrDescription'>" + escapeHTML(_enum.getDescription()) + "</div></td>";
-                }
-
-                contents += "</tr>";
-            }
-            // end Properties
-            contents += "</table></div><p/>";
+            contents += documentInnerEnums(cModel);
         }
 
         if (cModel.getMethods().size() > 0) {
-            // retrieve methods to work with in the order user specifies
-            ArrayList<MethodModel> methods = this.sortOrderStyle.equals(this.ALPHABETICAL)
-                ? cModel.getMethodsSorted()
-                : cModel.getMethods();
-
-            // start Methods
-            contents += "<h2 class='subsectionTitle'>Methods</h2><div>";
-
-            // method Table of Contents (TOC)
-            contents += "<ul class='methodTOC'>";
-            for (MethodModel method : methods) {
-                boolean isDeprecated = method.getDeprecated() != "";
-
-                contents += "<li class='method " + method.getScope() + "' >";
-                contents += "<a class='methodTOCEntry" + (isDeprecated ? " deprecated" : "") +
-                         "' href='#" + method.getMethodName() + "'>" +
-                         method.getMethodName() + "</a>";
-
-                // do not render description in TOC if user has indicated to hide
-                if (this.showMethodTOCDescription && method.getDescription() != "") {
-                    contents += "<div class='methodTOCDescription'>" + method.getDescription() + "</div>";
-                }
-
-                contents += "</li>";
-            }
-            contents += "</ul>";
-
-            // full method display
-            for (MethodModel method : methods) {
-                boolean isDeprecated = !method.getDeprecated().equals("");
-                String methodSourceLink = maybeMakeSourceLink(method, outerClass, hostedSourceURL, escapeHTML(method.getNameLine()));
-                contents += "<div class='method " + method.getScope() + "' >";
-                contents += "<h2 class='methodHeader" + (isDeprecated ? " deprecated" : "") + "'>" +
-                         "<a id='" + method.getMethodName() + "'/>" + method.getMethodName() + "</h2>" +
-                         "<div class='methodSignature'>" + methodSourceLink + "</div>";
-
-                if (!method.getDescription().equals("")) {
-                    contents += "<div class='methodDescription'>" + escapeHTML(method.getDescription()) + "</div>";
-                }
-
-                if (isDeprecated) {
-                    contents +="<div class='methodSubTitle deprecated'>Deprecated</div>";
-                    contents += "<div class='methodSubDescription'>" + escapeHTML(method.getDeprecated()) + "</div>";
-                }
-
-                if (method.getParams().size() > 0) {
-                    contents += "<div class='methodSubTitle'>Parameters</div>";
-                    for (String param : method.getParams()) {
-                        param = escapeHTML(param);
-                        if (param != null && param.trim().length() > 0) {
-                            Pattern p = Pattern.compile("\\s");
-                            Matcher m = p.matcher(param);
-
-                            String paramName;
-                            String paramDescription;
-                            if (m.find()) {
-                                int ich = m.start();
-                                paramName = param.substring(0, ich);
-                                paramDescription = param.substring(ich + 1);
-                            } else {
-                                paramName = param;
-                                paramDescription = null;
-                            }
-                            contents += "<div class='paramName'>" + paramName + "</div>";
-
-                            if (paramDescription != null) {
-                                contents += "<div class='paramDescription'>" + paramDescription + "</div>";
-                            }
-                        }
-                    }
-                    // end Parameters
-                }
-
-                if (!method.getReturns().equals("")) {
-                    contents += "<div class='methodSubTitle'>Return Value</div>";
-                    contents += "<div class='methodSubDescription'>" + escapeHTML(method.getReturns()) + "</div>";
-                }
-
-                if (!method.getException().equals("")) {
-                    contents += "<div class='methodSubTitle'>Exceptions</div>";
-                    contents += "<div class='methodSubDescription'>" + escapeHTML(method.getException()) + "</div>";
-                }
-
-                if (!method.getSee().equals("")) {
-                    contents += "<div class='methodSubTitle'>See</div>";
-                    contents += "<div class='methodSubDescription'>" + createSeeLink(models, method.getSee()) + "</div>";
-                }
-
-                if (!method.getAuthor().equals("")) {
-                    contents += "<div class='methodSubTitle'>Author</div>";
-                    contents += "<div class='methodSubDescription'>" + escapeHTML(method.getAuthor()) + "</div>";
-                }
-
-                if (!method.getDate().equals("")) {
-                    contents += "<div class='methodSubTitle'>Date</div>";
-                    contents += "<div class='methodSubDescription'>" + escapeHTML(method.getDate()) + "</div>";
-                }
-
-                if (!method.getExample().equals("")) {
-                    contents += "<div class='methodSubTitle'>Example</div>";
-                    contents += "<code class='methodExample'>" + escapeHTML(method.getExample()) + "</code>";
-                }
-
-                // end current method
-                contents += "</div>";
-            }
-            // end all methods
-            contents += "</div>";
+            contents += documentMethods(cModel, models);
         }
+
+        return contents;
+    }
+
+    private String createHTMLForEnumModel(EnumModel eModel, ArrayList<TopLevelModel> models) {
+        String contents = "";
+
+        String values = "<p />";
+        values += "<table class='attrTable'>";
+        values += "<tr><th>Values</th></tr><tr>";
+        values += "<td class='enumValues'>" + String.join(", ", eModel.getValues()) + "</td>";
+        values += "</tr></table>";
+
+        contents += documentClassLevel(eModel, models, eModel.getName(), values);
 
         return contents;
     }

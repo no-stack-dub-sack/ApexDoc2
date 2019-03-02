@@ -149,12 +149,11 @@ public class ApexDoc {
         ArrayList<File> files = fileManager.getFiles(sourceDirectory);
         ArrayList<TopLevelModel> models = new ArrayList<TopLevelModel>();
 
-        // set document title & favicon
+        // set file manager props
         fileManager.setDocumentTitle(documentTitle);
-        // set property to determine method sort style and
-        // whether or not to hide method descriptions in TOC
         fileManager.setShowMethodTOCDescription(showMethodTOCDescription);
         fileManager.setSortOrderStyle(sortOrder);
+        fileManager.setHostedSourceURL(hostedSourceURL);
 
         // parse each file, creating a class or enum model for it
         for (File fromFile : files) {
@@ -175,7 +174,7 @@ public class ApexDoc {
         String homeContents = fileManager.parseHTMLFile(homefilepath);
 
         // create our set of HTML files
-        fileManager.createDocs(classGroupMap, models, bannerContents, homeContents, hostedSourceURL);
+        fileManager.createDocs(classGroupMap, models, bannerContents, homeContents);
 
         // we are done!
         log("ApexDoc2 has completed!");
@@ -220,7 +219,7 @@ public class ApexDoc {
         return map;
     }
 
-    public static ClassModel parseFileContents(String filePath) {
+    public static TopLevelModel parseFileContents(String filePath) {
         try {
             // Get the object of DataInputStream
             FileInputStream fileStream = new FileInputStream(filePath);
@@ -234,6 +233,7 @@ public class ApexDoc {
 
             ClassModel cModel = null;
             ClassModel cModelParent = null;
+            EnumModel eModel = null;
             ArrayList<String> comments = new ArrayList<String>();
             Stack<ClassModel> cModels = new Stack<ClassModel>();
 
@@ -363,10 +363,13 @@ public class ApexDoc {
 
                 // look for an enum inside a class
                 if (line.matches(ENUM_REGEXP)) {
-                    EnumModel eModel = new EnumModel(comments, line, lineNum);
+                    eModel = new EnumModel(comments, line, lineNum);
                     ArrayList<String> values = new ArrayList<String>();
                     String nameLine = eModel.getNameLine();
-                    System.out.println("enum detected: " + line);
+                    System.out.println("enum detected: " + line); // TODO: REMOVE!
+                    System.out.println("open curlies: " + openCurlies);
+                    System.out.println("close curlies: " + closeCurlies);
+                    System.out.println("nestedDepth: " + nestedCurlyBraceDepth);
                     // one-liner enum
                     if (line.endsWith("}")) {
                         line = line.replace("}", "");
@@ -386,7 +389,7 @@ public class ApexDoc {
                         while (!line.contains("}")) {
                             line = bufferReader.readLine();
                             lineNum++;
-                            System.out.println("in while: " + line);
+                            // System.out.println("in while: " + line); TODO: REMOVE!
                             // in case opening curly is on the second line
                             // also handle replacing closing curly for last line
                             String valLine = line.replace("{", "");
@@ -402,9 +405,17 @@ public class ApexDoc {
                         }
                     }
 
-                    cModel.getEnums().add(eModel);
-                    comments.clear();
-                    continue;
+                    // if no class models have been created, and we see an
+                    // enum, we must be dealing with a class level enum and
+                    // should return early, otherwise we're dealing with
+                    // an inner enum and should add to our class model.
+                    if (cModel == null && cModels.size() == 0) {
+                        return eModel;
+                    } else {
+                        cModel.getEnums().add(eModel);
+                        comments.clear();
+                        continue;
+                    }
                 }
 
                 // look for a method

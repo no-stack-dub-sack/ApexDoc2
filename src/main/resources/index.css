@@ -70,6 +70,7 @@ body {
 /* attrTable is used to display the table of class attrTable */
 .attrTable {
     border-collapse: collapse;
+    max-width: 95%;
 }
 
 .attrTable th {
@@ -91,22 +92,28 @@ body {
     background: #f7f7f7;
 }
 
-.clsAttrName {
+/* restrict width of enum value column so
+most signatures will fit on a single lin */
+.attrTable .enumValues {
+    max-width: 500px;
+}
+
+.attrName {
     font-size: .9em;
     font-weight: bold;
 }
 
-.clsAttrDeclaration {
+.attrDeclaration {
     font-family: Courier;
     font-weight: normal;
     color: MediumBlue;
 }
 
-.clsAttrDescription {
+.attrDescription {
     font-weight: normal;
 }
 
-.clsAttrDescription.hasDescription {
+.attrDescription.hasDescription {
     height: 1em;
 }
 
