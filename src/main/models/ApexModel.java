@@ -19,15 +19,17 @@ public class ApexModel {
     private static final String RETURN = "@return";
     private static final String SEE = "@see";
 
+    // model state variables
     private String author = "";
     private String date = "";
     private String deprecated = "";
     private String description = "";
+    private ArrayList<String> annotations;
     protected String example = "";
     protected String exception = "";
     protected String groupName = "";
     protected String groupContentPath = "";
-    protected ArrayList<String> params = new ArrayList<String>();
+    protected ArrayList<String> params;
     protected String see = "";
     protected String returns = "";
 
@@ -36,12 +38,16 @@ public class ApexModel {
     protected String scope;
 
     public ApexModel(ArrayList<String> comments) {
+        annotations = new ArrayList<String>();
+        params = new ArrayList<String>();
         this.parseComments(comments);
     }
 
     // model attribute getters / setters
     protected void setNameLine(String nameLine, int lineNum) {
-        this.nameLine = nameLine.trim();
+        // strip any annotations from the signature line
+        // we'll capture those and display them separately
+        this.nameLine = Utils.stripAnnotations(nameLine).trim();
         this.lineNum = lineNum;
         parseScope();
     }
@@ -76,7 +82,6 @@ public class ApexModel {
         }
     }
 
-    // common @token getters
     public String getDescription() {
         return description == null ? "" : description;
     }
@@ -102,6 +107,10 @@ public class ApexModel {
 
     public String getSee() {
         return see == null ? "" : see;
+    }
+
+    public ArrayList<String> getAnnotations() {
+        return annotations;
     }
 
     // comment parser

@@ -46,248 +46,15 @@ public class DocGen {
         return contents;
     }
 
-    public static String makeHTMLScopingPanel() {
-        String str = "<tr><td colspan='2' style='text-align: center;' >";
-        str += "Show: ";
-
-        for (int i = 0; i < ApexDoc.rgstrScope.length; i++) {
-            str += "<input type='checkbox' checked='checked' id='cbx" + ApexDoc.rgstrScope[i] +
-                    "' onclick='toggleScope(\"" + ApexDoc.rgstrScope[i] + "\", this.checked );'>" +
-                    ApexDoc.rgstrScope[i] + "</input>&nbsp;&nbsp;";
-        }
-        str += "</td></tr>";
-        return str;
-    }
-
-    public static String makeHeader(String bannerPage, String documentTitle) {
-        String header =  "<html><head><title>" + documentTitle + "</title>";
-
-        if (bannerPage != null && bannerPage.trim().length() > 0) {
-            header += HTML.HEADER_OPEN + bannerPage;
-        } else {
-            header += HTML.HEADER_OPEN + HTML.PROJECT_DETAIL + HTML.HEADER_CLOSE;
-        }
-
-        return header;
-    }
-
-    public static String escapeHTML(String s) {
-        StringBuilder out = new StringBuilder(Math.max(16, s.length()));
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (c > 127 || c == '"' || c == '<' || c == '>' || c == '&') {
-                out.append("&#");
-                out.append((int) c);
-                out.append(';');
-            } else {
-                out.append(c);
-            }
-        }
-        return wrapInlineCode(out.toString());
-    }
-
-    private static String wrapInlineCode(String html) {
-        String[] words = html.split(" ");
-
-        for (Integer i = 0; i < words.length; i++) {
-            String str = words[i];
-            Integer firstIndex = str.indexOf("`");
-            Integer lastIndex = str.lastIndexOf("`");
-
-            if (firstIndex > -1 && lastIndex > -1 && firstIndex != lastIndex) {
-                str = str.replaceFirst("`", "<code class='inlineCode'>");
-                str = str.replaceFirst("`", "</code>");
-                words[i] = str;
-            }
-        }
-
-        return String.join(" ", words);
-    }
-
-    public static String makeMenu(TreeMap<String, ClassGroup> mapGroupNameToClassGroup, ArrayList<TopLevelModel> models) {
-        boolean createMiscellaneousGroup = false;
-
-        // this is the only place we need the list of class models sorted by name.
-        TreeMap<String, TopLevelModel> tm = new TreeMap<String, TopLevelModel>();
-
-        for (TopLevelModel model : models) {
-            tm.put(model.getName().toLowerCase(), model);
-            if (!createMiscellaneousGroup && model.getGroupName() == null) {
-                createMiscellaneousGroup = true;
-            }
-        }
-
-        models = new ArrayList<TopLevelModel>(tm.values());
-
-        String contents = "<td width='20%' vertical-align='top' >";
-        contents+= "<div class='navbar'>";
-        contents+= "<nav role='navigation'>";
-        contents+= "<a class='navHeader' id='home' href='javascript:void(0)' onclick=\"goToLocation('index.html');\">";
-        contents+= "Home";
-        contents+= "</a>";
-
-        // add a bucket ClassGroup for all Classes without a ClassGroup specified
-        if (createMiscellaneousGroup) {
-            mapGroupNameToClassGroup.put("Miscellaneous", new ClassGroup("Miscellaneous", null));
-        }
-
-        // create a sorted list of ClassGroups
-        for (String group : mapGroupNameToClassGroup.keySet()) {
-            ClassGroup cg = mapGroupNameToClassGroup.get(group);
-            String groupId = group.replaceAll(" ", "_");
-
-            contents+= "<details id='" + groupId + "' class='groupName'>";
-            contents+= "<summary onclick='toggleActiveClass(this);' id='header-" + groupId + "' class='navHeader'>";
-
-            if (cg.getContentFilename() != null) {
-                String destination = cg.getContentFilename() + ".html";
-                // handle both onclick and onkeydown when tabbing to link
-                contents+= "<a href='javascript:void(0)' title='See Class Group info' " +
-                           "onclick=\"goToLocation('" + destination + "');\">" +
-                           group + "</a>";
-            } else {
-                contents+= "<span>" + group + "</span>";
-            }
-
-            contents+= "</summary>";
-            contents+= "<ul>";
-
-            for (TopLevelModel model : models) {
-                // even though this algorithm is O(n^2), it was timed at just 12 milliseconds, so not an issue!
-                if (group.equals(model.getGroupName()) || (model.getGroupName() == null && group == "Miscellaneous")) {
-                    if (model.getNameLine() != null && model.getNameLine().trim().length() > 0) {
-                        String fileName = model.getName();
-                        contents+= "<li id='item-" + fileName + "' class='navItem class " +
-                                   model.getScope() + "' onclick=\"goToLocation('" + fileName + ".html');\">" +
-                                   "<a href='javascript:void(0)'>" + fileName + "</a></li>";
-                    }
-                }
-            }
-
-            contents+= "</ul></details>";
-        }
-
-        contents+= "</nav></div>";
-        contents+= "</td>";
-
-        return contents;
-    }
-
-    private static String maybeMakeSourceLink(ApexModel model, String className, String modelName) {
-        if (hostedSourceURL != null && !hostedSourceURL.equals("")) {
-            // if user leaves off trailing slash, save the day!
-            if (!hostedSourceURL.endsWith("/")) hostedSourceURL += "/";
-            return "<a target='_blank' title='Go to source' class='hostedSourceLink' href='" +
-                    hostedSourceURL + className + ".cls#L" + model.getLineNum() + "'>" +
-                    modelName + "</a>";
-        } else {
-            return "<span>" + modelName + "</span>";
-        }
-    }
-
-    private static String makeSeeLink(ArrayList<TopLevelModel> models, String qualifiersStr) throws IllegalArgumentException {
-        // the @see token may contain a comma separated list of fully qualified
-        // method or class names. Start by splitting them into individual qualifiers.
-        String[] qualifiers = qualifiersStr.split(",");
-
-        // initialize list to store created links
-        ArrayList<String> links = new ArrayList<String>();
-
-        // iterate over each qualifier and process
-        for (String qualifier : qualifiers) {
-
-            String[] parts = qualifier.trim().split("\\.");
-
-            if (parts.length > 3) {
-                ApexDoc.log(qualifiersStr);
-                String message = "Each comma separated qualifier of the @see token must be a fully qualified class " +
-                                 "or method name, with a minimum of 1 part and a maximum of 3. E.g. MyClassName, " +
-                                 "MyClassName.MyMethodName, MyClassName.MyInnerClassName.MyInnserClassMethodName.";
-                throw new IllegalArgumentException(message);
-            }
-
-            String href = "";
-            boolean foundMatch = false;
-
-            for (TopLevelModel model : models) {
-                // if first qualifier matches class name, begin search
-                if (model.getName().equalsIgnoreCase(parts[0])) {
-                    // if only a single qualifier, stope here
-                    if (parts.length == 1) {
-                        href = model.getName() + ".html";
-                        foundMatch = true;
-                        break;
-                    }
-
-                    // otherwise keep searching for a match for the second qualifier as long as our
-                    // model is not an enum model, in which case there is no searching left to do
-                    if (parts.length >= 2 && model.getModelType() != TopLevelModel.ModelType.ENUM) {
-                        ClassModel _class = (ClassModel) model;
-                        ArrayList<MethodModel> methods = _class.getMethods();
-                        ArrayList<ClassModel> childClasses = _class.getChildClasses();
-
-                        for (MethodModel method : methods) {
-                            if (method.getMethodName().equalsIgnoreCase(parts[1])) {
-                                // use actual class/methof name to create link to avoid case issues
-                                href = _class.getName() + ".html#" + method.getMethodName();
-                                foundMatch = true;
-                                break;
-                            }
-                        }
-
-                        // if after searching methods a match hasn't been found yet
-                        // see if child class name matches the second qualifier.
-                        for (ClassModel childClass : childClasses) {
-                            // ApexDoc2 stores child class name as 'OuterClass.InnerClass'
-                            // recreate that format below to try to make the match with
-                            String childClassName = parts[0] + "." + parts[1];
-                            if (childClass.getName().equalsIgnoreCase(childClassName)) {
-                                String[] innerClass = childClass.getName().split("\\.");
-                                // If match, and only 2 parts, stop here.
-                                if (parts.length == 2) {
-                                    // to ensure the link works, use actual name rather than
-                                    // user provided parts in case casing doesn't match
-                                    href =  innerClass[0] + ".html#" + innerClass[1];
-                                    foundMatch = true;
-                                    break;
-                                }
-
-                                // Otherwise, there must be 3 parts, attempt to match method.
-                                ArrayList<MethodModel> childMethods = childClass.getMethods();
-                                for (MethodModel method : childMethods) {
-                                    if (method.getMethodName().equalsIgnoreCase(parts[2])) {
-                                        // same as above, use actual name to avoid casing issues
-                                        href = innerClass[0] + ".html#" + method.getMethodName();
-                                        foundMatch = true;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            String link;
-            if (foundMatch) {
-                link = "<a href='javascript:void(0)' onclick=\"goToLocation" +
-                       "('" + href + "')\">" + qualifier + "</a>";
-            } else {
-                link = "<span title='A matching reference could not be found!'>" +
-                       qualifier + "</span>";
-            }
-
-            links.add(link);
-        }
-
-        return String.join(", ", links);
-    }
-
     private static String documentTopLevelAttributes(TopLevelModel model, ArrayList<TopLevelModel> models, String className, String additionalContent) {
         String sectionSourceLink = maybeMakeSourceLink(model, className, escapeHTML(model.getName()));
         String classSourceLink = maybeMakeSourceLink(model, className, escapeHTML(model.getNameLine()));
         boolean hasSource = hostedSourceURL != null && !hostedSourceURL.equals("");
         String contents = "";
+
+        if (model.getAnnotations().size() > 0) {
+            System.out.println("TopLevel Annotations: " + model.getAnnotations());
+        }
 
         contents += "<h2 class='sectionTitle'>" + sectionSourceLink +
         (hasSource ? "<span>" + HTML.EXTERNAL_LINK + "</span>" : "") +"</h2>";
@@ -337,27 +104,35 @@ public class DocGen {
                     "<div class='subsectionContainer'> " +
                     "<table class='attrTable properties'>";
 
-        // iterate once first to determine if we need to build the third column in the table
-        boolean hasDescription = false;
+        // iterate once first to determine if we need to
+        // build annotations and and description columns
+        String hasDescriptions = "", hasAnnotations = "";
         for (PropertyModel prop : properties) {
-            if (prop.getDescription().length() > 0) hasDescription = true;
+            if (prop.getDescription().length() > 0) hasDescriptions = "<th>Description</th>";
+            if (prop.getAnnotations().size() > 0) hasAnnotations = "<th>Annotations</th>";
         }
 
-        // if any property has a description build out the third column
-        if (hasDescription) {
-            contents += "<tr><th>Name</th><th>Signature</th><th>Description</th></tr>";
-        } else {
-            contents += "<tr><th>Name</th><th>Signature</th></tr>";
-        }
+        String columnsTemplate = "<tr><th>Name</th>%s<th>Signature</th>%s</tr>";
+        contents += String.format(columnsTemplate, hasAnnotations, hasDescriptions);
 
         for (PropertyModel prop : properties) {
+            // TODO: REMOVE ME!
+            if (prop.getAnnotations().size() > 0) {
+                System.out.println("Prop Annotations: " + prop.getAnnotations());
+            }
+
             String propSourceLink = maybeMakeSourceLink(prop, cModel.getTopmostClassName(), escapeHTML(prop.getNameLine()));
             contents += "<tr class='property " + prop.getScope() + "'>";
             contents += "<td class='attrName'>" + prop.getPropertyName() + "</td>";
+
+            if (hasAnnotations.length() > 0) {
+                contents += "<td><div>" + String.join(", ", prop.getAnnotations()) + "</div></td>";
+            }
+
             contents += "<td><div class='attrDeclaration'>" + propSourceLink + "</div></td>";
 
             // if any property has a description build out the third column
-            if (hasDescription) {
+            if (hasDescriptions.length() > 0) {
                 contents += "<td><div class='attrDescription'>" + escapeHTML(prop.getDescription()) + "</div></td>";
             }
 
@@ -371,11 +146,6 @@ public class DocGen {
     private static String documentInnerEnums(ClassModel cModel) {
         String contents = "";
 
-        for (EnumModel enum_ : cModel.getEnums()) {
-            System.out.println(enum_.getValues());
-            System.out.println(enum_.getNameLine());
-        }
-
         ArrayList<EnumModel> enums = sortOrderStyle.equals(ALPHABETICAL)
             ? cModel.getEnumsSorted()
             : cModel.getEnums();
@@ -387,8 +157,8 @@ public class DocGen {
 
         // iterate once first to determine if we need to build the third column in the table
         boolean hasDescription = false;
-        for (EnumModel _enum : enums) {
-            if (_enum.getDescription().length() > 0) hasDescription = true;
+        for (EnumModel Enum : enums) {
+            if (Enum.getDescription().length() > 0) hasDescription = true;
         }
 
         // if any property has a description build out the third column
@@ -398,16 +168,21 @@ public class DocGen {
             contents += "<tr><th>Name</th><th>Signature</th><th>Values</th></tr>";
         }
 
-        for (EnumModel _enum : enums) {
-            String propSourceLink = maybeMakeSourceLink(_enum, cModel.getTopmostClassName(), escapeHTML(_enum.getNameLine()));
-            contents += "<tr class='enum " + _enum.getScope() + "'>";
-            contents += "<td class='attrName'>" + _enum.getName() + "</td>";
+        for (EnumModel Enum : enums) {
+            // TODO: REMOVE ME!
+            if (Enum.getAnnotations().size() > 0) {
+                System.out.println("Enum Annotations: " + Enum.getAnnotations());
+            }
+
+            String propSourceLink = maybeMakeSourceLink(Enum, cModel.getTopmostClassName(), escapeHTML(Enum.getNameLine()));
+            contents += "<tr class='enum " + Enum.getScope() + "'>";
+            contents += "<td class='attrName'>" + Enum.getName() + "</td>";
             contents += "<td><div class='attrDeclaration'>" + propSourceLink + "</div></td>";
-            contents += "<td class='enumValues'>" + String.join(", ", _enum.getValues()) + "</td>";
+            contents += "<td class='enumValues'>" + String.join(", ", Enum.getValues()) + "</td>";
 
             // if any property has a description build out the third column
             if (hasDescription) {
-                contents += "<td><div class='attrDescription'>" + escapeHTML(_enum.getDescription()) + "</div></td>";
+                contents += "<td><div class='attrDescription'>" + escapeHTML(Enum.getDescription()) + "</div></td>";
             }
 
             contents += "</tr>";
@@ -431,6 +206,11 @@ public class DocGen {
         // method Table of Contents (TOC)
         contents += "<ul class='methodTOC'>";
         for (MethodModel method : methods) {
+            // TODO: REMOVE ME!
+            if (method.getAnnotations().size() > 0) {
+                System.out.println("Method Annotations: " + method.getAnnotations());
+            }
+
             boolean isDeprecated = method.getDeprecated() != "";
 
             contents += "<li class='method " + method.getScope() + "' >";
@@ -530,5 +310,242 @@ public class DocGen {
         contents += "</div>";
 
         return contents;
+    }
+
+    public static String escapeHTML(String s) {
+        StringBuilder out = new StringBuilder(Math.max(16, s.length()));
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c > 127 || c == '"' || c == '<' || c == '>' || c == '&') {
+                out.append("&#");
+                out.append((int) c);
+                out.append(';');
+            } else {
+                out.append(c);
+            }
+        }
+        return wrapInlineCode(out.toString());
+    }
+
+    private static String wrapInlineCode(String html) {
+        String[] words = html.split(" ");
+
+        for (Integer i = 0; i < words.length; i++) {
+            String str = words[i];
+            Integer firstIndex = str.indexOf("`");
+            Integer lastIndex = str.lastIndexOf("`");
+
+            if (firstIndex > -1 && lastIndex > -1 && firstIndex != lastIndex) {
+                str = str.replaceFirst("`", "<code class='inlineCode'>");
+                str = str.replaceFirst("`", "</code>");
+                words[i] = str;
+            }
+        }
+
+        return String.join(" ", words);
+    }
+
+    public static String makeHTMLScopingPanel() {
+        String str = "<tr><td colspan='2' style='text-align: center;' >";
+        str += "Show: ";
+
+        for (int i = 0; i < ApexDoc.rgstrScope.length; i++) {
+            str += "<input type='checkbox' checked='checked' id='cbx" + ApexDoc.rgstrScope[i] +
+                    "' onclick='toggleScope(\"" + ApexDoc.rgstrScope[i] + "\", this.checked );'>" +
+                    ApexDoc.rgstrScope[i] + "</input>&nbsp;&nbsp;";
+        }
+        str += "</td></tr>";
+        return str;
+    }
+
+    public static String makeHeader(String bannerPage, String documentTitle) {
+        String header =  "<html><head><title>" + documentTitle + "</title>";
+
+        if (bannerPage != null && bannerPage.trim().length() > 0) {
+            header += HTML.HEADER_OPEN + bannerPage;
+        } else {
+            header += HTML.HEADER_OPEN + HTML.PROJECT_DETAIL + HTML.HEADER_CLOSE;
+        }
+
+        return header;
+    }
+
+    public static String makeMenu(TreeMap<String, ClassGroup> mapGroupNameToClassGroup, ArrayList<TopLevelModel> models) {
+        boolean createMiscellaneousGroup = false;
+
+        // this is the only place we need the list of class models sorted by name.
+        TreeMap<String, TopLevelModel> tm = new TreeMap<String, TopLevelModel>();
+
+        for (TopLevelModel model : models) {
+            tm.put(model.getName().toLowerCase(), model);
+            if (!createMiscellaneousGroup && model.getGroupName() == null) {
+                createMiscellaneousGroup = true;
+            }
+        }
+
+        models = new ArrayList<TopLevelModel>(tm.values());
+
+        String contents = "<td width='20%' vertical-align='top' >";
+        contents+= "<div class='navbar'>";
+        contents+= "<nav role='navigation'>";
+        contents+= "<a class='navHeader' id='home' href='javascript:void(0)' onclick=\"goToLocation('index.html');\">";
+        contents+= "Home";
+        contents+= "</a>";
+
+        // add a bucket ClassGroup for all Classes without a ClassGroup specified
+        if (createMiscellaneousGroup) {
+            mapGroupNameToClassGroup.put("Miscellaneous", new ClassGroup("Miscellaneous", null));
+        }
+
+        // create a sorted list of ClassGroups
+        for (String group : mapGroupNameToClassGroup.keySet()) {
+            ClassGroup cg = mapGroupNameToClassGroup.get(group);
+            String groupId = group.replaceAll(" ", "_");
+
+            contents+= "<details id='" + groupId + "' class='groupName'>";
+            contents+= "<summary onclick='toggleActiveClass(this);' id='header-" + groupId + "' class='navHeader'>";
+
+            if (cg.getContentFilename() != null) {
+                String destination = cg.getContentFilename() + ".html";
+                // handle both onclick and onkeydown when tabbing to link
+                contents+= "<a href='javascript:void(0)' title='See Class Group info' " +
+                           "onclick=\"goToLocation('" + destination + "');\">" +
+                           group + "</a>";
+            } else {
+                contents+= "<span>" + group + "</span>";
+            }
+
+            contents+= "</summary>";
+            contents+= "<ul>";
+
+            for (TopLevelModel model : models) {
+                // even though this algorithm is O(n^2), it was timed at just 12 milliseconds, so not an issue!
+                if (group.equals(model.getGroupName()) || (model.getGroupName() == null && group == "Miscellaneous")) {
+                    if (model.getNameLine() != null && model.getNameLine().trim().length() > 0) {
+                        String fileName = model.getName();
+                        contents+= "<li id='item-" + fileName + "' class='navItem class " +
+                                   model.getScope() + "' onclick=\"goToLocation('" + fileName + ".html');\">" +
+                                   "<a href='javascript:void(0)'>" + fileName + "</a></li>";
+                    }
+                }
+            }
+
+            contents+= "</ul></details>";
+        }
+
+        contents+= "</nav></div>";
+        contents+= "</td>";
+
+        return contents;
+    }
+
+    private static String maybeMakeSourceLink(ApexModel model, String className, String modelName) {
+        if (hostedSourceURL != null && !hostedSourceURL.equals("")) {
+            // if user leaves off trailing slash, save the day!
+            if (!hostedSourceURL.endsWith("/")) hostedSourceURL += "/";
+            return "<a target='_blank' title='Go to source' class='hostedSourceLink' href='" +
+                    hostedSourceURL + className + ".cls#L" + model.getLineNum() + "'>" +
+                    modelName + "</a>";
+        } else {
+            return "<span>" + modelName + "</span>";
+        }
+    }
+
+    private static String makeSeeLink(ArrayList<TopLevelModel> models, String qualifiersStr) throws IllegalArgumentException {
+        // the @see token may contain a comma separated list of fully qualified
+        // method or class names. Start by splitting them into individual qualifiers.
+        String[] qualifiers = qualifiersStr.split(",");
+
+        // initialize list to store created links
+        ArrayList<String> links = new ArrayList<String>();
+
+        // iterate over each qualifier and process
+        for (String qualifier : qualifiers) {
+
+            String[] parts = qualifier.trim().split("\\.");
+
+            if (parts.length > 3) {
+                Utils.log(qualifiersStr);
+                String message = "Each comma separated qualifier of the @see token must be a fully qualified class " +
+                                 "or method name, with a minimum of 1 part and a maximum of 3. E.g. MyClassName, " +
+                                 "MyClassName.MyMethodName, MyClassName.MyInnerClassName.MyInnserClassMethodName.";
+                throw new IllegalArgumentException(message);
+            }
+
+            String href = "";
+            boolean foundMatch = false;
+
+            for (TopLevelModel model : models) {
+                // if first qualifier matches class name, begin search
+                if (model.getName().equalsIgnoreCase(parts[0])) {
+                    // if only a single qualifier, stope here
+                    if (parts.length == 1) {
+                        href = model.getName() + ".html";
+                        foundMatch = true;
+                        break;
+                    }
+
+                    // otherwise keep searching for a match for the second qualifier as long as our
+                    // model is not an enum model, in which case there is no searching left to do
+                    if (parts.length >= 2 && model.getModelType() != TopLevelModel.ModelType.ENUM) {
+                        ClassModel Class = (ClassModel) model;
+                        ArrayList<MethodModel> methods = Class.getMethods();
+                        ArrayList<ClassModel> childClasses = Class.getChildClasses();
+
+                        for (MethodModel method : methods) {
+                            if (method.getMethodName().equalsIgnoreCase(parts[1])) {
+                                // use actual class/methof name to create link to avoid case issues
+                                href = Class.getName() + ".html#" + method.getMethodName();
+                                foundMatch = true;
+                                break;
+                            }
+                        }
+
+                        // if after searching methods a match hasn't been found yet
+                        // see if child class name matches the second qualifier.
+                        for (ClassModel childClass : childClasses) {
+                            // ApexDoc2 stores child class name as 'OuterClass.InnerClass'
+                            // recreate that format below to try to make the match with
+                            String childClassName = parts[0] + "." + parts[1];
+                            if (childClass.getName().equalsIgnoreCase(childClassName)) {
+                                String[] innerClass = childClass.getName().split("\\.");
+                                // If match, and only 2 parts, stop here.
+                                if (parts.length == 2) {
+                                    // to ensure the link works, use actual name rather than
+                                    // user provided parts in case casing doesn't match
+                                    href =  innerClass[0] + ".html#" + innerClass[1];
+                                    foundMatch = true;
+                                    break;
+                                }
+
+                                // Otherwise, there must be 3 parts, attempt to match method.
+                                ArrayList<MethodModel> childMethods = childClass.getMethods();
+                                for (MethodModel method : childMethods) {
+                                    if (method.getMethodName().equalsIgnoreCase(parts[2])) {
+                                        // same as above, use actual name to avoid casing issues
+                                        href = innerClass[0] + ".html#" + method.getMethodName();
+                                        foundMatch = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            String link;
+            if (foundMatch) {
+                link = "<a href='javascript:void(0)' onclick=\"goToLocation" +
+                       "('" + href + "')\">" + qualifier + "</a>";
+            } else {
+                link = "<span title='A matching reference could not be found!'>" +
+                       qualifier + "</span>";
+            }
+
+            links.add(link);
+        }
+
+        return String.join(", ", links);
     }
 }

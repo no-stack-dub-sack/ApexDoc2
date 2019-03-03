@@ -93,9 +93,9 @@ public class ApexDoc {
         // validate sortOrder argument, throw if invalid default to 'alpha' if not
         // specified
         if (!sortOrder.isEmpty()) {
-            if (!sortOrder.equalsIgnoreCase("Utils.logical") && !sortOrder.equalsIgnoreCase("alpha")) {
+            if (!sortOrder.equalsIgnoreCase("logical") && !sortOrder.equalsIgnoreCase("alpha")) {
                 throw new IllegalArgumentException("Value for <sort_order> argument '" + sortOrder
-                        + "' is invalid. Options for this argument are: 'Utils.logical' or 'alpha'.");
+                        + "' is invalid. Options for this argument are: 'logical' or 'alpha'.");
             }
         } else {
             sortOrder = "alpha";
@@ -185,7 +185,6 @@ public class ApexDoc {
 
             ClassModel cModel = null;
             ClassModel cModelParent = null;
-            EnumModel eModel = null;
             ArrayList<String> comments = new ArrayList<String>();
             Stack<ClassModel> cModels = new Stack<ClassModel>();
 
@@ -204,11 +203,12 @@ public class ApexDoc {
             //
 
             int lineNum = 0;
-            String previousLine;
+            String previousLine = "";
 
             while ((line = reader.readLine()) != null) {
-                lineNum++;
+                String originalLine = line;
                 line = line.trim();
+                lineNum++;
 
                 if (line.length() == 0) {
                     continue;
@@ -281,21 +281,25 @@ public class ApexDoc {
                 // ignore anything after an '{' (if we're not dealing with an enum)
                 // this avoids confusing properties with methods.
                 offset = !Utils.isEnum(line) ? line.indexOf("{") : -1;
-
                 if (offset > -1) {
                     line = line.substring(0, offset);
                 }
 
                 // skip lines not dealing with scope that are not inner
                 // classes, interface methods, or (assumed to be) @isTest
-                if (Utils.shouldSkipLine(line, cModel))
+                if (Utils.shouldSkipLine(line, cModel)) {
+                    // preserve skipped line, it may be an annotation
+                    // line for a class, method, prop, or enum (though
+                    // enums support few and are unlikely to have any)
+                    previousLine = originalLine;
                     continue;
+                }
 
                 // look for a class.
-                if (Utils.isClass(line)) {
-
+                if (Utils.isClassOrInterface(line)) {
                     // create the new class
                     ClassModel cModelNew = new ClassModel(cModelParent, comments, line, lineNum);
+                    Utils.parseAnnotations(previousLine, line, cModelNew);
                     comments.clear();
 
                     // keep track of the new class, as long as it wasn't a single liner {}
@@ -311,12 +315,17 @@ public class ApexDoc {
                     } else {
                         cModelParent = cModelNew;
                     }
+
+                    previousLine = null;
                     continue;
                 }
 
                 // look for an enum
                 if (Utils.isEnum(line)) {
-                    eModel = new EnumModel(comments, line, lineNum);
+                    EnumModel eModel = new EnumModel(comments, line, lineNum);
+                    Utils.parseAnnotations(previousLine, line, eModel);
+                    comments.clear();
+
                     ArrayList<String> values = new ArrayList<String>();
                     String nameLine = eModel.getNameLine();
                     // one-liner enum
@@ -363,21 +372,26 @@ public class ApexDoc {
                         return eModel;
                     } else {
                         cModel.getEnums().add(eModel);
-                        comments.clear();
+                        previousLine = null;
                         continue;
                     }
                 }
 
                 // look for a method
                 if (line.contains("(")) {
+                    int startingLine = lineNum;
+
                     // deal with a method over multiple lines.
                     while (!line.contains(")")) {
                         line += reader.readLine();
                         lineNum++;
                     }
-                    MethodModel mModel = new MethodModel(comments, line, lineNum);
+
+                    MethodModel mModel = new MethodModel(comments, line, startingLine);
+                    Utils.parseAnnotations(previousLine, line, mModel);
                     cModel.getMethods().add(mModel);
                     comments.clear();
+                    previousLine = null;
                     continue;
                 }
 
@@ -388,13 +402,16 @@ public class ApexDoc {
                     line.contains(" set;") ||
                     line.contains(" get{") ||
                     line.contains(" set{")) {
+                    previousLine = null;
                     continue;
                 }
 
                 // must be a property
                 PropertyModel pModel = new PropertyModel(comments, line, lineNum);
+                Utils.parseAnnotations(previousLine, line, pModel);
                 cModel.getProperties().add(pModel);
                 comments.clear();
+                previousLine = null;
                 continue;
             }
 

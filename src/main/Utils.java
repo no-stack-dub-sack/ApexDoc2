@@ -1,6 +1,10 @@
 package main;
 
+import main.models.ApexModel;
 import main.models.ClassModel;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.ArrayList;
 
 public class Utils {
     // any word that a method or property might start with
@@ -18,7 +22,7 @@ public class Utils {
         COLLECTIONS = new String[] { "list", "set", "map" };
     }
 
-    public static boolean isClass(String line) {
+    public static boolean isClassOrInterface(String line) {
         // Accont for inner classes or @isTest classes without an access modifier; implicitly private
         if ((line.toLowerCase().matches(".*\\bclass\\b.*") || line.toLowerCase().contains(ApexDoc.INTERFACE + " "))) {
             return true;
@@ -28,6 +32,7 @@ public class Utils {
     }
 
     public static boolean isEnum(String line) {
+        line = stripAnnotations(line);
         if (line.matches("^(global\\s+|public\\s+|private\\s+)?enum\\b.*")) {
             return true;
         }
@@ -47,21 +52,52 @@ public class Utils {
             !line.toLowerCase().startsWith(ApexDoc.ENUM + " ") &&
             !line.toLowerCase().startsWith(ApexDoc.CLASS + " ") &&
             !line.toLowerCase().startsWith(ApexDoc.INTERFACE + " ") &&
-                !(cModel != null && cModel.getIsInterface() && line.contains("("))) {
-                    return true;
+            !(cModel != null && cModel.getIsInterface() && line.contains("("))) {
+                if (line.toLowerCase().contains("invocable")) System.out.println(line);
+                return true;
         }
 
         return false;
+    }
+
+    public static String stripAnnotations(String line) {
+        int i = 0;
+        while (line.trim().startsWith("@")) {
+            line = line.trim().replaceFirst("@\\w+\\s*(\\([\\w=.*''/\\s]+\\))?", "");
+            if (i >= 100) break; // infinite loop protect, just in case
+            i++;
+        }
+
+        return line;
+    }
+
+    public static void parseAnnotations(String previousLine, String line, ApexModel model) {
+        // If previous line is not a comment line, it could be an annotation line.
+        // Annotations may also be on the signature line, so check both for matches.
+        if (previousLine != null && !previousLine.startsWith("*")) {
+            line +=  " " + previousLine;
+            if (line.toLowerCase().contains("isTest"))
+            System.out.println(line);
+        }
+
+        ArrayList<String> matches = new ArrayList<String>();
+        Matcher m = Pattern.compile("@\\w+\\s*(\\([\\w=.*''/\\s]+\\))?").matcher(line);
+
+        while (m.find()) {
+            matches.add(m.group().trim());
+        }
+
+        if (model != null) model.getAnnotations().addAll(matches);
     }
 
     public static String containsScope(String str) {
         for (int i = 0; i < ApexDoc.rgstrScope.length; i++) {
             String scope = ApexDoc.rgstrScope[i].toLowerCase();
 
-            // if line starts with annotation, replace it so
+            // if line starts with annotations, replace them, so
             // we can accurately use startsWith to match scope.
+            str = stripAnnotations(str);
             str = str.toLowerCase().trim();
-            str = str.replaceFirst("^@\\w+\\b\\s{0,1}", "");
 
             // see if line starts with registered scopes.
             if (str.startsWith(scope + " ")) {
@@ -140,17 +176,17 @@ public class Utils {
     }
 
     public static void printHelp() {
-        Utils.log("\nApexDoc2 - a tool for generating documentation from Salesforce Apex code class files.\n");
-        Utils.log("    Invalid Arguments detected.  The correct syntax is:\n");
-        Utils.log("apexdoc2 -s <source_directory> [-t <target_directory>] [-u <source_url>] [-h <home_page>] [-b <banner_page>] [-p <scope>] [-d <document_title>] [-c <toc_descriptions>] [-o <sort_order>]\n");
-        Utils.log("(S)ource Directory  - The folder location which contains your Apex .cls classes");
-        Utils.log("(T)arget_directory  - Optional. Specifies your target folder where documentation will be generated.");
-        Utils.log("Source (U)RL        - Optional. Specifies a URL where the source is hosted (so ApexDoc2 can provide links to your source).");
-        Utils.log("(H)ome Page         - Optional. Specifies the html file that contains the contents for the home page\'s content area.");
-        Utils.log("(B)anner Page       - Optional. Specifies the text file that contains project information for the documentation header.");
-        Utils.log("Sco(p)e             - Optional. Semicolon seperated list of scopes to document. Defaults to 'global;public'. ");
-        Utils.log("(D)ocument Title    - Optional. The value for the document's <title> attribute. Defaults to 'ApexDocs'. ");
-        Utils.log("TO(C) Descriptions  - Optional. If 'false', will hide the method's description in the class's TOC. Defaults to 'true'.");
-        Utils.log("Sort (O)rder        - Optional. The order in which class methods, properties, and inner classes are presented. Either 'Utils.logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. ");
+        log("\nApexDoc2 - a tool for generating documentation from Salesforce Apex code class files.\n");
+        log("    Invalid Arguments detected.  The correct syntax is:\n");
+        log("apexdoc2 -s <source_directory> [-t <target_directory>] [-u <source_url>] [-h <home_page>] [-b <banner_page>] [-p <scope>] [-d <document_title>] [-c <toc_descriptions>] [-o <sort_order>]\n");
+        log("(S)ource Directory  - The folder location which contains your Apex .cls classes");
+        log("(T)arget_directory  - Optional. Specifies your target folder where documentation will be generated.");
+        log("Source (U)RL        - Optional. Specifies a URL where the source is hosted (so ApexDoc2 can provide links to your source).");
+        log("(H)ome Page         - Optional. Specifies the html file that contains the contents for the home page\'s content area.");
+        log("(B)anner Page       - Optional. Specifies the text file that contains project information for the documentation header.");
+        log("Sco(p)e             - Optional. Semicolon seperated list of scopes to document. Defaults to 'global;public'. ");
+        log("(D)ocument Title    - Optional. The value for the document's <title> attribute. Defaults to 'ApexDocs'. ");
+        log("TO(C) Descriptions  - Optional. If 'false', will hide the method's description in the class's TOC. Defaults to 'true'.");
+        log("Sort (O)rder        - Optional. The order in which class methods, properties, and inner classes are presented. Either 'Utils.logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. ");
     }
 }
