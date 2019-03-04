@@ -40,26 +40,6 @@ public class Utils {
         return false;
     }
 
-    /**
-     * @description Helper method to determine if a line being parsed should be skipped.
-     * Ignore lines not dealing with scope unless they start with the certain keywords:
-     * We do not want to skip @isTest classes, inner classes, inner interfaces, or innter
-     * enums defined without without explicit access modifiers. These are assumed to be
-     * private. Also, interface methods don't have scope, so don't skip those lines either.
-     */
-    public static boolean shouldSkipLine(String line, ClassModel cModel){
-        if (containsScope(line) == null &&
-            !line.toLowerCase().startsWith(ApexDoc.ENUM + " ") &&
-            !line.toLowerCase().startsWith(ApexDoc.CLASS + " ") &&
-            !line.toLowerCase().startsWith(ApexDoc.INTERFACE + " ") &&
-            !(cModel != null && cModel.getIsInterface() && line.contains("("))) {
-                if (line.toLowerCase().contains("invocable")) System.out.println(line);
-                return true;
-        }
-
-        return false;
-    }
-
     public static String stripAnnotations(String line) {
         int i = 0;
         while (line.trim().startsWith("@")) {
@@ -90,36 +70,58 @@ public class Utils {
         if (model != null) model.getAnnotations().addAll(matches);
     }
 
-    public static String containsScope(String str) {
+    /**
+     * @description Helper method to determine if a line being parsed should be skipped.
+     * Ignore lines not dealing with scope unless they start with the certain keywords:
+     * We do not want to skip @isTest classes, inner classes, inner interfaces, or innter
+     * enums defined without without explicit access modifiers. These are assumed to be
+     * private. Also, interface methods don't have scope, so don't skip those lines either.
+     */
+    public static boolean shouldSkipLine(String line, ClassModel cModel){
+        if (containsScope(line) == null &&
+            !line.toLowerCase().startsWith(ApexDoc.ENUM + " ") &&
+            !line.toLowerCase().startsWith(ApexDoc.CLASS + " ") &&
+            !line.toLowerCase().startsWith(ApexDoc.INTERFACE + " ") &&
+            !(cModel != null && cModel.getIsInterface() && line.contains("("))) {
+                if (line.toLowerCase().contains("invocable")) System.out.println(line);
+                return true;
+        }
+
+        return false;
+    }
+
+    public static String containsScope(String line) {
         for (int i = 0; i < ApexDoc.rgstrScope.length; i++) {
             String scope = ApexDoc.rgstrScope[i].toLowerCase();
 
             // if line starts with annotations, replace them, so
             // we can accurately use startsWith to match scope.
-            str = stripAnnotations(str);
-            str = str.toLowerCase().trim();
+            line = stripAnnotations(line);
+            line = line.toLowerCase().trim();
 
             // see if line starts with registered scopes.
-            if (str.startsWith(scope + " ")) {
+            if (line.startsWith(scope + " ")) {
                 return scope;
             }
 
             // If it does not, and current scope is private, see if line
             // starts with keyword or primitive data type, or collection
-            // which would mean it is implicitly private. unfortunately,
-            // we cannot check for all data types, so if a method or property
-            // is not given an explicit access modifier & it doesnt start
-            // with these keywords, it will be undetectable by ApexDoc2.
+            // which would mean it is implicitly private. This only works
+            // for methods, otherwise we would be matching on method level
+            // variables as well. This is why we check for '('. Unfortunately,
+            // we cannot check for all data types, so if a method is not given
+            // an explicit access modifier & it doesnt start with these keywords,
+            // it will be undetectable by ApexDoc2.
             else if (scope.equals(ApexDoc.PRIVATE)) {
                 for (String keyword : KEYWORDS) {
-                    if (str.startsWith(keyword + " ")) {
+                    if (line.startsWith(keyword + " ") && line.contains("(")) {
                         return ApexDoc.PRIVATE;
                     }
                 }
 
-                // match implicitly private collections
+                // match implicitly private metehods which return collections
                 for (String collection : COLLECTIONS) {
-                    if (str.matches("^" + collection + "<.+>\\s.*")) {
+                    if (line.matches("^" + collection + "<.+>\\s.*") && line.contains("(")) {
                         return ApexDoc.PRIVATE;
                     }
                 }

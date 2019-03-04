@@ -114,7 +114,7 @@ public class FileManager {
                     contents += DocGen.documentClass(cModel, models);
 
                     // get child classes to work with in the order user specifies
-                    ArrayList<ClassModel> childClasses = DocGen.sortOrderStyle.equals(DocGen.ALPHABETICAL)
+                    ArrayList<ClassModel> childClasses = DocGen.sortOrderStyle.equals(ApexDoc.ORDER_ALPHA)
                         ? cModel.getChildClassesSorted()
                         : cModel.getChildClasses();
 

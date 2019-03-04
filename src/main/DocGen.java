@@ -10,7 +10,6 @@ public class DocGen {
     public static String sortOrderStyle;
     public static String hostedSourceURL;
     public static boolean showMethodTOCDescription;
-    public static final String ALPHABETICAL = "alpha";
 
     public static String documentClass(ClassModel cModel, ArrayList<TopLevelModel> models) {
         String contents = "";
@@ -52,12 +51,14 @@ public class DocGen {
         boolean hasSource = hostedSourceURL != null && !hostedSourceURL.equals("");
         String contents = "";
 
-        if (model.getAnnotations().size() > 0) {
-            System.out.println("TopLevel Annotations: " + model.getAnnotations());
-        }
 
         contents += "<h2 class='sectionTitle'>" + sectionSourceLink +
         (hasSource ? "<span>" + HTML.EXTERNAL_LINK + "</span>" : "") +"</h2>";
+
+        // if (model.getAnnotations().size() > 0) {
+        //     System.out.println("TopLevel Annotations: " + model.getAnnotations());
+        //     contents += "<div>" + String.join(" ", model.getAnnotations()) + "</div>";
+        // }
 
         contents += "<div class='classSignature'>" + classSourceLink + "</div>";
 
@@ -95,7 +96,7 @@ public class DocGen {
     private static String documentProperties(ClassModel cModel) {
         String contents = "";
         // retrieve properties to work with in the order user specifies
-        ArrayList<PropertyModel> properties = sortOrderStyle.equals(ALPHABETICAL)
+        ArrayList<PropertyModel> properties = sortOrderStyle.equals(ApexDoc.ORDER_ALPHA)
             ? cModel.getPropertiesSorted()
             : cModel.getProperties();
 
@@ -112,24 +113,18 @@ public class DocGen {
             if (prop.getAnnotations().size() > 0) hasAnnotations = "<th>Annotations</th>";
         }
 
-        String columnsTemplate = "<tr><th>Name</th>%s<th>Signature</th>%s</tr>";
+        String columnsTemplate = "<tr><th>Name</th><th>Signature</th>%s%s</tr>";
         contents += String.format(columnsTemplate, hasAnnotations, hasDescriptions);
 
         for (PropertyModel prop : properties) {
-            // TODO: REMOVE ME!
-            if (prop.getAnnotations().size() > 0) {
-                System.out.println("Prop Annotations: " + prop.getAnnotations());
-            }
-
             String propSourceLink = maybeMakeSourceLink(prop, cModel.getTopmostClassName(), escapeHTML(prop.getNameLine()));
             contents += "<tr class='property " + prop.getScope() + "'>";
             contents += "<td class='attrName'>" + prop.getPropertyName() + "</td>";
+            contents += "<td><div class='attrDeclaration'>" + propSourceLink + "</div></td>";
 
             if (hasAnnotations.length() > 0) {
                 contents += "<td><div>" + String.join(", ", prop.getAnnotations()) + "</div></td>";
             }
-
-            contents += "<td><div class='attrDeclaration'>" + propSourceLink + "</div></td>";
 
             // if any property has a description build out the third column
             if (hasDescriptions.length() > 0) {
@@ -146,7 +141,7 @@ public class DocGen {
     private static String documentInnerEnums(ClassModel cModel) {
         String contents = "";
 
-        ArrayList<EnumModel> enums = sortOrderStyle.equals(ALPHABETICAL)
+        ArrayList<EnumModel> enums = sortOrderStyle.equals(ApexDoc.ORDER_ALPHA)
             ? cModel.getEnumsSorted()
             : cModel.getEnums();
 
@@ -156,24 +151,14 @@ public class DocGen {
                     "<table class='attrTable enums'>";
 
         // iterate once first to determine if we need to build the third column in the table
-        boolean hasDescription = false;
+        String hasDescription = "";
         for (EnumModel Enum : enums) {
-            if (Enum.getDescription().length() > 0) hasDescription = true;
+            if (Enum.getDescription().length() > 0) hasDescription = "<th>Description</th>";
         }
 
-        // if any property has a description build out the third column
-        if (hasDescription) {
-            contents += "<tr><th>Name</th><th>Signature</th><th>Values</th><th>Description</th></tr>";
-        } else {
-            contents += "<tr><th>Name</th><th>Signature</th><th>Values</th></tr>";
-        }
+        contents += String.format("<tr><th>Name</th><th>Signature</th><th>Values</th>%s</tr>", hasDescription);
 
         for (EnumModel Enum : enums) {
-            // TODO: REMOVE ME!
-            if (Enum.getAnnotations().size() > 0) {
-                System.out.println("Enum Annotations: " + Enum.getAnnotations());
-            }
-
             String propSourceLink = maybeMakeSourceLink(Enum, cModel.getTopmostClassName(), escapeHTML(Enum.getNameLine()));
             contents += "<tr class='enum " + Enum.getScope() + "'>";
             contents += "<td class='attrName'>" + Enum.getName() + "</td>";
@@ -181,7 +166,7 @@ public class DocGen {
             contents += "<td class='enumValues'>" + String.join(", ", Enum.getValues()) + "</td>";
 
             // if any property has a description build out the third column
-            if (hasDescription) {
+            if (hasDescription.length() > 0) {
                 contents += "<td><div class='attrDescription'>" + escapeHTML(Enum.getDescription()) + "</div></td>";
             }
 
@@ -196,7 +181,7 @@ public class DocGen {
     private static String documentMethods(ClassModel cModel, ArrayList<TopLevelModel> models) {
         String contents = "";
         // retrieve methods to work with in the order user specifies
-        ArrayList<MethodModel> methods = sortOrderStyle.equals(ALPHABETICAL)
+        ArrayList<MethodModel> methods = sortOrderStyle.equals(ApexDoc.ORDER_ALPHA)
             ? cModel.getMethodsSorted()
             : cModel.getMethods();
 

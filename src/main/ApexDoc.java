@@ -20,6 +20,8 @@ public class ApexDoc {
     private static final String PUBLIC = "public";
     private static final String WEB_SERVICE = "webService";
 
+    public static final String ORDER_ALPHA = "alpha";
+    public static final String ORDER_LOGICAL = "logical";
     public static final String PRIVATE = "private";
     public static final String CLASS = "class";
     public static final String ENUM = "enum";
@@ -93,12 +95,12 @@ public class ApexDoc {
         // validate sortOrder argument, throw if invalid default to 'alpha' if not
         // specified
         if (!sortOrder.isEmpty()) {
-            if (!sortOrder.equalsIgnoreCase("logical") && !sortOrder.equalsIgnoreCase("alpha")) {
+            if (!sortOrder.equalsIgnoreCase(ORDER_LOGICAL) && !sortOrder.equalsIgnoreCase(ORDER_ALPHA)) {
                 throw new IllegalArgumentException("Value for <sort_order> argument '" + sortOrder
                         + "' is invalid. Options for this argument are: 'logical' or 'alpha'.");
             }
         } else {
-            sortOrder = "alpha";
+            sortOrder = ORDER_ALPHA;
         }
 
         // default scope to global and public if not specified
@@ -178,13 +180,11 @@ public class ApexDoc {
             DataInputStream inputStream = new DataInputStream(fileStream);
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
 
-            String line;
-            boolean commentsStarted = false;
-            boolean docBlockStarted = false;
-            int nestedCurlyBraceDepth = 0;
+            int nestedCurlyBraceDepth = 0, lineNum = 0;
+            String line, originalLine, previousLine = "";
+            boolean commentsStarted = false, docBlockStarted = false;
 
-            ClassModel cModel = null;
-            ClassModel cModelParent = null;
+            ClassModel cModel = null, cModelParent = null;
             ArrayList<String> comments = new ArrayList<String>();
             Stack<ClassModel> cModels = new Stack<ClassModel>();
 
@@ -202,11 +202,8 @@ public class ApexDoc {
             // with 1 param, are actually properties.
             //
 
-            int lineNum = 0;
-            String previousLine = "";
-
             while ((line = reader.readLine()) != null) {
-                String originalLine = line;
+                originalLine = line;
                 line = line.trim();
                 lineNum++;
 
@@ -405,6 +402,7 @@ public class ApexDoc {
                     previousLine = null;
                     continue;
                 }
+
 
                 // must be a property
                 PropertyModel pModel = new PropertyModel(comments, line, lineNum);

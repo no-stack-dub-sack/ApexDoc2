@@ -121,6 +121,11 @@ public class ApexModel {
             String lowerComment = comment.toLowerCase();
             int i;
 
+            // skip lines that are just opening or closing comment blocks
+            if (comment.trim().equals("/**") || comment.trim().equals("*/")) {
+                continue;
+            }
+
             // if we find a token, start a new block
             if (((i = lowerComment.indexOf(block = AUTHOR)) >= 0)
                 || ((i = lowerComment.indexOf(block = DATE)) >= 0)
@@ -134,21 +139,27 @@ public class ApexModel {
                 || ((i = lowerComment.indexOf(block = GROUP_CONTENT)) >= 0)
                 || ((i = lowerComment.indexOf(block = EXAMPLE)) >= 0)) {
 
-                    comment = comment.substring(i + block.length());
-                    currBlock = block;
-                    newBlock = true;
+                comment = comment.substring(i + block.length());
+                currBlock = block;
+                newBlock = true;
+            }
+
+            // get everything after opening '*'s
+            String line = "";
+            comment = comment.trim();
+            for (int j = 0; j < comment.length(); ++j) {
+                char ch = comment.charAt(j);
+                // skip the '/' of the oppening
+                // block so comment is trimmed correctly
+                if (ch == '/' && j == 0) {
+                    continue;
                 }
 
-                // get everything after first '*'
-                String line = "";
-                comment = comment.trim();
-                for (int j = 0; j < comment.length(); ++j) {
-                    char ch = comment.charAt(j);
-                    if (ch != '*') {
-                        line = comment.substring(j);
-                        break;
-                    }
+                if (ch != '*') {
+                    line = comment.substring(j);
+                    break;
                 }
+            }
 
             // replace docBlock break marker and indicate we should break after
             // this round. Otherwise we may get some strange behavior due to
@@ -186,6 +197,10 @@ public class ApexModel {
                 } else if (currBlock.equals(EXAMPLE)) {
                     example += (!example.isEmpty() ? "\n" : "") + line;
                 }
+            // not a recognized token, assume we're in un-tagged description
+            } else if (currBlock == null && !line.trim().isEmpty()) {
+                currBlock = block = DESCRIPTION;
+                description += (!description.isEmpty() ? " " : "") + line.trim();
             }
 
             if (isBreak) break;
