@@ -83,7 +83,6 @@ public class Utils {
             !line.toLowerCase().startsWith(ApexDoc.CLASS + " ") &&
             !line.toLowerCase().startsWith(ApexDoc.INTERFACE + " ") &&
             !(cModel != null && cModel.getIsInterface() && line.contains("("))) {
-                if (line.toLowerCase().contains("invocable")) System.out.println(line);
                 return true;
         }
 

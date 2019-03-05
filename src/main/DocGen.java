@@ -55,10 +55,9 @@ public class DocGen {
         contents += "<h2 class='sectionTitle'>" + sectionSourceLink +
         (hasSource ? "<span>" + HTML.EXTERNAL_LINK + "</span>" : "") +"</h2>";
 
-        // if (model.getAnnotations().size() > 0) {
-        //     System.out.println("TopLevel Annotations: " + model.getAnnotations());
-        //     contents += "<div>" + String.join(" ", model.getAnnotations()) + "</div>";
-        // }
+        if (model.getAnnotations().size() > 0) {
+            contents += "<div class='classAnnotations'>" + String.join(" ", model.getAnnotations()) + "</div>";
+        }
 
         contents += "<div class='classSignature'>" + classSourceLink + "</div>";
 
@@ -191,10 +190,6 @@ public class DocGen {
         // method Table of Contents (TOC)
         contents += "<ul class='methodTOC'>";
         for (MethodModel method : methods) {
-            // TODO: REMOVE ME!
-            if (method.getAnnotations().size() > 0) {
-                System.out.println("Method Annotations: " + method.getAnnotations());
-            }
 
             boolean isDeprecated = method.getDeprecated() != "";
 
@@ -218,8 +213,13 @@ public class DocGen {
             String methodSourceLink = maybeMakeSourceLink(method, cModel.getTopmostClassName(), escapeHTML(method.getNameLine()));
             contents += "<div class='method " + method.getScope() + "' >";
             contents += "<h2 class='methodHeader" + (isDeprecated ? " deprecated" : "") + "'>" +
-                        "<a id='" + method.getMethodName() + "'/>" + method.getMethodName() + "</h2>" +
-                        "<div class='methodSignature'>" + methodSourceLink + "</div>";
+                        "<a id='" + method.getMethodName() + "'/>" + method.getMethodName() + "</h2>";
+
+            if (method.getAnnotations().size() > 0) {
+                contents += "<div class='methodAnnotations'>" + String.join(" ", method.getAnnotations()) + "</div>";
+            }
+
+            contents += "<div class='methodSignature'>" + methodSourceLink + "</div>";
 
             if (!method.getDescription().equals("")) {
                 contents += "<div class='methodDescription'>" + escapeHTML(method.getDescription()) + "</div>";

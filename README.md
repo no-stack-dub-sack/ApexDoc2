@@ -7,12 +7,12 @@
 ApexDoc2
 =======
 
-ApexDoc2 is a java app that you can use to document your Salesforce Apex classes.  You tell ApexDoc2 where your class files are, and it will generate a set of static HTML pages that fully document each class, including its properties and methods.  Each static HTML page will include an expandable menu on its left hand side that shows the class groups that you've defined, and the classes within those groups.  Command line parameters allow you to control many aspects of ApexDoc2, such as providing your own banner and Project Home HTML for the pages to use.
+ApexDoc2 is a java app that you can use to document your Salesforce Apex classes.  You tell ApexDoc2 where your class files are, and it will generate a set of static HTML pages that fully document each class, including its properties, methods, enums, and annotations.  Each static HTML page will include an expandable menu on its left hand side that shows the class groups that you've defined, and the classes within those groups.  Command line parameters allow you to control many aspects of ApexDoc2, such as providing your own banner and Project Home HTML for the pages to use.
 
 ## Credits
 As the name implies, ApexDoc2 is the second rendition of this project. Before finding its new home here, the [original ApexDoc](https://github.com/SalesforceFoundation/ApexDoc) was created by Aslam Bari (http://techsahre.blogspot.com/2011/01/apexdoc-salesforce-code-documentation.html).  It was then taken and extended by David Habib, at Groundwire, in 2011. It was subsequently enhanced by David Habib of the Salesforce Foundation in late 2014 for use with Nonprofit Starter Pack (https://github.com/SalesforceFoundation/Cumulus). Please see the [CHANGELOG](https://github.com/no-stack-dub-sack/ApexDoc2/blob/master/CHANGELOG.md) for a list of enhancements since ApexDoc and additional credits.
 
-## ApexDoc2 Reasoning
+## ApexDoc2 Rationale
 As the Salesforce Foundation was [no longer able to offer direct support for reported issues or incorporate enhancement requests](https://github.com/SalesforceFoundation/ApexDoc#credits), I am attempting to revitalize the project as ApexDoc2. I believe there is still a need for this project, and pull requests and issues to the original ApexDoc continue to be submitted (however sparsely) which have, or report, some much needed bug fixes. Plus, it might even be fun! If anyone happens to notice this, pull requests, issues, and help are all welcome.
 
 ## Command Line Parameters
@@ -46,12 +46,18 @@ java -jar apexdoc.jar
 A favicon has been added with ApexDoc2, so if you'd like to use your own favicon, simply replace the favicon png in the output directory with your own favicon. It must be a PNG and named favicon.png.
 
 ## Documenting Class Files
-ApexDoc2 scans each class file, and looks for comment blocks with special keywords to identify the documentation to include for a given class, property, or method.  The comment blocks must always begin with /** (or additional *'s) and can cover multiple lines.  Each line must start with * (or whitespace and then *).  The comment block ends with */.  Special tokens are called out with @token.
+ApexDoc2 scans each class file, and looks for comment blocks with special keywords to identify the documentation to include for a given class, property, enum, or method.  The comment blocks must always begin with /** (or additional *'s) and can cover multiple lines.  Each line must start with * (or whitespace and then *).  The comment block ends with */.  Special tokens are called out with @token.
 
-Within your ApexDoc2 comments, to indicate code inline, wrap it in backticks; e.g. \`String cool = 'cool!';\`. This will be formatted as code in the output file. See examples below.
+## Tips
+- `@description` tokens are optional; you may omit them.
+- Within your ApexDoc2 comments, to indicate code snippets or special keywords, wrap in backticks; e.g. \`String cool = 'cool!';\`. This will be formatted as code in the output file.
+- Class and method annotations such as `@IsTest` or `@Future` will be displayed above the class or method's signature, while property annotations such as `@TestVisible` or `@InvocableProperty` will be displayed in the generated properties table.
+- *Important note* on implicitly privacy: For ApexDoc2 to best document your class files, it is generally best practice to always give your classes, properties, interfaces, and emums explicit access modifiers. That said, ApexDoc2 does have some ability to detect implicitly private types and methods. For instance, implicitly private `@IsTest` and inner classes, or methods whose signatures start with keywords like `void`, `abstract`, `virtual`, or with primitive types or collections can still be detected and will be assumed to be private. However, in order to not confuse properties with scoped variables, properties *must* start with access modifiers in order to be detected. To best ensure accurate documentation, please always use access modifiers, which will only help to make your code more readable and easily understood!
 
-### Class Comments
-Located in the lines above the class declaration.  The special tokens are all optional.
+See examples below.
+
+### Class Comments (includes class-level Interfaces and Enums)
+In other words, includes any top-level types that live within a .cls file. Located in the lines above the type's declaration.  The special tokens are all optional.
 
 | token | description |
 |-------|-------------|
@@ -74,24 +80,27 @@ Example
 * @deprecated Replaced by AccountTriggerHandler
 * @see AccountTriggerHandler
 *
-* @description Trigger Handler on Accounts that handles ensuring the correct `System__c` flags are set on
-* our special accounts (Household, One-to-One), and also detects changes on Household Account that requires
-* name updating.
+* Look, no description token! Trigger Handler on Accounts that handles ensuring the correct `System__c`
+* flags are set on our special accounts (Household, One-to-One), and also detects changes on Household
+* Account that requires name updating.
 */
 public with sharing class ACCT_Accounts_TDTM extends TDTM_Runnable {
 ```
 
-### Property Comments
-Located in the lines above a property.  The special tokens are all optional.
+### Property and Inner Enum Comments
+Located in the lines above a property or an enum nested inside a class.  The special tokens are all optional.
 
 | token | description |
 |-------|-------------|
 | @description | one or more lines that describe the property|
 
-Example
+Examples
 ```
+    /** The countries in which our accounts are located */
+    public enum Countries { USA, CANADA, MEXICO, PERU, CHINA, RUSSIA, INDIA }
+
     /**
-    * @description specifies whether state and country picklists are enabled in this org.
+    * Specifies whether state and country picklists are enabled in this org.
     * returns true if enabled.
     */
     public static Boolean isStateCountryPicklistsEnabled {

@@ -201,6 +201,8 @@ public class ApexModel {
             } else if (currBlock == null && !line.trim().isEmpty()) {
                 currBlock = block = DESCRIPTION;
                 description += (!description.isEmpty() ? " " : "") + line.trim();
+            } else if (line.trim().isEmpty()) {
+                currBlock = null;
             }
 
             if (isBreak) break;

@@ -14,6 +14,7 @@
  */
  public static String exampleMethod() {
 ```
+- Added support for annotations like `@IsTest`, `@Future` and `@AuraEnabled` to be documented.
 - Added optional **<toc_desc>** command line argument: `-c`. As a matter of preference, if you find the method description snippet in the class's table of contents distracting, you can now hide it with this argument. Defaults to `false`.
 - Added optional **<sort_order>** command line argument: `-o`. This controls the order in which methods, properties, and inner classes are presented in the output documentation. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to the ApexDoc original of alphabetical order.
 - Added optional **<doc_title>** command line argument: `-d`. Allows you to set the value of the HTML document's `<title>` attribute. Now defaults to 'ApexDocs' instead of 'index.html'.
