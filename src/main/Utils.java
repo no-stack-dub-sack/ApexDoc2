@@ -15,7 +15,7 @@ public class Utils {
     static {
 
         KEYWORDS = new String[] {
-            "abstract", "final", "static", "virtual", "override",
+            "abstract", "final", "virtual", "override",
             "void", "blob", "boolean", "date", "datetime", "decimal",
             "double", "id", "integer", "long", "object", "string", "time" };
 
@@ -89,6 +89,16 @@ public class Utils {
         return false;
     }
 
+    /**
+    * See if line starts with scope keywords, if it does not, and
+    * current scope is private, see if line starts with keyword or
+    * primitive data type, or collection which would mean it is
+    * implicitly private. This only works for methods in most cases,
+    * otherwise we would be matching local variables as well. This is
+    * why we check for '('. Unfortunately, we cannot check for all data
+    * types, so if a method is not given an explicit access modifier &
+    * it doesnt start with these keywords, it will be undetectable by ApexDoc2.
+    */
     public static String containsScope(String line) {
         for (int i = 0; i < ApexDoc.rgstrScope.length; i++) {
             String scope = ApexDoc.rgstrScope[i].toLowerCase();
@@ -103,22 +113,22 @@ public class Utils {
                 return scope;
             }
 
-            // If it does not, and current scope is private, see if line
-            // starts with keyword or primitive data type, or collection
-            // which would mean it is implicitly private. This only works
-            // for methods, otherwise we would be matching on method level
-            // variables as well. This is why we check for '('. Unfortunately,
-            // we cannot check for all data types, so if a method is not given
-            // an explicit access modifier & it doesnt start with these keywords,
-            // it will be undetectable by ApexDoc2.
+            // match implicitly private lines
             else if (scope.equals(ApexDoc.PRIVATE)) {
+                // match static props or methods:
+                if (line.startsWith("static ")) {
+                    return ApexDoc.PRIVATE;
+                }
+
+                // match methods that start with
+                // keywords or return primitive types:
                 for (String keyword : KEYWORDS) {
                     if (line.startsWith(keyword + " ") && line.contains("(")) {
                         return ApexDoc.PRIVATE;
                     }
                 }
 
-                // match implicitly private metehods which return collections
+                // match metehods that return collections:
                 for (String collection : COLLECTIONS) {
                     if (line.matches("^" + collection + "<.+>\\s.*") && line.contains("(")) {
                         return ApexDoc.PRIVATE;
