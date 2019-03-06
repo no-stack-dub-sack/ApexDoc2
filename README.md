@@ -68,6 +68,7 @@ In other words, includes any top-level types that live within a .cls file. Locat
 | @description | One or more lines that provide an overview of the class|
 | @deprecated | Indicates class should no longer be used; message should indicate replacement |
 | @see | A comma separated list of fully qualified class or method names; creates link(s) to that class or method in the documentation. The name must be a fully qualified name, even if its a reference to another method in the same class, e.g. Class.Method, Class.InnerClass, Class.InnerClass.InnerClassMethod|
+| @example | Example code usage. Code will be given syntax highlighting complements of [highlight.js](https://highlightjs.org/) and be wrapped in `<pre><code>` tags to preserve whitespace|
 
 Example
 ```
@@ -119,8 +120,8 @@ In order for ApexDoc2 to identify class methods, the method line must contain an
 | @return | A description of the return value from the method|
 | @deprecated | Indicates method should no longer be used; message should indicate replacement |
 | @exception | A list of exceptions a method throws and/or description of Exception(s) that might be thrown |
-| @example | Example code usage. This will be wrapped in <code> tags to preserve whitespace|
 | @see | A comma separated list of fully qualified class or method names; creates link(s) to that class or method in the documentation. The name must be a fully qualified name, even if its a reference to another method in the same class, e.g. Class.Method, Class.InnerClass, Class.InnerClass.InnerClassMethod|
+| @example | Example code usage. Code will be given syntax highlighting complements of [highlight.js](https://highlightjs.org/) and be wrapped in `<pre><code>` tags to preserve whitespace|
 
 Example
 ```

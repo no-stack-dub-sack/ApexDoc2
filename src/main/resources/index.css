@@ -5,7 +5,7 @@
     --med-grey: #e7e7e7;
     --med-blue: #0000cd;
     --white: #fff;
-    --dark-red: #a50000;
+    --dark-red: #a31515;
 }
 
 body {
@@ -113,10 +113,11 @@ most signatures will fit on a single lin */
     font-weight: bold;
 }
 
-.attrDeclaration {
-    font-family: Courier;
-    font-weight: normal;
-    color: var(--med-blue);
+.propAnnotations,
+.attrSignature {
+    background: none;
+    font-family: monospace;
+    padding: 0;
 }
 
 .attrDescription {
@@ -132,10 +133,10 @@ most signatures will fit on a single lin */
 }
 
 /* the class's signature line */
+.classAnnotations,
 .classSignature {
-    color: var(--med-blue);
-    font-family: Courier;
-    font-size: .9em;
+    font-family: monospace;
+    font-size: 1.05em;
     font-weight: normal;
     text-indent: -15px;
     padding: 0 0 4px 15px;
@@ -143,11 +144,7 @@ most signatures will fit on a single lin */
 
 /* the class's Annotation line */
 .classAnnotations {
-    font-family: Courier;
-    font-size: .9em;
-    font-weight: normal;
-    text-indent: -15px;
-    padding: 6px 0 0 15px;
+    padding: 0 0 0 15px;
 }
 
 /* the description, author, date and other class attributes */
@@ -214,12 +211,10 @@ ul.methodTOC {
 /* method listing related classes */
 .methodSignature,
 .methodAnnotations {
-    font-family: Courier;
-    font-size: .8em;
-    font-weight: normal;
-    color: var(--med-blue);
+    font-family: monospace;
+    font-size: 1em;
     text-indent: -15px;
-    padding-left: 15px;
+    padding: 0 0 0 15px;
 }
 
 .methodDescription {
@@ -239,12 +234,13 @@ ul.methodTOC {
     margin: .7em 0 0 0;
 }
 
-.methodExample {
-    background-color: var(--light-grey);
-    display: block;
-    padding: 1em;
-    white-space: pre;
-    margin-right: 5px;
+.codeExample {
+    margin: 0 5px 0 0;
+}
+
+.codeExample code {
+    background: var(--light-grey);
+    padding: .5em .5em .5em .2em;
 }
 
 .paramName {
@@ -343,15 +339,15 @@ details[open] .navHeader.active {
 }
 
 /* accents */
-.classAnnotations,
+/* .classAnnotations,
 .methodAnnotations {
     color: var(--dark-blue);
     font-weight: 600;
-}
+} */
 
 .inlineCode {
-    background-color: #f2f2f2;
-    color: #c83434;
+    background-color: var(--light-grey);
+    color: var(--dark-red);
     font-family: monospace;
     padding: 1px 5px;
 }

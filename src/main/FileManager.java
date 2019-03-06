@@ -184,6 +184,8 @@ public class FileManager {
         doCopy("favicon.png", toFileName);
         doCopy("index.css", toFileName);
         doCopy("index.js", toFileName);
+        doCopy("highlight.css", toFileName);
+        doCopy("highlight.js", toFileName);
     }
 
     public ArrayList<File> getFiles(String path) {

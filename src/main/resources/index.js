@@ -8,6 +8,7 @@ var APEX_DOC_ACTIVE_EL = 'apex-doc-2-active-el';
 // document ready function - removes jQuery dependency
 document.addEventListener("DOMContentLoaded", function() {
 	initMenu();
+	initHighlightJs();
 	renderMenuFromState();
 	setActiveElement();
 	readScopeCookie();
@@ -22,6 +23,19 @@ window.onbeforeunload = function() {
 }
 // #endregion
 
+function initHighlightJs() {
+	var selectors = [
+		'pre code', '.methodSignature', '.methodAnnotations', '.classSignature',
+		'.classAnnotations', '.attrSignature', '.propAnnotations'
+	];
+	// initialize highlighting for code examples and
+	// signatures for methods, classes, props and enums
+	selectors.forEach(function(selector) {
+		document.querySelectorAll(selector).forEach(function(block) {
+			hljs.highlightBlock(block);
+		});
+	});
+}
 
 // #region Menu Utils
 /***********************************************************************

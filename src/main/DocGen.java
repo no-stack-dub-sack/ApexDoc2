@@ -87,6 +87,11 @@ public class DocGen {
             contents += "<br/>" + escapeHTML(model.getDate());
         }
 
+        if (!model.getExample().equals("")) {
+            contents += "<div class='classSubTitle'>Example</div>";
+            contents += "<pre class='codeExample'><code>" + escapeHTML(model.getExample()) + "</code></pre>";
+        }
+
         contents += "</div><p/>";
 
         return contents;
@@ -119,10 +124,10 @@ public class DocGen {
             String propSourceLink = maybeMakeSourceLink(prop, cModel.getTopmostClassName(), escapeHTML(prop.getNameLine()));
             contents += "<tr class='property " + prop.getScope() + "'>";
             contents += "<td class='attrName'>" + prop.getPropertyName() + "</td>";
-            contents += "<td><div class='attrDeclaration'>" + propSourceLink + "</div></td>";
+            contents += "<td><div class='attrSignature'>" + propSourceLink + "</div></td>";
 
             if (hasAnnotations.length() > 0) {
-                contents += "<td><div>" + String.join(", ", prop.getAnnotations()) + "</div></td>";
+                contents += "<td><div class='propAnnotations'>" + String.join(", ", prop.getAnnotations()) + "</div></td>";
             }
 
             // if any property has a description build out the third column
@@ -161,7 +166,7 @@ public class DocGen {
             String propSourceLink = maybeMakeSourceLink(Enum, cModel.getTopmostClassName(), escapeHTML(Enum.getNameLine()));
             contents += "<tr class='enum " + Enum.getScope() + "'>";
             contents += "<td class='attrName'>" + Enum.getName() + "</td>";
-            contents += "<td><div class='attrDeclaration'>" + propSourceLink + "</div></td>";
+            contents += "<td><div class='attrSignature'>" + propSourceLink + "</div></td>";
             contents += "<td class='enumValues'>" + String.join(", ", Enum.getValues()) + "</td>";
 
             // if any property has a description build out the third column
@@ -285,7 +290,7 @@ public class DocGen {
 
             if (!method.getExample().equals("")) {
                 contents += "<div class='methodSubTitle'>Example</div>";
-                contents += "<code class='methodExample'>" + escapeHTML(method.getExample()) + "</code>";
+                contents += "<pre class='codeExample'><code>" + escapeHTML(method.getExample()) + "</code></pre>";
             }
 
             // end current method

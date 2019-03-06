@@ -4,6 +4,8 @@ public class HTML {
 
     public static final String HEADER_OPEN =
         "<script type='text/javascript' src='index.js'></script>" +
+        "<link rel='stylesheet' href='highlight.css'>" +
+        "<script charset='UTF-8' src='highlight.js'></script>" +
         "<link rel='stylesheet' type='text/css' href='index.css' /> " +
         "<link rel='shortcut icon' type='image/png' href='favicon.png'/>" +
         "</head><body>";
