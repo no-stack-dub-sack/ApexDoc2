@@ -3,7 +3,7 @@
     --grey-blue: #51638A;
     --light-grey: #f7f7f7;
     --med-grey: #e7e7e7;
-    --med-blue: #0000cd;
+    --med-blue: #00f;
     --white: #fff;
     --dark-red: #a31515;
 }
@@ -300,7 +300,7 @@ details summary::-webkit-details-marker {
 
 .navHeader {
     height: 25px;
-    background: #f2f5f6;
+    background: var(--light-grey);
     border: 1px solid #dce4e7;
     border-top-color: var(--white);
     padding: 6px 0 0 6px;

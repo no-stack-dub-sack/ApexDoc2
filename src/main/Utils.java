@@ -176,6 +176,10 @@ public class Utils {
         return count;
     }
 
+    public static boolean isURL(String str) {
+        return str.trim().matches("^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]");
+    }
+
     public static void log(Exception ex) {
         log("");
         ex.printStackTrace();

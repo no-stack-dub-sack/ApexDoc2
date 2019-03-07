@@ -2,14 +2,18 @@ package main;
 
 import main.models.*;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Arrays;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.function.Function;
 
 public class DocGen {
     public static String sortOrderStyle;
     public static String hostedSourceURL;
     public static boolean showMethodTOCDescription;
+    public static TreeMap<String, String> usedIds = new TreeMap<String, String>();
 
     public static String documentClass(ClassModel cModel, ArrayList<TopLevelModel> models) {
         String contents = "";
@@ -52,7 +56,7 @@ public class DocGen {
         String contents = "";
 
 
-        contents += "<h2 class='sectionTitle'>" + sectionSourceLink +
+        contents += "<h2 class='sectionTitle' id='" + model.getName() + "'>" + sectionSourceLink +
         (hasSource ? "<span>" + HTML.EXTERNAL_LINK + "</span>" : "") +"</h2>";
 
         if (model.getAnnotations().size() > 0) {
@@ -111,27 +115,29 @@ public class DocGen {
 
         // iterate once first to determine if we need to
         // build annotations and and description columns
-        String hasDescriptions = "", hasAnnotations = "";
+        String descriptionCol = "", annotationsCol = "";
         for (PropertyModel prop : properties) {
-            if (prop.getDescription().length() > 0) hasDescriptions = "<th>Description</th>";
-            if (prop.getAnnotations().size() > 0) hasAnnotations = "<th>Annotations</th>";
+            if (prop.getDescription().length() > 0) descriptionCol = "<th>Description</th>";
+            if (prop.getAnnotations().size() > 0) annotationsCol = "<th>Annotations</th>";
         }
 
         String columnsTemplate = "<tr><th>Name</th><th>Signature</th>%s%s</tr>";
-        contents += String.format(columnsTemplate, hasAnnotations, hasDescriptions);
+        contents += String.format(columnsTemplate, annotationsCol, descriptionCol);
 
         for (PropertyModel prop : properties) {
-            String propSourceLink = maybeMakeSourceLink(prop, cModel.getTopmostClassName(), escapeHTML(prop.getNameLine()));
+            String nameLine = highlightNameLine(prop.getNameLine());
+            String propSourceLink = maybeMakeSourceLink(prop, cModel.getTopmostClassName(), nameLine);
+
             contents += "<tr class='property " + prop.getScope() + "'>";
             contents += "<td class='attrName'>" + prop.getPropertyName() + "</td>";
             contents += "<td><div class='attrSignature'>" + propSourceLink + "</div></td>";
 
-            if (hasAnnotations.length() > 0) {
+            if (annotationsCol.length() > 0) {
                 contents += "<td><div class='propAnnotations'>" + String.join(", ", prop.getAnnotations()) + "</div></td>";
             }
 
             // if any property has a description build out the third column
-            if (hasDescriptions.length() > 0) {
+            if (descriptionCol.length() > 0) {
                 contents += "<td><div class='attrDescription'>" + escapeHTML(prop.getDescription()) + "</div></td>";
             }
 
@@ -155,22 +161,23 @@ public class DocGen {
                     "<table class='attrTable enums'>";
 
         // iterate once first to determine if we need to build the third column in the table
-        String hasDescription = "";
+        String descriptionCol = "";
         for (EnumModel Enum : enums) {
-            if (Enum.getDescription().length() > 0) hasDescription = "<th>Description</th>";
+            if (Enum.getDescription().length() > 0) descriptionCol = "<th>Description</th>";
         }
 
-        contents += String.format("<tr><th>Name</th><th>Signature</th><th>Values</th>%s</tr>", hasDescription);
+        contents += String.format("<tr><th>Name</th><th>Signature</th><th>Values</th>%s</tr>", descriptionCol);
 
         for (EnumModel Enum : enums) {
-            String propSourceLink = maybeMakeSourceLink(Enum, cModel.getTopmostClassName(), escapeHTML(Enum.getNameLine()));
+            String nameLine = highlightNameLine(Enum.getNameLine());
+            String propSourceLink = maybeMakeSourceLink(Enum, cModel.getTopmostClassName(), nameLine);
             contents += "<tr class='enum " + Enum.getScope() + "'>";
             contents += "<td class='attrName'>" + Enum.getName() + "</td>";
             contents += "<td><div class='attrSignature'>" + propSourceLink + "</div></td>";
             contents += "<td class='enumValues'>" + String.join(", ", Enum.getValues()) + "</td>";
 
             // if any property has a description build out the third column
-            if (hasDescription.length() > 0) {
+            if (descriptionCol.length() > 0) {
                 contents += "<td><div class='attrDescription'>" + escapeHTML(Enum.getDescription()) + "</div></td>";
             }
 
@@ -183,60 +190,72 @@ public class DocGen {
     }
 
     private static String documentMethods(ClassModel cModel, ArrayList<TopLevelModel> models) {
-        String contents = "";
+
+        // Local fucntion to make TOC entry
+        Function<MethodModel, String> makeTOCEntry = method -> {
+            boolean isDeprecated = !method.getDeprecated().equals("");
+
+            String entry =
+                "<li class='method " + method.getScope() + "' >" +
+                "<a class='methodTOCEntry" + (isDeprecated ? " deprecated" : "") + "'" +
+                "href='#" + cModel.getName() + "." + method.getMethodName() + "'>" + method.getMethodName() + "</a>";
+
+            // do not render description in TOC if user has indicated to hide
+            if (showMethodTOCDescription && method.getDescription() != "") {
+                entry += "<div class='methodTOCDescription'>" + method.getDescription() + "</div>";
+            }
+
+            entry += "</li>";
+            return entry;
+        };
+
+
         // retrieve methods to work with in the order user specifies
         ArrayList<MethodModel> methods = sortOrderStyle.equals(ApexDoc.ORDER_ALPHA)
             ? cModel.getMethodsSorted()
             : cModel.getMethods();
 
         // start Methods
-        contents += "<h2 class='subsectionTitle'>Methods</h2><div>";
-
-        // method Table of Contents (TOC)
-        contents += "<ul class='methodTOC'>";
-        for (MethodModel method : methods) {
-
-            boolean isDeprecated = method.getDeprecated() != "";
-
-            contents += "<li class='method " + method.getScope() + "' >";
-            contents += "<a class='methodTOCEntry" + (isDeprecated ? " deprecated" : "") +
-                        "' href='#" + method.getMethodName() + "'>" +
-                        method.getMethodName() + "</a>";
-
-            // do not render description in TOC if user has indicated to hide
-            if (showMethodTOCDescription && method.getDescription() != "") {
-                contents += "<div class='methodTOCDescription'>" + method.getDescription() + "</div>";
-            }
-
-            contents += "</li>";
-        }
-        contents += "</ul>";
+        String contents = "<h2 class='subsectionTitle'>Methods</h2><div>";
+        String tocHTML = "<ul class='methodTOC'>";
+        String methodsHTML = "";
 
         // full method display
         for (MethodModel method : methods) {
+            // create method TOC entry:
+            tocHTML += makeTOCEntry.apply(method);
+
+            // create full methods view HTML:
             boolean isDeprecated = !method.getDeprecated().equals("");
+            String qualifiedMethodName = cModel.getName() + "." + method.getMethodName();
             String methodSourceLink = maybeMakeSourceLink(method, cModel.getTopmostClassName(), escapeHTML(method.getNameLine()));
-            contents += "<div class='method " + method.getScope() + "' >";
-            contents += "<h2 class='methodHeader" + (isDeprecated ? " deprecated" : "") + "'>" +
-                        "<a id='" + method.getMethodName() + "'/>" + method.getMethodName() + "</h2>";
+
+            // open current method
+            methodsHTML += "<div class='method " + method.getScope() + "' >";
+
+            // use fully qualified method name as ID to prevent from TOCs in the same file linking
+            // to the same method. For example, an abstract class and a calss which extends that
+            // class in the same file are likely to have the same methods and thus conflicting IDs.
+            methodsHTML += "<h2 class='methodHeader" + (isDeprecated ? " deprecated" : "") + "'" +
+                        "id='" + qualifiedMethodName + "'>" + method.getMethodName() + "</h2>";
 
             if (method.getAnnotations().size() > 0) {
-                contents += "<div class='methodAnnotations'>" + String.join(" ", method.getAnnotations()) + "</div>";
+                methodsHTML += "<div class='methodAnnotations'>" + String.join(" ", method.getAnnotations()) + "</div>";
             }
 
-            contents += "<div class='methodSignature'>" + methodSourceLink + "</div>";
+            methodsHTML += "<div class='methodSignature'>" + methodSourceLink + "</div>";
 
             if (!method.getDescription().equals("")) {
-                contents += "<div class='methodDescription'>" + escapeHTML(method.getDescription()) + "</div>";
+                methodsHTML += "<div class='methodDescription'>" + escapeHTML(method.getDescription()) + "</div>";
             }
 
             if (isDeprecated) {
-                contents +="<div class='methodSubTitle deprecated'>Deprecated</div>";
-                contents += "<div class='methodSubDescription'>" + escapeHTML(method.getDeprecated()) + "</div>";
+                methodsHTML +="<div class='methodSubTitle deprecated'>Deprecated</div>";
+                methodsHTML += "<div class='methodSubDescription'>" + escapeHTML(method.getDeprecated()) + "</div>";
             }
 
             if (method.getParams().size() > 0) {
-                contents += "<div class='methodSubTitle'>Parameters</div>";
+                methodsHTML += "<div class='methodSubTitle'>Parameters</div>";
                 for (String param : method.getParams()) {
                     param = escapeHTML(param);
                     if (param != null && param.trim().length() > 0) {
@@ -253,10 +272,10 @@ public class DocGen {
                             paramName = param;
                             paramDescription = null;
                         }
-                        contents += "<div class='paramName'>" + paramName + "</div>";
+                        methodsHTML += "<div class='paramName'>" + paramName + "</div>";
 
                         if (paramDescription != null) {
-                            contents += "<div class='paramDescription'>" + paramDescription + "</div>";
+                            methodsHTML += "<div class='paramDescription'>" + paramDescription + "</div>";
                         }
                     }
                 }
@@ -264,39 +283,43 @@ public class DocGen {
             }
 
             if (!method.getReturns().equals("")) {
-                contents += "<div class='methodSubTitle'>Return Value</div>";
-                contents += "<div class='methodSubDescription'>" + escapeHTML(method.getReturns()) + "</div>";
+                methodsHTML += "<div class='methodSubTitle'>Return Value</div>";
+                methodsHTML += "<div class='methodSubDescription'>" + escapeHTML(method.getReturns()) + "</div>";
             }
 
             if (!method.getException().equals("")) {
-                contents += "<div class='methodSubTitle'>Exceptions</div>";
-                contents += "<div class='methodSubDescription'>" + escapeHTML(method.getException()) + "</div>";
+                methodsHTML += "<div class='methodSubTitle'>Exceptions</div>";
+                methodsHTML += "<div class='methodSubDescription'>" + escapeHTML(method.getException()) + "</div>";
             }
 
             if (!method.getSee().equals("")) {
-                contents += "<div class='methodSubTitle'>See</div>";
-                contents += "<div class='methodSubDescription'>" + makeSeeLink(models, method.getSee()) + "</div>";
+                methodsHTML += "<div class='methodSubTitle'>See</div>";
+                methodsHTML += "<div class='methodSubDescription'>" + makeSeeLink(models, method.getSee()) + "</div>";
             }
 
             if (!method.getAuthor().equals("")) {
-                contents += "<div class='methodSubTitle'>Author</div>";
-                contents += "<div class='methodSubDescription'>" + escapeHTML(method.getAuthor()) + "</div>";
+                methodsHTML += "<div class='methodSubTitle'>Author</div>";
+                methodsHTML += "<div class='methodSubDescription'>" + escapeHTML(method.getAuthor()) + "</div>";
             }
 
             if (!method.getDate().equals("")) {
-                contents += "<div class='methodSubTitle'>Date</div>";
-                contents += "<div class='methodSubDescription'>" + escapeHTML(method.getDate()) + "</div>";
+                methodsHTML += "<div class='methodSubTitle'>Date</div>";
+                methodsHTML += "<div class='methodSubDescription'>" + escapeHTML(method.getDate()) + "</div>";
             }
 
             if (!method.getExample().equals("")) {
-                contents += "<div class='methodSubTitle'>Example</div>";
-                contents += "<pre class='codeExample'><code>" + escapeHTML(method.getExample()) + "</code></pre>";
+                methodsHTML += "<div class='methodSubTitle'>Example</div>";
+                methodsHTML += "<pre class='codeExample'><code>" + escapeHTML(method.getExample()) + "</code></pre>";
             }
 
             // end current method
-            contents += "</div>";
+            methodsHTML += "</div>";
         }
-        // end all methods
+
+        // concat and close TOC and full methods display HTML
+        contents += tocHTML;
+        contents += "</ul>";
+        contents += methodsHTML;
         contents += "</div>";
 
         return contents;
@@ -450,7 +473,16 @@ public class DocGen {
         ArrayList<String> links = new ArrayList<String>();
 
         // iterate over each qualifier and process
+        // we could just take the users qualifiers and assume its a valid path
+        // but this could easily result in dead links. This algorithm doesn't
+        // exactly scream efficiency, but its still fast on moderate codebases
+        // and its better than the alternative of dead links all over the place.
         for (String qualifier : qualifiers) {
+            // chcek if URL, add to links and continue with loop if so
+            if (Utils.isURL(qualifier)) {
+                links.add("<a target='_blank' href='" + qualifier.trim() + "'>" + qualifier.trim() + "</a>");
+                continue;
+            }
 
             String[] parts = qualifier.trim().split("\\.");
 
@@ -485,7 +517,7 @@ public class DocGen {
                         for (MethodModel method : methods) {
                             if (method.getMethodName().equalsIgnoreCase(parts[1])) {
                                 // use actual class/methof name to create link to avoid case issues
-                                href = Class.getName() + ".html#" + method.getMethodName();
+                                href = Class.getName() + ".html#" + Class.getName() + "." + method.getMethodName();
                                 foundMatch = true;
                                 break;
                             }
@@ -503,7 +535,7 @@ public class DocGen {
                                 if (parts.length == 2) {
                                     // to ensure the link works, use actual name rather than
                                     // user provided parts in case casing doesn't match
-                                    href =  innerClass[0] + ".html#" + innerClass[1];
+                                    href =  innerClass[0] + ".html#" + innerClass[0] + "." + innerClass[1];
                                     foundMatch = true;
                                     break;
                                 }
@@ -513,7 +545,7 @@ public class DocGen {
                                 for (MethodModel method : childMethods) {
                                     if (method.getMethodName().equalsIgnoreCase(parts[2])) {
                                         // same as above, use actual name to avoid casing issues
-                                        href = innerClass[0] + ".html#" + method.getMethodName();
+                                        href = innerClass[0] + ".html#" + childClass.getName() + "." + method.getMethodName();
                                         foundMatch = true;
                                         break;
                                     }
@@ -537,5 +569,13 @@ public class DocGen {
         }
 
         return String.join(", ", links);
+    }
+
+    private static String highlightNameLine(String nameLine) {
+        // Help highlight.js along, since props and enum signatures are not
+        // recognized by highlight.js since they are not full declarations.
+        List<String> words = Arrays.asList(escapeHTML(nameLine).split(" "));
+        words.set(words.size() - 1, "<span class='hljs-title'>" + words.get(words.size() - 1) + "<span>");
+        return String.join(" ", words);
     }
 }

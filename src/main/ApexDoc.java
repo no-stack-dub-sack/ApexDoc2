@@ -14,19 +14,20 @@ import java.util.TreeMap;
 
 public class ApexDoc {
 
+    // constants
     private static final String COMMENT_CLOSE = "*/";
     private static final String COMMENT_OPEN = "/**";
     private static final String GLOBAL = "global";
     private static final String PUBLIC = "public";
     private static final String WEB_SERVICE = "webService";
+    private static final String PROTECTED = "protected";
 
-    public static final String ORDER_ALPHA = "alpha";
-    public static final String ORDER_LOGICAL = "logical";
     public static final String PRIVATE = "private";
     public static final String CLASS = "class";
     public static final String ENUM = "enum";
     public static final String INTERFACE = "interface";
-
+    public static final String ORDER_ALPHA = "alpha";
+    public static final String ORDER_LOGICAL = "logical";
 
     // use special token for marking the end of a doc block
     // comment. Now that we're supporting multi-line for all
@@ -35,9 +36,22 @@ public class ApexDoc {
     // behavior when lesser scopes than available are indicated
     // e.g. private;public when there are protected methods
     public static final String DOC_BLOCK_BREAK = "@@BREAK@@";
+    private static final ArrayList<String> SCOPES;
 
-    public static FileManager fileManager;
+    // non-constant properties
     public static String[] rgstrScope;
+    private static FileManager fileManager;
+    public static String targetDirectory = "";
+
+    static {
+        // initialize scopes const
+        SCOPES = new ArrayList<String>();
+        SCOPES.add(GLOBAL);
+        SCOPES.add(PUBLIC);
+        SCOPES.add(PRIVATE);
+        SCOPES.add(PROTECTED);
+        SCOPES.add(WEB_SERVICE);
+    }
 
     // public entry point when called from the command line.
     public static void main(String[] args) {
@@ -52,14 +66,13 @@ public class ApexDoc {
 
     // public main routine which is used by both command line invocation and
     // Eclipse PlugIn invocation
-    public static void RunApexDoc(String[] args) throws IllegalArgumentException {
+    public static void RunApexDoc(String[] args) {
         String sourceDirectory = "";
-        String targetDirectory = "";
         String homefilepath = "";
         String bannerFilePath = "";
         String hostedSourceURL = "";
         String documentTitle = "";
-        String sortOrder = "";
+        String sortOrder = ORDER_ALPHA;
 
         boolean showMethodTOCDescription = true;
 
@@ -70,7 +83,7 @@ public class ApexDoc {
             } else if (args[i].equalsIgnoreCase("-s")) {
                 sourceDirectory = args[++i];
             } else if (args[i].equalsIgnoreCase("-u")) {
-                hostedSourceURL = args[++i];
+                hostedSourceURL = sourceURLGuard(args[++i]);
             } else if (args[i].equalsIgnoreCase("-t")) {
                 targetDirectory = args[++i];
             } else if (args[i].equalsIgnoreCase("-h")) {
@@ -79,28 +92,17 @@ public class ApexDoc {
                 bannerFilePath = args[++i];
             } else if (args[i].equalsIgnoreCase("-p")) {
                 String scope = args[++i];
-                rgstrScope = scope.split(";");
+                rgstrScope = scopeGuard(scope);
             } else if (args[i].equalsIgnoreCase("-d")) {
                 documentTitle = args[++i];
             } else if (args[i].equalsIgnoreCase("-c")) {
-                showMethodTOCDescription = Boolean.valueOf(args[++i]);
+                showMethodTOCDescription = showTOCGuard(args[++i]);
             } else if (args[i].equalsIgnoreCase("-o")) {
-                sortOrder = args[++i].trim();
+                sortOrder = sortOrderGuard(args[++i].trim());
             } else {
                 Utils.printHelp();
                 System.exit(-1);
             }
-        }
-
-        // validate sortOrder argument, throw if invalid default to 'alpha' if not
-        // specified
-        if (!sortOrder.isEmpty()) {
-            if (!sortOrder.equalsIgnoreCase(ORDER_LOGICAL) && !sortOrder.equalsIgnoreCase(ORDER_ALPHA)) {
-                throw new IllegalArgumentException("Value for <sort_order> argument '" + sortOrder
-                        + "' is invalid. Options for this argument are: 'logical' or 'alpha'.");
-            }
-        } else {
-            sortOrder = ORDER_ALPHA;
         }
 
         // default scope to global and public if not specified
@@ -124,7 +126,7 @@ public class ApexDoc {
         DocGen.showMethodTOCDescription = showMethodTOCDescription;
 
         // parse each file, creating a class or enum model for it
-        for (File fromFile : files) {
+        files.stream().forEach(fromFile -> {
             String fromFileName = fromFile.getAbsolutePath();
             if (fromFileName.endsWith(".cls")) {
                 TopLevelModel model = parseFileContents(fromFileName);
@@ -132,7 +134,7 @@ public class ApexDoc {
                     models.add(model);
                 }
             }
-        }
+        });
 
         // create our Groups
         TreeMap<String, ClassGroup> classGroupMap = createGroupNameMap(models, sourceDirectory);
@@ -151,7 +153,8 @@ public class ApexDoc {
     private static TreeMap<String, ClassGroup> createGroupNameMap(ArrayList<TopLevelModel> models,
             String sourceDirectory) {
         TreeMap<String, ClassGroup> map = new TreeMap<String, ClassGroup>();
-        for (TopLevelModel model : models) {
+
+        models.stream().forEach(model -> {
             String group = model.getGroupName();
             String contentPath = model.getGroupContentPath();
             if (contentPath != null && !contentPath.isEmpty()) {
@@ -169,7 +172,8 @@ public class ApexDoc {
                 // put the new or potentially modified ClassGroup back in the map
                 map.put(group, cg);
             }
-        }
+        });
+
         return map;
     }
 
@@ -353,11 +357,11 @@ public class ApexDoc {
                     }
 
                     // add all enum values to model
-                    for (String value : values) {
+                    values.stream().forEach(value -> {
                         if (!value.trim().isEmpty()) {
                             eModel.getValues().add(value.trim());
                         }
-                    }
+                    });
 
                     // if no class models have been created, and we see an
                     // enum, we must be dealing with a class level enum and
@@ -420,6 +424,56 @@ public class ApexDoc {
         } catch (Exception ex) { // Catch exception if any
             Utils.log(ex);
             return null;
+        }
+    }
+
+    // argument guards
+    private static String sourceURLGuard(String string) throws IllegalArgumentException {
+        if (Utils.isURL(string)) {
+            return string.trim();
+        } else {
+            throw new IllegalArgumentException(
+                "Value for <source_url> argument: '" + string +
+                "' is invalid. Please provide a valid URL where your source code is hosted, e.g.: " +
+                "https://github.com/no-stack-dub-sack/ApexDoc2/tree/master/src/main"
+            );
+        }
+    }
+
+    private static boolean showTOCGuard(String string) throws IllegalArgumentException {
+        if (string.equalsIgnoreCase("true") || string.equalsIgnoreCase("false")) {
+            return Boolean.valueOf(string);
+        } else {
+            throw new IllegalArgumentException(
+                "Value for <toc_descriptions> argument: '" + string +
+                "' is invalid. Please provide either 'true' or 'false'."
+            );
+        }
+    }
+
+    private static String[] scopeGuard(String scopes) throws IllegalArgumentException {
+        String[] scopeRegister = scopes.split(";");
+        for (String scope : scopeRegister) {
+            if (!SCOPES.contains(scope)) {
+                throw new IllegalArgumentException(
+                    "Value for <scope> argument: '" + scope +
+                    "' is invalid. Please provide a semi-colon delimited list of valid scopes." +
+                    " Valid scopes include: " + String.join(", ", SCOPES)
+                );
+            }
+        }
+
+        return scopeRegister;
+    }
+
+    private static String sortOrderGuard(String sortOrder) throws IllegalArgumentException {
+        if (sortOrder.equalsIgnoreCase(ORDER_LOGICAL) || sortOrder.equalsIgnoreCase(ORDER_ALPHA)) {
+            return sortOrder.toLowerCase();
+        } else {
+            throw new IllegalArgumentException(
+                "Value for <sort_order> argument '" + sortOrder +
+                "' is invalid. Options for this argument are: 'logical' or 'alpha'."
+            );
         }
     }
 }

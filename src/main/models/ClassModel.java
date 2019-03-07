@@ -91,9 +91,9 @@ public class ClassModel extends TopLevelModel {
                 String methodName2 = o2.getMethodName();
                 String className = getName();
 
-                if (methodName1.equals(className)) {
+                if (methodName1 != null && methodName1.equals(className)) {
                     return Integer.MIN_VALUE;
-                } else if (methodName2.equals(className)) {
+                } else if (methodName2 != null && methodName2.equals(className)) {
                     return Integer.MAX_VALUE;
                 }
 

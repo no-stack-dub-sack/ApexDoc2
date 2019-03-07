@@ -11,18 +11,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 public class FileManager {
     private String path;
-    private StringBuffer infoMessages;
     private String documentTitle = "ApexDocs";
     private FileOutputStream fileOutputStream;
     private DataOutputStream dataOutputStream;
 
     public FileManager(String path) {
-        this.infoMessages = new StringBuffer();
-
         if (path == null || path.trim().length() == 0) {
             this.path = ".";
         } else {
@@ -56,11 +55,13 @@ public class FileManager {
                 dataOutputStream.write(contents.getBytes());
                 dataOutputStream.close();
                 fileOutputStream.close();
-                infoMessages.append(fileName + " Processed...\n");
                 // prepend \n on 1st iteration for space between cmd line input & output
                 Utils.log((i == 0 ? "\n" : "") + fileName + " Processed...");
                 i++;
             }
+
+            Utils.log(""); // print new line
+
             copy(path);
             return true;
         } catch (Exception e) {
@@ -118,11 +119,13 @@ public class FileManager {
                         ? cModel.getChildClassesSorted()
                         : cModel.getChildClasses();
 
-                    // deal with any nested classes
-                    for (ClassModel cmChild : childClasses) {
-                        contents += "<p/>";
-                        contents += DocGen.documentClass(cmChild, models);
-                    }
+                    // map over child classes returning HTML strings
+                    List<String> childClassHTML = childClasses.stream().map(cmChild ->
+                        DocGen.documentClass(cmChild, models)).collect(Collectors.toList());
+
+                    // join and concat with contents
+                    contents += "<p/>" + String.join("<p/>", childClassHTML);
+
                 } else if (model.getModelType() == TopLevelModel.ModelType.ENUM) {
                     EnumModel eModel = (EnumModel) model;
                     contents += DocGen.documentEnum(eModel, models);
@@ -142,24 +145,25 @@ public class FileManager {
 
     // create our Class Group content files
     private void createClassGroupContent(TreeMap<String, String> mapFNameToContent, String links, String bannerPage,
-            TreeMap<String, ClassGroup> mapGroupNameToClassGroup) {
+        TreeMap<String, ClassGroup> mapGroupNameToClassGroup) {
 
-        for (String group : mapGroupNameToClassGroup.keySet()) {
+        mapGroupNameToClassGroup.keySet().stream().forEach(group -> {
             ClassGroup cg = mapGroupNameToClassGroup.get(group);
             if (cg.getContentSource() != null) {
                 String cgContent = parseHTMLFile(cg.getContentSource());
                 if (cgContent != "") {
 
-                    String html = DocGen.makeHeader(bannerPage, this.documentTitle) + links +
-                                     "<td class='contentTD'>" + "<h2 class='sectionTitle'>" +
-                                     DocGen.escapeHTML(cg.getName()) + "</h2>" + cgContent + "</td>";
+                    String html =
+                        DocGen.makeHeader(bannerPage, this.documentTitle) + links +
+                        "<td class='contentTD'>" + "<h2 class='sectionTitle'>" +
+                        DocGen.escapeHTML(cg.getName()) + "</h2>" + cgContent + "</td>";
 
                     html += HTML.FOOTER;
 
                     mapFNameToContent.put(cg.getContentFilename(), html);
                 }
             }
-        }
+        });
     }
 
     private void doCopy(String source, String target) throws Exception {
@@ -191,10 +195,12 @@ public class FileManager {
     public ArrayList<File> getFiles(String path) {
         File folder = new File(path);
         ArrayList<File> listOfFilesToCopy = new ArrayList<File>();
-        if (folder != null) {
+        try {
             File[] listOfFiles = folder.listFiles();
+            Utils.log("\nProcessing files:\n");
             if (listOfFiles != null && listOfFiles.length > 0) {
                 for (int i = 0; i < listOfFiles.length; i++) {
+                    Utils.log(listOfFiles[i].getName());
                     if (listOfFiles[i].isFile()) {
                         listOfFilesToCopy.add(listOfFiles[i]);
                     }
@@ -202,6 +208,8 @@ public class FileManager {
             } else {
                 System.out.println("WARNING: No files found in directory: " + path);
             }
+        } catch (SecurityException e) {
+            Utils.log(e);
         }
         return listOfFilesToCopy;
     }

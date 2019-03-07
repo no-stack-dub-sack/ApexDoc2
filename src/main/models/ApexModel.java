@@ -1,7 +1,10 @@
 package main.models;
 
 import main.ApexDoc;
+import main.HTML;
 import main.Utils;
+
+import java.io.File;
 import java.util.ArrayList;
 
 public class ApexModel {
@@ -192,10 +195,10 @@ public class ApexModel {
                     description += (!description.isEmpty() ? " " : "") + line.trim();
                 } else if (currBlock.equals(GROUP)) {
                     groupName += (!groupName.isEmpty() ? " " : "") + line.trim();
-                } else if (currBlock.equals(GROUP_CONTENT)) {
-                    groupContentPath += (!groupContentPath.isEmpty() ? " " : "") + line.trim();
                 } else if (currBlock.equals(EXAMPLE)) {
                     example += (!example.isEmpty() ? "\n" : "") + line;
+                } else if (currBlock.equals(GROUP_CONTENT)) {
+                    if (pathExists(line.trim())) groupContentPath += line.trim();
                 }
             // not a recognized token, assume we're in un-tagged description
             } else if (currBlock == null && !line.trim().isEmpty()) {
@@ -206,6 +209,22 @@ public class ApexModel {
             }
 
             if (isBreak) break;
+        }
+    }
+
+    // make sure path relative to target
+    // directory exists for @group-content token
+    private boolean pathExists(String line) {
+        String root = ApexDoc.targetDirectory.endsWith("/")
+            ? ApexDoc.targetDirectory + HTML.ROOT_DIRECTORY + "/"
+            : ApexDoc.targetDirectory + "/" + HTML.ROOT_DIRECTORY + "/";
+
+        String path = root + line.trim();
+        if (line.trim().endsWith("html") && new File(path).exists()) {
+            return true;
+        } else {
+            Utils.log("\nWARNING: @group-content path: '" + path + "' is invalid!\n");
+            return false;
         }
     }
 }
