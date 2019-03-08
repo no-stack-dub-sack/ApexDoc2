@@ -5,12 +5,15 @@ import main.models.ClassModel;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class Utils {
     // any word that a method or property might start with
     // which would make the method or prop implicitly private
     private static final String[] KEYWORDS;
     private static final String[] COLLECTIONS;
+    private static final String URL_REGEXP = "(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
 
     static {
 
@@ -177,7 +180,32 @@ public class Utils {
     }
 
     public static boolean isURL(String str) {
-        return str.trim().matches("^(https?)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]");
+        return str.trim().matches("^" + URL_REGEXP);
+    }
+
+    public static boolean isMarkdownURL(String str) {
+        return str.trim().matches("^\\[.*\\]\\(.*\\)$");
+    }
+
+    public static String markdownUrlToLink(String str) {
+        str = str.trim();
+
+        String linkName = str.substring(1, str.indexOf(']'));
+        String url = str.substring(str.indexOf("](") + 2, str.length() - 1);
+
+        return Utils.isURL(url)
+            ? "<a target='_blank' href='" + url + "'>" + linkName + "</a>"
+            : "<span title='URL was invalid!'>" + linkName + "</span>";
+    }
+
+    /**
+    * Help highlight.js along, since props and enum signatures are not
+    * recognized by highlight.js since they are not full declarations.
+    */
+    public static String highlightNameLine(String nameLine) {
+        List<String> words = Arrays.asList(DocGen.escapeHTML(nameLine).split(" "));
+        words.set(words.size() - 1, "<span class='hljs-title'>" + words.get(words.size() - 1) + "<span>");
+        return String.join(" ", words);
     }
 
     public static void log(Exception ex) {

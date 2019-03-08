@@ -80,7 +80,7 @@ public class DocGen {
 
         if (!model.getSee().equals("")) {
             contents += "<div class='classSubtitle'>See</div>";
-            contents += "<div class='classSubDescription'>" + makeSeeLink(models, model.getSee()) + "</div>";
+            contents += "<div class='classSubDescription'>" + makeSeeLinks(models, model.getSee()) + "</div>";
         }
 
         if (!model.getAuthor().equals("")) {
@@ -125,7 +125,7 @@ public class DocGen {
         contents += String.format(columnsTemplate, annotationsCol, descriptionCol);
 
         for (PropertyModel prop : properties) {
-            String nameLine = highlightNameLine(prop.getNameLine());
+            String nameLine = Utils.highlightNameLine(prop.getNameLine());
             String propSourceLink = maybeMakeSourceLink(prop, cModel.getTopmostClassName(), nameLine);
 
             contents += "<tr class='property " + prop.getScope() + "'>";
@@ -169,7 +169,7 @@ public class DocGen {
         contents += String.format("<tr><th>Name</th><th>Signature</th><th>Values</th>%s</tr>", descriptionCol);
 
         for (EnumModel Enum : enums) {
-            String nameLine = highlightNameLine(Enum.getNameLine());
+            String nameLine = Utils.highlightNameLine(Enum.getNameLine());
             String propSourceLink = maybeMakeSourceLink(Enum, cModel.getTopmostClassName(), nameLine);
             contents += "<tr class='enum " + Enum.getScope() + "'>";
             contents += "<td class='attrName'>" + Enum.getName() + "</td>";
@@ -294,7 +294,7 @@ public class DocGen {
 
             if (!method.getSee().equals("")) {
                 methodsHTML += "<div class='methodSubTitle'>See</div>";
-                methodsHTML += "<div class='methodSubDescription'>" + makeSeeLink(models, method.getSee()) + "</div>";
+                methodsHTML += "<div class='methodSubDescription'>" + makeSeeLinks(models, method.getSee()) + "</div>";
             }
 
             if (!method.getAuthor().equals("")) {
@@ -464,7 +464,7 @@ public class DocGen {
         }
     }
 
-    private static String makeSeeLink(ArrayList<TopLevelModel> models, String qualifiersStr) throws IllegalArgumentException {
+    private static String makeSeeLinks(ArrayList<TopLevelModel> models, String qualifiersStr) throws IllegalArgumentException {
         // the @see token may contain a comma separated list of fully qualified
         // method or class names. Start by splitting them into individual qualifiers.
         String[] qualifiers = qualifiersStr.split(",");
@@ -478,19 +478,35 @@ public class DocGen {
         // exactly scream efficiency, but its still fast on moderate codebases
         // and its better than the alternative of dead links all over the place.
         for (String qualifier : qualifiers) {
-            // chcek if URL, add to links and continue with loop if so
-            if (Utils.isURL(qualifier)) {
-                links.add("<a target='_blank' href='" + qualifier.trim() + "'>" + qualifier.trim() + "</a>");
+            qualifier = qualifier.trim();
+
+            // 1) continue if empty
+            if (qualifier.isEmpty()) {
                 continue;
             }
 
-            String[] parts = qualifier.trim().split("\\.");
+            // 2) chcek if URL, add to links and continue with loop if so
+            if (Utils.isURL(qualifier)) {
+                links.add("<a target='_blank' href='" + qualifier + "'>" + qualifier + "</a>");
+                continue;
+            }
+
+            // 3) check if markdown-formatted URL. add to links and continue.
+            // markdown parsing function will detect if URL is valid and return
+            // a span with tooltip indicating invalid link if not
+            if (Utils.isMarkdownURL(qualifier)) {
+                links.add(Utils.markdownUrlToLink(qualifier));
+                continue;
+            }
+
+            // 4) if not URL or empty, must be a qualified class or method name
+            String[] parts = qualifier.split("\\.");
 
             if (parts.length > 3) {
                 Utils.log(qualifiersStr);
-                String message = "Each comma separated qualifier of the @see token must be a fully qualified class " +
-                                 "or method name, with a minimum of 1 part and a maximum of 3. E.g. MyClassName, " +
-                                 "MyClassName.MyMethodName, MyClassName.MyInnerClassName.MyInnserClassMethodName.";
+                String message = "Each comma separated qualifier of the @see token must be a fully qualified class "
+                        + "or method name, with a minimum of 1 part and a maximum of 3. E.g. MyClassName, "
+                        + "MyClassName.MyMethodName, MyClassName.MyInnerClassName.MyInnserClassMethodName.";
                 throw new IllegalArgumentException(message);
             }
 
@@ -498,7 +514,7 @@ public class DocGen {
             boolean foundMatch = false;
 
             for (TopLevelModel model : models) {
-                // if first qualifier matches class name, begin search
+                // 4.A) if first qualifier matches class name, begin search
                 if (model.getName().equalsIgnoreCase(parts[0])) {
                     // if only a single qualifier, stope here
                     if (parts.length == 1) {
@@ -507,7 +523,7 @@ public class DocGen {
                         break;
                     }
 
-                    // otherwise keep searching for a match for the second qualifier as long as our
+                    // 4.B) otherwise keep searching for a match for the second qualifier as long as
                     // model is not an enum model, in which case there is no searching left to do
                     if (parts.length >= 2 && model.getModelType() != TopLevelModel.ModelType.ENUM) {
                         ClassModel Class = (ClassModel) model;
@@ -523,29 +539,30 @@ public class DocGen {
                             }
                         }
 
-                        // if after searching methods a match hasn't been found yet
-                        // see if child class name matches the second qualifier.
+                        // 4.C) if after searching methods a match hasn't been found
+                        // yet see if child class name matches the second qualifier.
                         for (ClassModel childClass : childClasses) {
                             // ApexDoc2 stores child class name as 'OuterClass.InnerClass'
                             // recreate that format below to try to make the match with
                             String childClassName = parts[0] + "." + parts[1];
                             if (childClass.getName().equalsIgnoreCase(childClassName)) {
                                 String[] innerClass = childClass.getName().split("\\.");
-                                // If match, and only 2 parts, stop here.
+                                // 4.D) If match, and only 2 parts, stop here.
                                 if (parts.length == 2) {
                                     // to ensure the link works, use actual name rather than
                                     // user provided parts in case casing doesn't match
-                                    href =  innerClass[0] + ".html#" + innerClass[0] + "." + innerClass[1];
+                                    href = innerClass[0] + ".html#" + innerClass[0] + "." + innerClass[1];
                                     foundMatch = true;
                                     break;
                                 }
 
-                                // Otherwise, there must be 3 parts, attempt to match method.
+                                // 4.E) Otherwise, there must be 3 parts, attempt to match method.
                                 ArrayList<MethodModel> childMethods = childClass.getMethods();
                                 for (MethodModel method : childMethods) {
                                     if (method.getMethodName().equalsIgnoreCase(parts[2])) {
                                         // same as above, use actual name to avoid casing issues
-                                        href = innerClass[0] + ".html#" + childClass.getName() + "." + method.getMethodName();
+                                        href = innerClass[0] + ".html#" + childClass.getName() + "."
+                                                + method.getMethodName();
                                         foundMatch = true;
                                         break;
                                     }
@@ -556,26 +573,22 @@ public class DocGen {
                 }
             }
 
+            // 5) if match made, create link with goToLocation function onclick
+            // Otherwise, add span with Tooltip indicating no link could be made
             String link;
             if (foundMatch) {
-                link = "<a href='javascript:void(0)' onclick=\"goToLocation" +
-                       "('" + href + "')\">" + qualifier + "</a>";
+                link =
+                    "<a href='javascript:void(0)' onclick=\"goToLocation" + "('" + href + "')\">" +
+                    qualifier + "</a>";
             } else {
-                link = "<span title='A matching reference could not be found!'>" +
-                       qualifier + "</span>";
+                link =
+                    "<span title='A matching reference could not be found!'>" + qualifier + "</span>";
             }
 
             links.add(link);
         }
 
+        // 6) collect links / spans and join back into a single string
         return String.join(", ", links);
-    }
-
-    private static String highlightNameLine(String nameLine) {
-        // Help highlight.js along, since props and enum signatures are not
-        // recognized by highlight.js since they are not full declarations.
-        List<String> words = Arrays.asList(escapeHTML(nameLine).split(" "));
-        words.set(words.size() - 1, "<span class='hljs-title'>" + words.get(words.size() - 1) + "<span>");
-        return String.join(" ", words);
     }
 }
