@@ -3,6 +3,7 @@ package main;
 import main.models.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Arrays;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
@@ -193,42 +194,49 @@ public class DocGen {
     }
 
     private static String documentMethods(ClassModel cModel, ArrayList<TopLevelModel> models) {
-
         // track Ids used to make sure we're not generating duplicate
         // Ids within this class, and so that overloaded methods each
         // have their own unique anchor to link to in the TOC.
         TreeMap<String, Integer> idCountMap = new TreeMap<String, Integer>();
 
-        // Local fucntion to make TOC entry
-        Function<MethodModel, String> makeTOCEntry = method -> {
-            boolean isDeprecated = !method.getDeprecated().equals("");
+        // Local fucntion to make TOC entry and other variables we need to make HTML
+        Function<MethodModel, TreeMap<String, String>> describeMethod = method -> {
+            // Get method id, i.e. the fully qualified method name.
+            // Then see if this ID has been used previously in this class
+            // (must be an overloaded method or constructor) and ammend
+            // as needed to ensure all of our methods have unique IDs
             String methodId = cModel.getName() + "." + method.getMethodName();
-
-            // Get Id count and ammend as needed if Id has been used
-            // previously in this class (must be an overloaded method)
-            Integer count = idCountMap.get(methodId);
-
-            if (count == null) {
+            Integer count;
+            if ((count = idCountMap.get(methodId)) == null) {
                 idCountMap.put(methodId, 1);
             } else {
-                idCountMap.put(methodId, (count + 1));
+                idCountMap.put(methodId, count + 1);
                 methodId += '_' + String.valueOf(count);
             }
 
-            String entry =
-                "<li class='method " + method.getScope() + "' >" +
+            // if method is constructor, append <init>
+            String methodName = method.getMethodName();
+            if (methodName.equalsIgnoreCase(cModel.getName())) methodName += ".&lt;init&gt;";
+            boolean isDeprecated = !method.getDeprecated().equals("");
+
+            // make TOC entry with variables we just calculated
+            String entry = "<li class='method " + method.getScope() + "' >" +
                 "<a class='methodTOCEntry" + (isDeprecated ? " deprecated" : "") + "'" +
-                "href='#" + methodId + "'>" + method.getMethodName() + "</a>";
+                "href='#" + methodId + "'>" + methodName + "</a>";
 
             // do not render description in TOC if user has indicated to hide
             if (showMethodTOCDescription && method.getDescription() != "") {
                 entry += "<div class='methodTOCDescription'>" + method.getDescription() + "</div>";
             }
 
-            entry += "</li>";
-            return entry;
+            // add everything to the map and return
+            TreeMap<String, String> results = new TreeMap<String, String>();
+            results.put("isDeprecated", String.valueOf(isDeprecated));
+            results.put("TOC", entry += "</li>");
+            results.put("name", methodName);
+            results.put("id", methodId);
+            return results;
         };
-
 
         // retrieve methods to work with in the order user specifies
         ArrayList<MethodModel> methods = sortOrderStyle.equals(ApexDoc.ORDER_ALPHA)
@@ -242,21 +250,14 @@ public class DocGen {
 
         // full method display
         for (MethodModel method : methods) {
-            // create method TOC entry:
-            tocHTML += makeTOCEntry.apply(method);
+            // get the TOC entry and other variables we need to make HTML
+            TreeMap<String, String> methodAttributes = describeMethod.apply(method);
 
-            // create full methods view HTML:
-            boolean isDeprecated = !method.getDeprecated().equals("");
-            String methodId = cModel.getName() + "." + method.getMethodName();
+            tocHTML += methodAttributes.get("TOC");
+            String methodId = methodAttributes.get("id");
+            String methodName = methodAttributes.get("name");
+            boolean isDeprecated = Boolean.valueOf(methodAttributes.get("isDeprecated"));
             String methodSourceLink = maybeMakeSourceLink(method, cModel.getTopmostClassName(), escapeHTML(method.getNameLine()));
-
-            // if method is an overload, be sure to give it a unique Id
-            // since the Id count has already been incremented by this
-            // point, we need to suntract 1 from the current value
-            Integer count = idCountMap.get(methodId);
-            if (count > 1) {
-                methodId += '_' + String.valueOf(count - 1);
-            }
 
             // open current method
             methodsHTML += "<div class='method " + method.getScope() + "' >";
@@ -265,7 +266,7 @@ public class DocGen {
             // to the same method. For example, an abstract class and a calss which extends that
             // class in the same file are likely to have the same methods and thus conflicting IDs.
             methodsHTML += "<h2 class='methodHeader" + (isDeprecated ? " deprecated" : "") + "'" +
-                        "id='" + methodId + "'>" + method.getMethodName() + "</h2>";
+                        "id='" + methodId + "'>" + methodName + "</h2>";
 
             if (method.getAnnotations().size() > 0) {
                 methodsHTML += "<div class='methodAnnotations'>" + String.join(" ", method.getAnnotations()) + "</div>";
