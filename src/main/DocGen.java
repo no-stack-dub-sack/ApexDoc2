@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.function.Function;
 
 public class DocGen {
@@ -66,9 +67,11 @@ public class DocGen {
         contents += "<div class='classSignature'>" + classSourceLink + "</div>";
 
         if (!model.getDescription().equals("")) {
-            contents += "<div class='classDetails'>" + escapeHTML(model.getDescription());
+            contents += "<div class='classDetails'><div>" + escapeHTML(model.getDescription()) + "</div>";
         }
 
+        // add any additional content passed in from the caller. currently, only
+        // use case is the values table used when documenting class-level enums
         if (additionalContent != null) {
             contents += additionalContent;
         }
@@ -373,19 +376,18 @@ public class DocGen {
     }
 
     private static String wrapInlineCode(String html) {
-        String[] words = html.split(" ");
-
-        for (Integer i = 0; i < words.length; i++) {
-            String str = words[i];
-            Integer firstIndex = str.indexOf("`");
-            Integer lastIndex = str.lastIndexOf("`");
-
-            if (firstIndex > -1 && lastIndex > -1 && firstIndex != lastIndex) {
-                str = str.replaceFirst("`", "<code class='inlineCode'>");
-                str = str.replaceFirst("`", "</code>");
-                words[i] = str;
-            }
-        }
+        List<String> words = Arrays
+            .asList(html.split("\\b\\s+\\b"))
+            .stream().map(word -> {
+                int firstIndex = word.indexOf("`");
+                int lastIndex = word.lastIndexOf("`");
+                if (firstIndex > -1 && lastIndex > -1 && firstIndex != lastIndex) {
+                    word = word.replaceFirst("`", "<code class='inlineCode'>");
+                    word = word.replaceFirst("`", "</code>");
+                    return word;
+                }
+                return word;
+            }).collect(Collectors.toList());
 
         return String.join(" ", words);
     }

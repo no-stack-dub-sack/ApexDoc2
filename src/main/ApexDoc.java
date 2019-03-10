@@ -23,6 +23,7 @@ public class ApexDoc {
     private static final String PROTECTED = "protected";
 
     public static final String PRIVATE = "private";
+    public static final String TEST_METHOD = "testMethod";
     public static final String CLASS = "class";
     public static final String ENUM = "enum";
     public static final String INTERFACE = "interface";
@@ -51,6 +52,7 @@ public class ApexDoc {
         SCOPES.add(PRIVATE);
         SCOPES.add(PROTECTED);
         SCOPES.add(WEB_SERVICE);
+        SCOPES.add(TEST_METHOD);
     }
 
     // public entry point when called from the command line.
