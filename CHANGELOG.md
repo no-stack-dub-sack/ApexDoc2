@@ -20,6 +20,7 @@
 - Added optional **<doc_title>** command line argument: `-d`. Allows you to set the value of the HTML document's `<title>` attribute. Now defaults to 'ApexDocs' instead of 'index.html'.
 - Added support for `//` style comments inside of `@example` code snippets in case some explanation of the code is needed, it will appear properly commented out in the output docs.
 - Added support for empty line preservation inside of `@example` code snippets where spacing might be needed for complex code examples.
+- Added support for line breaks in ApexDoc comments with use of `<br>`, `<br />` or `<br >` tags.
 - Changed logo to ApexDoc2 logo, added favicon.
 
 ### Changed

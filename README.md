@@ -48,18 +48,23 @@ A favicon has been added with ApexDoc2, so if you'd like to use your own favicon
 ## Documenting Class Files
 ApexDoc2 scans each class file, and looks for comment blocks with special keywords to identify the documentation to include for a given class, property, enum, or method.  The comment blocks must always begin with /** (or additional *'s) and can cover multiple lines.  Each line must start with * (or whitespace and then *).  The comment block ends with */.  Special tokens are called out with @token.
 
-## Tips
+### Tips
 - `@description` tokens are optional; you may omit them.
-- Within your ApexDoc2 comments, to indicate code snippets or special keywords, wrap in backticks; e.g. \`String cool = 'cool!';\`. This will be formatted as code in the output file.
 - Class and method annotations such as `@IsTest` or `@Future` will be displayed above the class or method's signature, while property annotations such as `@TestVisible` or `@InvocableProperty` will be displayed in the generated properties table.
-- *Important note* on implicitly privacy: For ApexDoc2 to best document your class files, it is generally best practice to always give your classes, properties, interfaces, and emums explicit access modifiers. That said, ApexDoc2 does have some ability to detect implicitly private types and methods. For instance, implicitly private `@IsTest` and inner classes, or methods whose signatures start with keywords like `void`, `abstract`, `virtual`, or with primitive types or collections can still be detected and will be assumed to be private. However, in order to not confuse properties with local variables, properties *must* start with access modifiers or the `static` keyword in order to be detected. To best ensure accurate documentation, please always use access modifiers, which will only help to make your code more readable and easily understood!
+- **Important note** on implicitly privacy: For ApexDoc2 to best document your class files, it is generally best practice to always give your classes, properties, interfaces, and emums explicit access modifiers. That said, ApexDoc2 does have some ability to detect implicitly private types and methods. For instance, implicitly private `@IsTest` and inner classes, or methods whose signatures start with keywords like `void`, `abstract`, `virtual`, or with primitive types or collections can still be detected and will be assumed to be private. However, in order to not confuse properties with local variables, properties *must* start with access modifiers or the `static` keyword in order to be detected. To best ensure accurate documentation, please always use access modifiers, which will only help to make your code more readable and easily understood!
 
-See examples below.
+### Special Tokens
+In addition to the `@token`s listed below for each category, there are a few other special tokens to be aware of:
+
+| Token | Description |
+|-------|-------------|
+| \` \` | Backticks, \` \`, can be used to indicate inline code within your ApexDoc2 comments. E.g. \`String cool = 'cool!';\` &mdash; the expression within the backticks will be formatted as code. |
+| &lt;br&gt; | The &lt;br&gt; tag can be used to render line breaks in your comments when more complex formatting is needed. &lt;br /&gt; is also acceptable. |
 
 ### Class Comments (includes class-level Interfaces and Enums)
 In other words, includes any top-level types that live within a .cls file. Located in the lines above the type's declaration.  The special tokens are all optional.
 
-| token | description |
+| Token | Description |
 |-------|-------------|
 | @author | The author of the class |
 | @date | The date the class was first implemented |
@@ -81,9 +86,10 @@ Example
 * @deprecated Replaced by AccountTriggerHandler
 * @see AccountTriggerHandler
 *
-* Look, no description token! Trigger Handler on Accounts that handles ensuring the correct `System__c`
-* flags are set on our special accounts (Household, One-to-One), and also detects changes on Household
-* Account that requires name updating.
+* @description Trigger Handler on Accounts that handles ensuring the correct `System__c`
+* flags are set on our special accounts (Household, One-to-One).
+* &lt;br&gt;&lt;br&gt;
+* Also detects changes on Household Account that requires name updating.
 */
 public with sharing class ACCT_Accounts_TDTM extends TDTM_Runnable {
 ```
@@ -91,7 +97,7 @@ public with sharing class ACCT_Accounts_TDTM extends TDTM_Runnable {
 ### Property and Inner Enum Comments
 Located in the lines above a property or an enum nested inside a class.  The special tokens are all optional.
 
-| token | description |
+| Token | Description |
 |-------|-------------|
 | @description | one or more lines that describe the property|
 
@@ -111,7 +117,7 @@ Examples
 ### Method Comments
 In order for ApexDoc2 to identify class methods, the method line must contain an explicit scope (global, public, private, testMethod, webService).  The comment block is located in the lines above a method.  The special tokens are all optional.
 
-| token | description |
+| Token | Description |
 |-------|-------------|
 | @author | The author of the method |
 | @date | The date the method was first implemented |

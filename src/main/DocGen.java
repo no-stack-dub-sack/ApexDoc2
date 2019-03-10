@@ -337,7 +337,14 @@ public class DocGen {
                 out.append(c);
             }
         }
-        return wrapInlineCode(out.toString());
+
+        // wrap any words wrapped in backticks in code tags for styling
+        String result = wrapInlineCode(out.toString());
+
+        // preserve <br> tags so they render as HTML
+        result = result.replaceAll("&#60;br\\s?/?&#62;", "<br>");
+
+        return result;
     }
 
     private static String wrapInlineCode(String html) {
