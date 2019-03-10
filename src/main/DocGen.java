@@ -191,14 +191,31 @@ public class DocGen {
 
     private static String documentMethods(ClassModel cModel, ArrayList<TopLevelModel> models) {
 
+        // track Ids used to make sure we're not generating duplicate
+        // Ids within this class, and so that overloaded methods each
+        // have their own unique anchor to link to in the TOC.
+        TreeMap<String, Integer> idCountMap = new TreeMap<String, Integer>();
+
         // Local fucntion to make TOC entry
         Function<MethodModel, String> makeTOCEntry = method -> {
             boolean isDeprecated = !method.getDeprecated().equals("");
+            String methodId = cModel.getName() + "." + method.getMethodName();
+
+            // Get Id count and ammend as needed if Id has been used
+            // previously in this class (must be an overloaded method)
+            Integer count = idCountMap.get(methodId);
+
+            if (count == null) {
+                idCountMap.put(methodId, 1);
+            } else {
+                idCountMap.put(methodId, (count + 1));
+                methodId += '_' + String.valueOf(count);
+            }
 
             String entry =
                 "<li class='method " + method.getScope() + "' >" +
                 "<a class='methodTOCEntry" + (isDeprecated ? " deprecated" : "") + "'" +
-                "href='#" + cModel.getName() + "." + method.getMethodName() + "'>" + method.getMethodName() + "</a>";
+                "href='#" + methodId + "'>" + method.getMethodName() + "</a>";
 
             // do not render description in TOC if user has indicated to hide
             if (showMethodTOCDescription && method.getDescription() != "") {
@@ -227,8 +244,16 @@ public class DocGen {
 
             // create full methods view HTML:
             boolean isDeprecated = !method.getDeprecated().equals("");
-            String qualifiedMethodName = cModel.getName() + "." + method.getMethodName();
+            String methodId = cModel.getName() + "." + method.getMethodName();
             String methodSourceLink = maybeMakeSourceLink(method, cModel.getTopmostClassName(), escapeHTML(method.getNameLine()));
+
+            // if method is an overload, be sure to give it a unique Id
+            // since the Id count has already been incremented by this
+            // point, we need to suntract 1 from the current value
+            Integer count = idCountMap.get(methodId);
+            if (count > 1) {
+                methodId += '_' + String.valueOf(count - 1);
+            }
 
             // open current method
             methodsHTML += "<div class='method " + method.getScope() + "' >";
@@ -237,7 +262,7 @@ public class DocGen {
             // to the same method. For example, an abstract class and a calss which extends that
             // class in the same file are likely to have the same methods and thus conflicting IDs.
             methodsHTML += "<h2 class='methodHeader" + (isDeprecated ? " deprecated" : "") + "'" +
-                        "id='" + qualifiedMethodName + "'>" + method.getMethodName() + "</h2>";
+                        "id='" + methodId + "'>" + method.getMethodName() + "</h2>";
 
             if (method.getAnnotations().size() > 0) {
                 methodsHTML += "<div class='methodAnnotations'>" + String.join(" ", method.getAnnotations()) + "</div>";
@@ -506,7 +531,22 @@ public class DocGen {
                 continue;
             }
 
-            // 4) if not URL or empty, must be a qualified class or method name
+            // 4) if not URL or empty, must be a qualified class or method name.
+            // First prepare the qualifier by stripping away and saving any method
+            // overload selector for later. E.g. SomeClass.SomeMethod[4] means: link
+            // to the 4th overload (zero-based) of that method. This syntax is only required
+            // to specify a method other than the 1st. Otherwise SomeClass.SomeMethod is fine
+            int overloadSelector = 0;
+            if (qualifier.matches(".*\\[\\d+\\]$")) {
+                int i = qualifier.lastIndexOf('[');
+                // isolate the number inside the brackets
+                String selector = qualifier.substring(i+1, qualifier.length() - 1);
+                System.out.println(selector);
+                overloadSelector = Integer.valueOf(selector);
+                // strip away the suffix from the qualifier
+                qualifier = qualifier.substring(0, i);
+            }
+
             String[] parts = qualifier.split("\\.");
 
             if (parts.length > 3) {
@@ -537,14 +577,34 @@ public class DocGen {
                         ArrayList<MethodModel> methods = Class.getMethods();
                         ArrayList<ClassModel> childClasses = Class.getChildClasses();
 
+                        int methodNum = 0;
                         for (MethodModel method : methods) {
                             if (method.getMethodName().equalsIgnoreCase(parts[1])) {
                                 // use actual class/methof name to create link to avoid case issues
                                 href = Class.getName() + ".html#" + Class.getName() + "." + method.getMethodName();
-                                foundMatch = true;
-                                break;
+                                // no overload selector, we've made a match!
+                                if (overloadSelector == 0) {
+                                    foundMatch = true;
+                                    break;
+                                }
+                                // If there's an overload suffix to take into account
+                                // ensure that many overloads of the method actually
+                                // exist before commiting to the method link.
+                                else if (overloadSelector > 0 && methodNum != overloadSelector) {
+                                    methodNum++;
+                                    continue;
+                                }
+                                // confirmed overload exists. Match!!
+                                else if (methodNum == overloadSelector) {
+                                    href += '_' + String.valueOf(overloadSelector);
+                                    foundMatch = true;
+                                    break;
+                                }
                             }
                         }
+
+                        // match; go no further
+                        if (foundMatch) break;
 
                         // 4.C) if after searching methods a match hasn't been found
                         // yet see if child class name matches the second qualifier.
