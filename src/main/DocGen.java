@@ -52,8 +52,8 @@ public class DocGen {
     }
 
     private static String documentTopLevelAttributes(TopLevelModel model, ArrayList<TopLevelModel> models, String className, String additionalContent) {
-        String sectionSourceLink = maybeMakeSourceLink(model, className, escapeHTML(model.getName()));
-        String classSourceLink = maybeMakeSourceLink(model, className, escapeHTML(model.getNameLine()));
+        String sectionSourceLink = maybeMakeSourceLink(model, className, escapeHTML(model.getName(), false));
+        String classSourceLink = maybeMakeSourceLink(model, className, escapeHTML(model.getNameLine(), false));
         boolean hasSource = hostedSourceURL != null && !hostedSourceURL.equals("");
         String contents = "";
 
@@ -68,7 +68,7 @@ public class DocGen {
         contents += "<div class='classSignature'>" + classSourceLink + "</div>";
 
         if (!model.getDescription().equals("")) {
-            contents += "<div class='classDetails'><div>" + escapeHTML(model.getDescription()) + "</div>";
+            contents += "<div class='classDetails'><div>" + escapeHTML(model.getDescription(), true) + "</div>";
         }
 
         // add any additional content passed in from the caller. currently, only
@@ -79,7 +79,7 @@ public class DocGen {
 
         if (!model.getDeprecated().equals("")) {
             contents +="<div class='classSubtitle deprecated'>Deprecated</div>";
-            contents += "<div class='classSubDescription'>" + escapeHTML(model.getDeprecated()) + "</div>";
+            contents += "<div class='classSubDescription'>" + escapeHTML(model.getDeprecated(), true) + "</div>";
         }
 
         if (!model.getSee().equals("")) {
@@ -88,16 +88,16 @@ public class DocGen {
         }
 
         if (!model.getAuthor().equals("")) {
-            contents += "<br/>" + escapeHTML(model.getAuthor());
+            contents += "<br/>" + escapeHTML(model.getAuthor(), false);
         }
 
         if (!model.getDate().equals("")) {
-            contents += "<br/>" + escapeHTML(model.getDate());
+            contents += "<br/>" + escapeHTML(model.getDate(), false);
         }
 
         if (!model.getExample().equals("")) {
             contents += "<div class='classSubTitle'>Example</div>";
-            contents += "<pre class='codeExample'><code>" + escapeHTML(model.getExample()) + "</code></pre>";
+            contents += "<pre class='codeExample'><code>" + escapeHTML(model.getExample(), false) + "</code></pre>";
         }
 
         contents += "</div><p/>";
@@ -142,7 +142,7 @@ public class DocGen {
 
             // if any property has a description build out the third column
             if (descriptionCol.length() > 0) {
-                contents += "<td><div class='attrDescription'>" + escapeHTML(prop.getDescription()) + "</div></td>";
+                contents += "<td><div class='attrDescription'>" + escapeHTML(prop.getDescription(), true) + "</div></td>";
             }
 
             contents += "</tr>";
@@ -182,7 +182,7 @@ public class DocGen {
 
             // if any property has a description build out the third column
             if (descriptionCol.length() > 0) {
-                contents += "<td><div class='attrDescription'>" + escapeHTML(Enum.getDescription()) + "</div></td>";
+                contents += "<td><div class='attrDescription'>" + escapeHTML(Enum.getDescription(), true) + "</div></td>";
             }
 
             contents += "</tr>";
@@ -257,7 +257,7 @@ public class DocGen {
             String methodId = methodAttributes.get("id");
             String methodName = methodAttributes.get("name");
             boolean isDeprecated = Boolean.valueOf(methodAttributes.get("isDeprecated"));
-            String methodSourceLink = maybeMakeSourceLink(method, cModel.getTopmostClassName(), escapeHTML(method.getNameLine()));
+            String methodSourceLink = maybeMakeSourceLink(method, cModel.getTopmostClassName(), escapeHTML(method.getNameLine(), false));
 
             // open current method
             methodsHTML += "<div class='method " + method.getScope() + "' >";
@@ -275,18 +275,18 @@ public class DocGen {
             methodsHTML += "<div class='methodSignature'>" + methodSourceLink + "</div>";
 
             if (!method.getDescription().equals("")) {
-                methodsHTML += "<div class='methodDescription'>" + escapeHTML(method.getDescription()) + "</div>";
+                methodsHTML += "<div class='methodDescription'>" + escapeHTML(method.getDescription(), true) + "</div>";
             }
 
             if (isDeprecated) {
                 methodsHTML +="<div class='methodSubTitle deprecated'>Deprecated</div>";
-                methodsHTML += "<div class='methodSubDescription'>" + escapeHTML(method.getDeprecated()) + "</div>";
+                methodsHTML += "<div class='methodSubDescription'>" + escapeHTML(method.getDeprecated(), true) + "</div>";
             }
 
             if (method.getParams().size() > 0) {
                 methodsHTML += "<div class='methodSubTitle'>Parameters</div>";
                 for (String param : method.getParams()) {
-                    param = escapeHTML(param);
+                    param = escapeHTML(param, true);
                     if (param != null && param.trim().length() > 0) {
                         Pattern p = Pattern.compile("\\s");
                         Matcher m = p.matcher(param);
@@ -313,12 +313,12 @@ public class DocGen {
 
             if (!method.getReturns().equals("")) {
                 methodsHTML += "<div class='methodSubTitle'>Return Value</div>";
-                methodsHTML += "<div class='methodSubDescription'>" + escapeHTML(method.getReturns()) + "</div>";
+                methodsHTML += "<div class='methodSubDescription'>" + escapeHTML(method.getReturns(), true) + "</div>";
             }
 
             if (!method.getException().equals("")) {
                 methodsHTML += "<div class='methodSubTitle'>Exceptions</div>";
-                methodsHTML += "<div class='methodSubDescription'>" + escapeHTML(method.getException()) + "</div>";
+                methodsHTML += "<div class='methodSubDescription'>" + escapeHTML(method.getException(), true) + "</div>";
             }
 
             if (!method.getSee().equals("")) {
@@ -328,17 +328,17 @@ public class DocGen {
 
             if (!method.getAuthor().equals("")) {
                 methodsHTML += "<div class='methodSubTitle'>Author</div>";
-                methodsHTML += "<div class='methodSubDescription'>" + escapeHTML(method.getAuthor()) + "</div>";
+                methodsHTML += "<div class='methodSubDescription'>" + escapeHTML(method.getAuthor(), false) + "</div>";
             }
 
             if (!method.getDate().equals("")) {
                 methodsHTML += "<div class='methodSubTitle'>Date</div>";
-                methodsHTML += "<div class='methodSubDescription'>" + escapeHTML(method.getDate()) + "</div>";
+                methodsHTML += "<div class='methodSubDescription'>" + escapeHTML(method.getDate(), false) + "</div>";
             }
 
             if (!method.getExample().equals("")) {
                 methodsHTML += "<div class='methodSubTitle'>Example</div>";
-                methodsHTML += "<pre class='codeExample'><code>" + escapeHTML(method.getExample()) + "</code></pre>";
+                methodsHTML += "<pre class='codeExample'><code>" + escapeHTML(method.getExample(), false) + "</code></pre>";
             }
 
             // end current method
@@ -354,7 +354,7 @@ public class DocGen {
         return contents;
     }
 
-    public static String escapeHTML(String s) {
+    public static String escapeHTML(String s, boolean wrapBackticks) {
         StringBuilder out = new StringBuilder(Math.max(16, s.length()));
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
@@ -368,7 +368,7 @@ public class DocGen {
         }
 
         // wrap any words wrapped in backticks in code tags for styling
-        String result = wrapInlineCode(out.toString());
+        String result = wrapBackticks ? wrapInlineCode(out.toString()) : out.toString();
 
         // preserve <br> tags so they render as HTML
         result = result.replaceAll("&#60;br\\s?/?&#62;", "<br>");
@@ -378,7 +378,7 @@ public class DocGen {
 
     private static String wrapInlineCode(String html) {
         List<String> words = Arrays
-            .asList(html.split("\\b\\s+\\b"))
+            .asList(html.split("\\b\\s{1,2}\\b"))
             .stream().map(word -> {
                 int firstIndex = word.indexOf("`");
                 int lastIndex = word.lastIndexOf("`");

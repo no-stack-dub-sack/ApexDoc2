@@ -156,7 +156,7 @@ public class FileManager {
                     String html =
                         DocGen.makeHeader(bannerPage, this.documentTitle) + links +
                         "<td class='contentTD'>" + "<h2 class='sectionTitle'>" +
-                        DocGen.escapeHTML(cg.getName()) + "</h2>" + cgContent + "</td>";
+                        DocGen.escapeHTML(cg.getName(), false) + "</h2>" + cgContent + "</td>";
 
                     html += HTML.FOOTER;
 
