@@ -1,12 +1,12 @@
 // #region Global vars / Life-Cycle Functions
 /***********************************************************************
 ***********************************************************************/
-var SCOPES = ['global', 'public', 'private', 'protected', 'testMethod', 'webService'];
-var APEX_DOC_MENU = 'apex-doc-2-menu';
-var APEX_DOC_ACTIVE_EL = 'apex-doc-2-active-el';
+const SCOPES = ['global', 'public', 'private', 'protected', 'testMethod', 'webService'];
+const APEX_DOC_MENU = 'apex-doc-2-menu';
+const APEX_DOC_ACTIVE_EL = 'apex-doc-2-active-el';
 
 // document ready function - removes jQuery dependency
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", () => {
 	initMenu();
 	initHighlightJs();
 	renderMenuFromState();
@@ -17,39 +17,40 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 // fire un-mounting functions
-window.onbeforeunload = function() {
+window.onbeforeunload = () => {
 	updateMenuState();
 	updateActiveElement();
 }
 // #endregion
 
+// #region Initialization & Menu Utils
+/***********************************************************************
+***********************************************************************/
 function initHighlightJs() {
-	var selectors = [
+	const selectors = [
 		'pre code', '.methodSignature', '.methodAnnotations', '.classSignature',
 		'.classAnnotations', '.attrSignature', '.propAnnotations'
 	];
 	// initialize highlighting for code examples and
 	// signatures for methods, classes, props and enums
-	selectors.forEach(function(selector) {
-		document.querySelectorAll(selector).forEach(function(block) {
+	selectors.forEach(selector => {
+		document.querySelectorAll(selector).forEach(block => {
 			hljs.highlightBlock(block);
 		});
 	});
 }
 
-// #region Menu Utils
-/***********************************************************************
-***********************************************************************/
 // create session storage object for menu state
 // and/or update state with any new menu items
 function initMenu() {
-	var items = document.querySelectorAll('.groupName');
-	var hasState = sessionStorage.getItem(APEX_DOC_MENU);
-	var state = !hasState ? {} : JSON.parse(hasState);
+	const hasState = sessionStorage.getItem(APEX_DOC_MENU);
+	let items = document.querySelectorAll('.groupName');
+	let state = !hasState ? {} : JSON.parse(hasState);
 
 	if (!hasState) {
 		// initialize menu state
-		initializeMenuModel(items, state);
+		console.log('ApexDoc2: initializing menu state');
+		items.forEach(item => state[item.id] = false);
 	} else {
 		// If already init, add any new class groups since last load.
 		// should really only happen when docs are under development
@@ -60,47 +61,25 @@ function initMenu() {
 	sessionStorage.setItem(APEX_DOC_MENU, JSON.stringify(state));
 }
 
-function initializeMenuModel(items, state) {
-	console.log('ApexDoc2: initializing menu state');
-
-	// on init, set first group to open
-	items.forEach(function(item, i) {
-		if (i === 0) {
-			state[item.id] = true;
-		} else {
-			state[item.id] = false;
-		}
-	});
-}
-
 function updateMenuModel(items, state) {
 	// 1) get keys currently in state object
-	var keys = Object.keys(state);
+	let keys = Object.keys(state);
 
 	// 2) get ids from each .groupName <details> element
-	var groups = Array.prototype.map.call(items, function(item) {
-		return {
-			id: item.id,
-			isOpen: item.getAttribute('open')
-		}
-	});
+	let groups = Array.prototype.map.call(items, item => ({
+		id: item.id,
+		isOpen: item.getAttribute('open')
+	}));
 
 	// 3) perform diff to get Ids not yet captured in storage
-	var deletedKeys = keys.filter(function(key) {
-		var idx = groups.findIndex((group) => {
-			return group.id === key
-		});
+	let deletedKeys = keys.filter(key =>
+		groups.findIndex(group => group.id === key) === -1);
 
-		return idx === -1;
-	});
-
-	var newKeys = groups.filter(function(item) {
-		return keys.indexOf(item.id) === -1;
-	});
+	let newKeys = groups.filter(item => keys.indexOf(item.id) === -1);
 
 	// 4) add/delete keys to/from state
 	if (deletedKeys.length > 0) {
-		deletedKeys.forEach(function(key) {
+		deletedKeys.forEach(key => {
 			delete state[key];
 		});
 		console.log('ApexDoc2: Stale menu keys found, deleting from session storage:');
@@ -108,18 +87,16 @@ function updateMenuModel(items, state) {
 	}
 
 	if (newKeys.length > 0) {
-		newKeys.forEach(function(item) {
-			state[item.id] = item.isOpen === '' && true
-		});
+		newKeys.forEach(item => state[item.id] = item.isOpen === '' && true);
 		console.log('ApexDoc2: New menu keys found, adding to session storage:');
 		console.log(newKeys.map(function(g) { return g.id }));
 	}
 }
 
 function renderMenuFromState() {
-	var state = JSON.parse(sessionStorage.getItem(APEX_DOC_MENU));
-	for (var group in state) {
-		var item = document.getElementById(group);
+	let state = JSON.parse(sessionStorage.getItem(APEX_DOC_MENU));
+	for (let group in state) {
+		let item = document.getElementById(group);
 		if (state[group]) {
 			console.log('ApexDoc2: Opening ' + group + ' section');
 			item.setAttribute('open', '');
@@ -130,11 +107,11 @@ function renderMenuFromState() {
 // save menu state before each unload so that state is
 // preserved when changing files or when reloading the page.
 function updateMenuState() {
-	var items = document.querySelectorAll('.groupName');
-	var state = JSON.parse(sessionStorage.getItem(APEX_DOC_MENU));
+	let items = document.querySelectorAll('.groupName');
+	let state = JSON.parse(sessionStorage.getItem(APEX_DOC_MENU));
 
-	items.forEach(function(item) {
-		var isOpen = item.getAttribute('open');
+	items.forEach(item => {
+		let isOpen = item.getAttribute('open');
 		state[item.id] = isOpen === '' && true;
 	});
 
@@ -143,13 +120,13 @@ function updateMenuState() {
 
 // preserve active menu item across loads
 function updateActiveElement() {
-	var active = document.querySelector('.active');
+	let active = document.querySelector('.active');
 	active && sessionStorage.setItem(APEX_DOC_ACTIVE_EL, active.id);
 }
 
 // set active element from storage
 function setActiveElement() {
-	var id = sessionStorage.getItem(APEX_DOC_ACTIVE_EL);
+	const id = sessionStorage.getItem(APEX_DOC_ACTIVE_EL);
 	if (id) {
 		var item = document.getElementById(id);
 		item.classList.add('active');
@@ -169,11 +146,11 @@ function setActiveElement() {
 /***********************************************************************
 ***********************************************************************/
 function getListScope() {
-	var list = [];
-	var checkboxes = document.querySelectorAll('input[type=checkbox]');
-	checkboxes.forEach(function(elem) {
+	let list = [];
+	let checkboxes = document.querySelectorAll('input[type=checkbox]');
+	checkboxes.forEach(elem => {
 		if (elem.checked) {
-			var str = elem.id;
+			let str = elem.id;
 			str = str.replace('cbx', '');
 			list.push(str);
 		}
@@ -182,29 +159,29 @@ function getListScope() {
 }
 
 function showScopes() {
-	var list = getListScope();
-	for (var i = 0; i < list.length; i++) {
+	let list = getListScope();
+	for (let i = 0; i < list.length; i++) {
 		toggleScope(list[i], true);
 	}
 }
 
 function showAllScopes() {
-	for (var i = 0; i < SCOPES.length; i++) {
+	for (let i = 0; i < SCOPES.length; i++) {
 		toggleScope(SCOPES[i], true);
 	}
 }
 
 function hideAllScopes() {
-	for (var i = 0; i < SCOPES.length; i++) {
+	for (let i = 0; i < SCOPES.length; i++) {
 		toggleScope(SCOPES[i], false);
 	}
 }
 
 function setScopeCookie() {
-	var list = getListScope();
-	var strScope = '';
-	var comma = '';
-	for (var i = 0; i < list.length; i++) {
+	const list = getListScope();
+	let strScope = '';
+	let comma = '';
+	for (let i = 0; i < list.length; i++) {
 		strScope += comma + list[i];
 		comma = ',';
 	}
@@ -212,20 +189,18 @@ function setScopeCookie() {
 }
 
 function readScopeCookie() {
-	var strScope = getCookie('scope');
+	const strScope = getCookie('scope');
 	if (strScope != null && strScope != '') {
 
 		// first clear all the scope checkboxes
-		var checkboxes = document.querySelectorAll('input[type=checkbox]');
-		checkboxes.forEach(function(elem) {
-			elem.checked = false;
-		});
+		let checkboxes = document.querySelectorAll('input[type=checkbox]');
+		checkboxes.forEach(elem => elem.checked = false);
 
 		// now check the appropriate scope checkboxes
-		var list = strScope.split(',');
-		for (var i = 0; i < list.length; i++) {
-			var id = 'cbx' + list[i];
-			var checkbox = document.getElementById(id);
+		let list = strScope.split(',');
+		for (let i = 0; i < list.length; i++) {
+			let id = 'cbx' + list[i];
+			let checkbox = document.getElementById(id);
 			checkbox.setAttribute('checked', true);
 		}
 	} else {
@@ -234,10 +209,10 @@ function readScopeCookie() {
 }
 
 function getCookie(cname) {
-	var name = cname + '=';
-	var ca = document.cookie.split(';');
-	for (var i=0; i < ca.length; i++) {
-		var c = ca[i];
+	let name = cname + '=';
+	let ca = document.cookie.split(';');
+	for (let i=0; i < ca.length; i++) {
+		let c = ca[i];
 		while (c.charAt(0) === ' ') c = c.substring(1);
 		if (c.indexOf(name) === 0) return c.substring(name.length, c.length);
 	}
@@ -246,12 +221,12 @@ function getCookie(cname) {
 
 function toggleScope(scope, isShow) {
 	setScopeCookie();
-	var enumTable = document.querySelectorAll('.properties');
-	var propTable = document.querySelectorAll('.enums');
-	var props = document.querySelectorAll('.property.' + scope);
-	var enums = document.querySelectorAll('.enum.' + scope);
-	var methods = document.querySelectorAll('.method.' + scope);
-	var classes = document.querySelectorAll('.class.' + scope);
+	let enumTable = document.querySelectorAll('.properties');
+	let propTable = document.querySelectorAll('.enums');
+	let props = document.querySelectorAll('.property.' + scope);
+	let enums = document.querySelectorAll('.enum.' + scope);
+	let methods = document.querySelectorAll('.method.' + scope);
+	let classes = document.querySelectorAll('.class.' + scope);
 	// show or hide all props, classes, & methods of a given scope
 	if (isShow === true) {
 		// show props table if its been hidden
@@ -273,7 +248,7 @@ function toggleScope(scope, isShow) {
 }
 
 function toggleVisibility(elements, isShow) {
-	for (var elem of elements) {
+	for (let elem of elements) {
 		if (isShow) {
 			elem.classList.remove('hide');
 		} else {
@@ -283,9 +258,9 @@ function toggleVisibility(elements, isShow) {
 }
 
 function maybeHideTable(tableSelector, itemSelector) {
-	var props, table = document.querySelectorAll(tableSelector);
+	let props, table = document.querySelectorAll(tableSelector);
 	if (props = document.querySelectorAll(itemSelector)) {
-		for (var prop of props) {
+		for (let prop of props) {
 			if (!prop.classList.contains('hide')) {
 				return;
 			}
@@ -301,7 +276,7 @@ function maybeHideTable(tableSelector, itemSelector) {
 ***********************************************************************/
 function toggleActiveClass(elem) {
 	// remove isActive from current active element
-	var item = document.querySelector('.active');
+	let item = document.querySelector('.active');
 	item && item.classList.remove('active');
 
 	// add to new active element
