@@ -79,8 +79,8 @@ public class FileManager {
      * @param homeContents
      * @param hostedSourceURL
      */
-    public void createDocs(TreeMap<String, ClassGroup> groupNameMap, ArrayList<TopLevelModel> models,
-                          String bannerPage, String homeContents) {
+    public void createDocs(TreeMap<String, ClassGroup> groupNameMap, TreeMap<String, TopLevelModel> modelMap,
+            ArrayList<TopLevelModel> models, String bannerPage, String homeContents) {
 
         String links = "<table width='100%'>";
         links += DocGen.makeHTMLScopingPanel();
@@ -112,7 +112,7 @@ public class FileManager {
                 if (model.getModelType() == TopLevelModel.ModelType.CLASS) {
 
                     ClassModel cModel = (ClassModel) model;
-                    contents += DocGen.documentClass(cModel, models);
+                    contents += DocGen.documentClass(cModel, modelMap, models);
 
                     // get child classes to work with in the order user specifies
                     ArrayList<ClassModel> childClasses = DocGen.sortOrderStyle.equals(ApexDoc.ORDER_ALPHA)
@@ -121,14 +121,14 @@ public class FileManager {
 
                     // map over child classes returning HTML strings
                     List<String> childClassHTML = childClasses.stream().map(cmChild ->
-                        DocGen.documentClass(cmChild, models)).collect(Collectors.toList());
+                        DocGen.documentClass(cmChild, modelMap, models)).collect(Collectors.toList());
 
                     // join and concat with contents
                     contents += "<p/>" + String.join("<p/>", childClassHTML);
 
                 } else if (model.getModelType() == TopLevelModel.ModelType.ENUM) {
                     EnumModel eModel = (EnumModel) model;
-                    contents += DocGen.documentEnum(eModel, models);
+                    contents += DocGen.documentEnum(eModel, modelMap, models);
                 }
 
             } else {

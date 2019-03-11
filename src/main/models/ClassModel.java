@@ -15,6 +15,7 @@ public class ClassModel extends TopLevelModel {
     private ArrayList<PropertyModel> properties;
     private ArrayList<ClassModel> childClasses;
     private ArrayList<EnumModel> enums;
+    private TreeMap<String, ClassModel> childClassNameToChildClass;
 
     public ClassModel(ClassModel cmodelParent, ArrayList<String> comments, String nameLine, int lineNum) {
         super(comments, ModelType.CLASS);
@@ -25,6 +26,7 @@ public class ClassModel extends TopLevelModel {
         this.methods = new ArrayList<MethodModel>();
         this.properties = new ArrayList<PropertyModel>();
         this.enums = new ArrayList<EnumModel>();
+        this.childClassNameToChildClass = new TreeMap<String, ClassModel>();
 
         if (nameLine.toLowerCase().contains(" " + ApexDoc.INTERFACE + " ")) {
             this.isInterface = true;
@@ -123,6 +125,12 @@ public class ClassModel extends TopLevelModel {
 
     public void addChildClass(ClassModel child) {
         childClasses.add(child);
+        // also add child class to map for use in making @see links
+        childClassNameToChildClass.put(child.getName().toLowerCase(), child);
+    }
+
+    public TreeMap<String, ClassModel> getChildClassMap() {
+        return childClassNameToChildClass;
     }
 
     public String getName() {

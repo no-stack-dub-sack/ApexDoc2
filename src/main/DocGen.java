@@ -3,7 +3,6 @@ package main;
 import main.models.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Arrays;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
@@ -17,10 +16,10 @@ public class DocGen {
     public static boolean showMethodTOCDescription;
     public static TreeMap<String, String> usedIds = new TreeMap<String, String>();
 
-    public static String documentClass(ClassModel cModel, ArrayList<TopLevelModel> models) {
+    public static String documentClass(ClassModel cModel, TreeMap<String, TopLevelModel> modelMap, ArrayList<TopLevelModel> models) {
         String contents = "";
 
-        contents += documentTopLevelAttributes(cModel, models, cModel.getTopmostClassName(), null);
+        contents += documentTopLevelAttributes(cModel, modelMap, models, cModel.getTopmostClassName(), null);
 
         if (cModel.getProperties().size() > 0) {
             contents += documentProperties(cModel);
@@ -31,13 +30,13 @@ public class DocGen {
         }
 
         if (cModel.getMethods().size() > 0) {
-            contents += documentMethods(cModel, models);
+            contents += documentMethods(cModel, modelMap, models);
         }
 
         return contents;
     }
 
-    public static String documentEnum(EnumModel eModel, ArrayList<TopLevelModel> models) {
+    public static String documentEnum(EnumModel eModel, TreeMap<String, TopLevelModel> modelMap, ArrayList<TopLevelModel> models) {
         String contents = "";
 
         String values = "<p />";
@@ -46,12 +45,12 @@ public class DocGen {
         values += "<td class='enumValues'>" + String.join(", ", eModel.getValues()) + "</td>";
         values += "</tr></table>";
 
-        contents += documentTopLevelAttributes(eModel, models, eModel.getName(), values);
+        contents += documentTopLevelAttributes(eModel, modelMap, models, eModel.getName(), values);
 
         return contents;
     }
 
-    private static String documentTopLevelAttributes(TopLevelModel model, ArrayList<TopLevelModel> models, String className, String additionalContent) {
+    private static String documentTopLevelAttributes(TopLevelModel model, TreeMap<String, TopLevelModel> modelMap, ArrayList<TopLevelModel> models, String className, String additionalContent) {
         String sectionSourceLink = maybeMakeSourceLink(model, className, escapeHTML(model.getName(), false));
         String classSourceLink = maybeMakeSourceLink(model, className, escapeHTML(model.getNameLine(), false));
         boolean hasSource = hostedSourceURL != null && !hostedSourceURL.equals("");
@@ -84,7 +83,7 @@ public class DocGen {
 
         if (!model.getSee().equals("")) {
             contents += "<div class='classSubtitle'>See</div>";
-            contents += "<div class='classSubDescription'>" + makeSeeLinks(models, model.getSee()) + "</div>";
+            contents += "<div class='classSubDescription'>" + makeSeeLinks(modelMap, models, model.getSee()) + "</div>";
         }
 
         if (!model.getAuthor().equals("")) {
@@ -193,7 +192,7 @@ public class DocGen {
         return contents;
     }
 
-    private static String documentMethods(ClassModel cModel, ArrayList<TopLevelModel> models) {
+    private static String documentMethods(ClassModel cModel, TreeMap<String, TopLevelModel> modelMap, ArrayList<TopLevelModel> models) {
         // track Ids used to make sure we're not generating duplicate
         // Ids within this class, and so that overloaded methods each
         // have their own unique anchor to link to in the TOC.
@@ -323,7 +322,7 @@ public class DocGen {
 
             if (!method.getSee().equals("")) {
                 methodsHTML += "<div class='methodSubTitle'>See</div>";
-                methodsHTML += "<div class='methodSubDescription'>" + makeSeeLinks(models, method.getSee()) + "</div>";
+                methodsHTML += "<div class='methodSubDescription'>" + makeSeeLinks(modelMap, models, method.getSee()) + "</div>";
             }
 
             if (!method.getAuthor().equals("")) {
@@ -499,7 +498,12 @@ public class DocGen {
         }
     }
 
-    private static String makeSeeLinks(ArrayList<TopLevelModel> models, String qualifiersStr) throws IllegalArgumentException {
+    private static String makeSeeLinks(TreeMap<String, TopLevelModel> modelMap, ArrayList<TopLevelModel> models, String qualifiersStr) throws IllegalArgumentException {
+        String exceptionMessage =
+            "Each comma separated qualifier of the @see token must be a fully qualified class " +
+            "or method name, with a minimum of 1 part and a maximum of 3. E.g. MyClassName, " +
+            "MyClassName.MyMethodName, MyClassName.MyInnerClassName.MyInnserClassMethodName.";
+
         // the @see token may contain a comma separated list of fully qualified
         // method or class names. Start by splitting them into individual qualifiers.
         String[] qualifiers = qualifiersStr.split(",");
@@ -544,7 +548,6 @@ public class DocGen {
                 int i = qualifier.lastIndexOf('[');
                 // isolate the number inside the brackets
                 String selector = qualifier.substring(i+1, qualifier.length() - 1);
-                System.out.println(selector);
                 overloadSelector = Integer.valueOf(selector);
                 // strip away the suffix from the qualifier
                 qualifier = qualifier.substring(0, i);
@@ -554,84 +557,81 @@ public class DocGen {
 
             if (parts.length > 3) {
                 Utils.log(qualifiersStr);
-                String message = "Each comma separated qualifier of the @see token must be a fully qualified class "
-                        + "or method name, with a minimum of 1 part and a maximum of 3. E.g. MyClassName, "
-                        + "MyClassName.MyMethodName, MyClassName.MyInnerClassName.MyInnserClassMethodName.";
-                throw new IllegalArgumentException(message);
+                throw new IllegalArgumentException(exceptionMessage);
             }
 
             String href = "";
             boolean foundMatch = false;
 
-            for (TopLevelModel model : models) {
-                // 4.A) if first qualifier matches class name, begin search
-                if (model.getName().equalsIgnoreCase(parts[0])) {
-                    // if only a single qualifier, stope here
-                    if (parts.length == 1) {
-                        href = model.getName() + ".html";
-                        foundMatch = true;
-                        break;
-                    }
+            // 4.A) if first qualifier matches class name, begin search: We've
+            // made the model map in all lowercase to avoid case mis-matching
+            TopLevelModel model = modelMap.get(parts[0].toLowerCase());
 
-                    // 4.B) otherwise keep searching for a match for the second qualifier as long as
-                    // model is not an enum model, in which case there is no searching left to do
-                    if (parts.length >= 2 && model.getModelType() != TopLevelModel.ModelType.ENUM) {
-                        ClassModel Class = (ClassModel) model;
-                        ArrayList<MethodModel> methods = Class.getMethods();
-                        ArrayList<ClassModel> childClasses = Class.getChildClasses();
+            if (model != null) {
+                // if only a single qualifier, stope here
+                if (parts.length == 1) {
+                    href = model.getName() + ".html";
+                    foundMatch = true;
+                }
 
-                        int methodNum = 0;
-                        for (MethodModel method : methods) {
-                            if (method.getMethodName().equalsIgnoreCase(parts[1])) {
-                                // use actual class/methof name to create link to avoid case issues
-                                href = Class.getName() + ".html#" + Class.getName() + "." + method.getMethodName();
-                                // no overload selector, we've made a match!
-                                if (overloadSelector == 0) {
-                                    foundMatch = true;
-                                    break;
-                                }
-                                // If there's an overload suffix to take into account
-                                // ensure that many overloads of the method actually
-                                // exist before commiting to the method link.
-                                else if (overloadSelector > 0 && methodNum != overloadSelector) {
-                                    methodNum++;
-                                    continue;
-                                }
-                                // confirmed overload exists. Match!!
-                                else if (methodNum == overloadSelector) {
-                                    href += '_' + String.valueOf(overloadSelector);
-                                    foundMatch = true;
-                                    break;
-                                }
+                // 4.B) otherwise keep searching for a match for the second qualifier as long as
+                // model is not an enum model, in which case there is no searching left to do
+                else if (parts.length >= 2 && model.getModelType() != TopLevelModel.ModelType.ENUM) {
+                    ClassModel Class = (ClassModel) model;
+                    ArrayList<MethodModel> methods = Class.getMethods();
+                    TreeMap<String, ClassModel> childClasses = Class.getChildClassMap();
+
+                    int methodNum = 0;
+                    for (MethodModel method : methods) {
+                        if (method.getMethodName().equalsIgnoreCase(parts[1])) {
+                            // use actual class/methof name to create link to avoid case issues
+                            href = Class.getName() + ".html#" + Class.getName() + "." + method.getMethodName();
+                            // no overload selector, we've made a match!
+                            if (overloadSelector == 0) {
+                                foundMatch = true;
+                                break;
+                            }
+                            // If there's an overload suffix to take into account
+                            // ensure that many overloads of the method actually
+                            // exist before commiting to the method link.
+                            else if (overloadSelector > 0 && methodNum != overloadSelector) {
+                                methodNum++;
+                                continue;
+                            }
+                            // confirmed overload exists. Match!!
+                            else if (methodNum == overloadSelector) {
+                                href += '_' + String.valueOf(overloadSelector);
+                                foundMatch = true;
+                                break;
                             }
                         }
+                    }
 
-                        // match; go no further
-                        if (foundMatch) break;
+                    // 4.C) if after searching methods a match hasn't been found
+                    // yet see if child class name matches the second qualifier.
+                    if (!foundMatch) {
+                        // ApexDoc2 stores child class name as 'OuterClass.InnerClass'
+                        // recreate that format below to try to make the match with
+                        String childClassName = parts[0] + "." + parts[1];
+                        ClassModel childClass = childClasses.get(childClassName.toLowerCase());
 
-                        // 4.C) if after searching methods a match hasn't been found
-                        // yet see if child class name matches the second qualifier.
-                        for (ClassModel childClass : childClasses) {
-                            // ApexDoc2 stores child class name as 'OuterClass.InnerClass'
-                            // recreate that format below to try to make the match with
-                            String childClassName = parts[0] + "." + parts[1];
-                            if (childClass.getName().equalsIgnoreCase(childClassName)) {
-                                String[] innerClass = childClass.getName().split("\\.");
-                                // 4.D) If match, and only 2 parts, stop here.
-                                if (parts.length == 2) {
-                                    // to ensure the link works, use actual name rather than
-                                    // user provided parts in case casing doesn't match
-                                    href = innerClass[0] + ".html#" + innerClass[0] + "." + innerClass[1];
-                                    foundMatch = true;
-                                    break;
-                                }
-
-                                // 4.E) Otherwise, there must be 3 parts, attempt to match method.
+                        if (childClass != null) {
+                            String[] nameParts = childClass.getName().split("\\.");
+                            // 4.D) If match, and only 2 parts, stop here.
+                            if (parts.length == 2) {
+                                // to ensure the link works, use actual name rather than
+                                // user provided parts in case casing doesn't match
+                                href = nameParts[0] + ".html#" + nameParts[0] + "." + nameParts[1];
+                                foundMatch = true;
+                            }
+                            // 4.E) Otherwise, there must be 3 parts
+                            // attempt to match on child class method.
+                            else {
                                 ArrayList<MethodModel> childMethods = childClass.getMethods();
                                 for (MethodModel method : childMethods) {
                                     if (method.getMethodName().equalsIgnoreCase(parts[2])) {
                                         // same as above, use actual name to avoid casing issues
-                                        href = innerClass[0] + ".html#" + childClass.getName() + "."
+                                        href = nameParts[0] + ".html#" + childClass.getName() + "."
                                                 + method.getMethodName();
                                         foundMatch = true;
                                         break;

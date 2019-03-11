@@ -119,6 +119,7 @@ public class ApexDoc {
         fileManager = new FileManager(targetDirectory);
         ArrayList<File> files = fileManager.getFiles(sourceDirectory);
         ArrayList<TopLevelModel> models = new ArrayList<TopLevelModel>();
+        TreeMap<String, TopLevelModel> modelMap = new TreeMap<String, TopLevelModel>();
 
         fileManager.setDocumentTitle(documentTitle);
 
@@ -132,6 +133,7 @@ public class ApexDoc {
             String fromFileName = fromFile.getAbsolutePath();
             if (fromFileName.endsWith(".cls")) {
                 TopLevelModel model = parseFileContents(fromFileName);
+                modelMap.put(model.getName().toLowerCase(), model);
                 if (model != null) {
                     models.add(model);
                 }
@@ -146,7 +148,7 @@ public class ApexDoc {
         String homeContents = fileManager.parseHTMLFile(homefilepath);
 
         // create our set of HTML files
-        fileManager.createDocs(classGroupMap, models, bannerContents, homeContents);
+        fileManager.createDocs(classGroupMap, modelMap, models, bannerContents, homeContents);
 
         // we are done!
         Utils.log("ApexDoc2 has completed!");
