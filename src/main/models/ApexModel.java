@@ -80,7 +80,7 @@ public class ApexModel {
 
                 // this must be an inner class
                 // or an @IsTest class
-                scope = "private";
+                scope = ApexDoc.PRIVATE;
             }
         }
     }

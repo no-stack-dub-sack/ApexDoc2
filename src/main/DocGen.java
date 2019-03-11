@@ -432,12 +432,12 @@ public class DocGen {
 
         models = new ArrayList<TopLevelModel>(tm.values());
 
-        String contents = "<td width='20%' vertical-align='top' >";
+        // make menu wide enough to always handle 40 char class name limit
+        String contents = "<td width='22%' vertical-align='top' >";
         contents+= "<div class='navbar'>";
         contents+= "<nav role='navigation'>";
         contents+= "<a class='navHeader' id='home' href='javascript:void(0)' onclick=\"goToLocation('index.html');\">";
-        contents+= "Home";
-        contents+= "</a>";
+        contents+= "Home</a>";
 
         // add a bucket ClassGroup for all Classes without a ClassGroup specified
         if (createMiscellaneousGroup) {
