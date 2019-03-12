@@ -243,7 +243,7 @@ public class DocGen {
             : cModel.getMethods();
 
         // start Methods
-        String contents = "<h2 class='subsectionTitle'>Methods</h2><div>";
+        String contents = "<h2 class='subsectionTitle methods'>Methods</h2><div>";
         String tocHTML = "<ul class='methodTOC'>";
         String methodsHTML = "";
 

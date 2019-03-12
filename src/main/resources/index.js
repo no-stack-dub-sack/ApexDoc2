@@ -2,8 +2,9 @@
 /***********************************************************************
 ***********************************************************************/
 const SCOPES = ['global', 'public', 'private', 'protected', 'testMethod', 'webService'];
-const APEX_DOC_MENU = 'apex-doc-2-menu';
-const APEX_DOC_ACTIVE_EL = 'apex-doc-2-active-el';
+const APEX_DOC_MENU = 'APEX_DOC_2_MENU';
+const APEX_DOC_ACTIVE_EL = 'APEX_DOC_2_ACTIVE_EL';
+const APEX_DOC_SCOPE = 'APEX_DOC_2_SCOPE';
 
 // document ready function - removes jQuery dependency
 document.addEventListener("DOMContentLoaded", () => {
@@ -11,9 +12,10 @@ document.addEventListener("DOMContentLoaded", () => {
 	initHighlightJs();
 	renderMenuFromState();
 	setActiveElement();
-	readScopeCookie();
+	readScope();
 	hideAllScopes();
 	showScopes();
+	console.log('okokokokok')
 });
 
 // fire un-mounting functions
@@ -177,24 +179,19 @@ function hideAllScopes() {
 	}
 }
 
-function setScopeCookie() {
+function setScope() {
 	const list = getListScope();
-	let strScope = '';
-	let comma = '';
-	for (let i = 0; i < list.length; i++) {
-		strScope += comma + list[i];
-		comma = ',';
-	}
-	document.cookie = 'scope=' + strScope + '; path=/';
+	const scopes = list.join(',');
+	sessionStorage.setItem(APEX_DOC_SCOPE, scopes);
 }
 
-function readScopeCookie() {
-	const strScope = getCookie('scope');
+function readScope() {
+	const strScope = getScope();
 	if (strScope != null && strScope != '') {
 
 		// first clear all the scope checkboxes
 		let checkboxes = document.querySelectorAll('input[type=checkbox]');
-		checkboxes.forEach(elem => elem.checked = false);
+		checkboxes.forEach(elem => elem.removeAttribute('checked'));
 
 		// now check the appropriate scope checkboxes
 		let list = strScope.split(',');
@@ -208,42 +205,46 @@ function readScopeCookie() {
 	}
 }
 
-function getCookie(cname) {
-	let name = cname + '=';
-	let ca = document.cookie.split(';');
-	for (let i=0; i < ca.length; i++) {
-		let c = ca[i];
-		while (c.charAt(0) === ' ') c = c.substring(1);
-		if (c.indexOf(name) === 0) return c.substring(name.length, c.length);
-	}
-	return '';
+function getScope() {
+	const scope = sessionStorage.getItem(APEX_DOC_SCOPE);
+	return scope ? scope : '';
 }
 
 function toggleScope(scope, isShow) {
-	setScopeCookie();
+	setScope();
+
 	let enumTable = document.querySelectorAll('.properties');
 	let propTable = document.querySelectorAll('.enums');
+	let methodsH2 = document.querySelectorAll('.methods');
+
 	let props = document.querySelectorAll('.property.' + scope);
 	let enums = document.querySelectorAll('.enum.' + scope);
 	let methods = document.querySelectorAll('.method.' + scope);
 	let classes = document.querySelectorAll('.class.' + scope);
+
 	// show or hide all props, classes, & methods of a given scope
 	if (isShow === true) {
-		// show props table if its been hidden
-		toggleVisibility(enumTable, true);
-		toggleVisibility(propTable, true);
+		// show tables if they've been hidden and rows to show
+		props.length && toggleVisibility(enumTable, true);
+		enums.length && toggleVisibility(propTable, true);
+		methods.length && toggleVisibility(methodsH2, true);
+
 		toggleVisibility(props, true);
 		toggleVisibility(enums, true);
 		toggleVisibility(methods, true);
 		toggleVisibility(classes, true);
-	} else {
+	}
+
+	else {
 		toggleVisibility(props, false);
 		toggleVisibility(enums, false);
 		toggleVisibility(methods, false);
 		toggleVisibility(classes, false);
-		// hide props table if there all props have been hidden
-		maybeHideTable('.properties', '.property');
-		maybeHideTable('.enums', '.enum');
+
+		// hide props tables if all rows have been hidden
+		maybeHideElement('.properties', '.property');
+		maybeHideElement('.methods', '.method');
+		maybeHideElement('.enums', '.enum');
 	}
 }
 
@@ -257,8 +258,8 @@ function toggleVisibility(elements, isShow) {
 	}
 }
 
-function maybeHideTable(tableSelector, itemSelector) {
-	let props, table = document.querySelectorAll(tableSelector);
+function maybeHideElement(toHide, itemSelector) {
+	let props, table = document.querySelectorAll(toHide);
 	if (props = document.querySelectorAll(itemSelector)) {
 		for (let prop of props) {
 			if (!prop.classList.contains('hide')) {
