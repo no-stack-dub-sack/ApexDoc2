@@ -15,7 +15,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	readScope();
 	hideAllScopes();
 	showScopes();
-	console.log('okokokokok')
 });
 
 // fire un-mounting functions
@@ -150,10 +149,10 @@ function setActiveElement() {
 function getListScope() {
 	let list = [];
 	let checkboxes = document.querySelectorAll('input[type=checkbox]');
-	checkboxes.forEach(elem => {
-		if (elem.checked) {
-			let str = elem.id;
-			str = str.replace('cbx', '');
+	checkboxes.forEach(checkbox => {
+		if (checkbox.checked && checkbox.id !== 'cbx-all') {
+			let str = checkbox.id;
+			str = str.replace('cbx-', '');
 			list.push(str);
 		}
 	});
@@ -183,6 +182,7 @@ function setScope() {
 	const list = getListScope();
 	const scopes = list.join(',');
 	sessionStorage.setItem(APEX_DOC_SCOPE, scopes);
+	shouldCheckAll(list);
 }
 
 function readScope() {
@@ -191,15 +191,18 @@ function readScope() {
 
 		// first clear all the scope checkboxes
 		let checkboxes = document.querySelectorAll('input[type=checkbox]');
-		checkboxes.forEach(elem => elem.removeAttribute('checked'));
+		checkboxes.forEach(checkbox => checkbox.removeAttribute('checked'));
 
 		// now check the appropriate scope checkboxes
 		let list = strScope.split(',');
 		for (let i = 0; i < list.length; i++) {
-			let id = 'cbx' + list[i];
+			let id = 'cbx-' + list[i];
 			let checkbox = document.getElementById(id);
 			checkbox.setAttribute('checked', true);
 		}
+
+		// check the all box if all scopes have are active
+		shouldCheckAll(list, checkboxes);
 	} else {
 		showAllScopes();
 	}
@@ -210,7 +213,36 @@ function getScope() {
 	return scope ? scope : '';
 }
 
-function toggleScope(scope, isShow) {
+function shouldCheckAll(list, checkboxes) {
+	if (checkboxes === undefined) {
+		checkboxes = document.querySelectorAll('input[type=checkbox]');
+	}
+
+	let allBox = document.getElementById('cbx-all');
+
+	if (checkboxes.length - 1 === list.length) {
+		allBox.setAttribute('checked', true);
+	} else {
+		allBox.removeAttribute('checked');
+	}
+}
+
+function toggleAllScopes(isShow) {
+	const checkboxes = document.querySelectorAll('input[type=checkbox]');
+	// NOTE: for some reason, just checking or un-checking the checkboxes
+	// via attribute and then using hideAllScopes or showAllScopes wasn't
+	// working as expected, use click() to trigger the onclick funcs instead.
+	checkboxes.forEach(checkbox => {
+		if (isShow && !checkbox.checked) {
+			checkbox.click();
+		} else if (!isShow && checkbox.checked) {
+			checkbox.click();
+		}
+	});
+}
+
+function toggleScope(scope, isShow, _this) {
+	console.log(isShow, _this);
 	setScope();
 
 	let enumTable = document.querySelectorAll('.properties');

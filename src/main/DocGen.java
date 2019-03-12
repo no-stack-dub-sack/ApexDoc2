@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.function.Function;
 
@@ -396,11 +397,22 @@ public class DocGen {
         String str = "<tr><td colspan='2' style='text-align: center;' >";
         str += "Show: ";
 
-        for (int i = 0; i < ApexDoc.rgstrScope.length; i++) {
-            str += "<input type='checkbox' checked='checked' id='cbx" + ApexDoc.rgstrScope[i] +
-                    "' onclick='toggleScope(\"" + ApexDoc.rgstrScope[i] + "\", this.checked );'>" +
-                    ApexDoc.rgstrScope[i] + "</input>&nbsp;&nbsp;";
-        }
+        // add toggle all checkbox
+        str += "<input type='checkbox' checked='true' id='cbx-all' ";
+        str += "onclick='toggleAllScopes(this.checked);'>All</input>&nbsp;&nbsp;";
+
+        // add checkboxes for registered scopes
+        List<String> boxes = Arrays
+            .asList(ApexDoc.rgstrScope)
+                .stream()
+                    .map(scope -> {
+                        return "<input type='checkbox' checked='true' id='cbx-" + scope +
+                                "' onclick='toggleScope(\"" + scope + "\", this.checked, this );'>" +
+                                scope + "</input>";
+                    })
+                .collect(Collectors.toList());
+
+        str += String.join("&nbsp;&nbsp;", boxes);
         str += "</td></tr>";
         return str;
     }
