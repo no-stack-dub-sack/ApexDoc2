@@ -29,8 +29,8 @@ window.onbeforeunload = () => {
 ***********************************************************************/
 function initHighlightJs() {
 	const selectors = [
-		'pre code', '.methodSignature', '.methodAnnotations', '.classSignature',
-		'.classAnnotations', '.attrSignature', '.propAnnotations'
+		'pre code', '.methodAnnotations', '.classSignature',
+		'.classAnnotations', '.propAnnotations'
 	];
 	// initialize highlighting for code examples and
 	// signatures for methods, classes, props and enums
@@ -202,7 +202,7 @@ function readScope() {
 		}
 
 		// check the all box if all scopes have are active
-		shouldCheckAll(list, checkboxes);
+		shouldCheckAll(list);
 	} else {
 		showAllScopes();
 	}
@@ -213,10 +213,8 @@ function getScope() {
 	return scope ? scope : '';
 }
 
-function shouldCheckAll(list, checkboxes) {
-	if (checkboxes === undefined) {
-		checkboxes = document.querySelectorAll('input[type=checkbox]');
-	}
+function shouldCheckAll(list) {
+	const checkboxes = document.querySelectorAll('input[type=checkbox]');
 
 	let allBox = document.getElementById('cbx-all');
 
@@ -233,16 +231,17 @@ function toggleAllScopes(isShow) {
 	// via attribute and then using hideAllScopes or showAllScopes wasn't
 	// working as expected, use click() to trigger the onclick funcs instead.
 	checkboxes.forEach(checkbox => {
-		if (isShow && !checkbox.checked) {
-			checkbox.click();
-		} else if (!isShow && checkbox.checked) {
-			checkbox.click();
+		if (checkbox.id !== 'cbx-all') {
+			if (isShow && !checkbox.checked) {
+				checkbox.click();
+			} else if (!isShow && checkbox.checked) {
+				checkbox.click();
+			}
 		}
 	});
 }
 
-function toggleScope(scope, isShow, _this) {
-	console.log(isShow, _this);
+function toggleScope(scope, isShow) {
 	setScope();
 
 	let enumTable = document.querySelectorAll('.properties');

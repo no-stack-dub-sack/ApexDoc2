@@ -257,7 +257,7 @@ public class DocGen {
             String methodId = methodAttributes.get("id");
             String methodName = methodAttributes.get("name");
             boolean isDeprecated = Boolean.valueOf(methodAttributes.get("isDeprecated"));
-            String methodSourceLink = maybeMakeSourceLink(method, cModel.getTopmostClassName(), escapeHTML(method.getNameLine(), false));
+            String methodSourceLink = maybeMakeSourceLink(method, cModel.getTopmostClassName(), Utils.highlightNameLine(escapeHTML(method.getNameLine(), false)));
 
             // open current method
             methodsHTML += "<div class='method " + method.getScope() + "' >";
@@ -398,8 +398,9 @@ public class DocGen {
         str += "Show: ";
 
         // add toggle all checkbox
-        str += "<input type='checkbox' checked='true' id='cbx-all' ";
-        str += "onclick='toggleAllScopes(this.checked);'>All</input>&nbsp;&nbsp;";
+        str += "<input type='checkbox' checked='true' id='cbx-all'";
+        str += "onclick='toggleAllScopes(this.checked);' />";
+        str += "<label for='cbx-all'>All</label>&nbsp;&nbsp;";
 
         // add checkboxes for registered scopes
         List<String> boxes = Arrays
@@ -407,8 +408,8 @@ public class DocGen {
                 .stream()
                     .map(scope -> {
                         return "<input type='checkbox' checked='true' id='cbx-" + scope +
-                                "' onclick='toggleScope(\"" + scope + "\", this.checked, this );'>" +
-                                scope + "</input>";
+                                "' onclick='toggleScope(\"" + scope + "\", this.checked);' />" +
+                                "<label for='cbx-" + scope + "'>" + scope + "</label>";
                     })
                 .collect(Collectors.toList());
 

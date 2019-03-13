@@ -203,9 +203,14 @@ public class Utils {
     * recognized by highlight.js since they are not full declarations.
     */
     public static String highlightNameLine(String nameLine) {
-        List<String> words = Arrays.asList(DocGen.escapeHTML(nameLine, false).split(" "));
-        words.set(words.size() - 1, "<span class='hljs-title'>" + words.get(words.size() - 1) + "<span>");
-        return String.join(" ", words);
+        if (nameLine.contains("(")) {
+            String name = previousWord(nameLine, nameLine.indexOf("("));
+            return nameLine.replace(name, "<span class='hljs-title'>" + name + "</span>");
+        } else {
+            List<String> words = Arrays.asList(DocGen.escapeHTML(nameLine, false).split(" "));
+            words.set(words.size() - 1, "<span class='hljs-title'>" + words.get(words.size() - 1) + "<span>");
+            return String.join(" ", words);
+        }
     }
 
     public static void log(Exception ex) {
