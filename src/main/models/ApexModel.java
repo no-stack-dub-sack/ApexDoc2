@@ -215,9 +215,10 @@ public class ApexModel {
     // make sure path relative to target
     // directory exists for @group-content token
     private boolean pathExists(String line) {
-        String root = ApexDoc.targetDirectory.endsWith("/")
-            ? ApexDoc.targetDirectory + HTML.ROOT_DIRECTORY + "/"
-            : ApexDoc.targetDirectory + "/" + HTML.ROOT_DIRECTORY + "/";
+        String root = ApexDoc.targetDirectory;
+        if (!root.endsWith("/") || !root.endsWith("\\")) {
+            root += "/";
+        }
 
         String path = root + line.trim();
         if (line.trim().endsWith("html") && new File(path).exists()) {

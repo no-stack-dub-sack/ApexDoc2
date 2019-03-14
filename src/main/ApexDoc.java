@@ -42,7 +42,8 @@ public class ApexDoc {
     // non-constant properties
     public static String[] rgstrScope;
     private static FileManager fileManager;
-    public static String targetDirectory = "";
+    public static String targetDirectory;
+    private static String sourceDirectory;
 
     static {
         // initialize scopes const
@@ -68,8 +69,7 @@ public class ApexDoc {
 
     // public main routine which is used by both command line invocation and
     // Eclipse PlugIn invocation
-    public static void RunApexDoc(String[] args) {
-        String sourceDirectory = "";
+    public static void RunApexDoc(String[] args) {;
         String homefilepath = "";
         String bannerFilePath = "";
         String hostedSourceURL = "";
@@ -83,11 +83,11 @@ public class ApexDoc {
             if (args[i] == null) {
                 continue;
             } else if (args[i].equalsIgnoreCase("-s")) {
-                sourceDirectory = args[++i];
+                sourceDirectory = directoryGuard(args[++i], "source_directory");
             } else if (args[i].equalsIgnoreCase("-u")) {
                 hostedSourceURL = sourceURLGuard(args[++i]);
             } else if (args[i].equalsIgnoreCase("-t")) {
-                targetDirectory = args[++i];
+                targetDirectory = directoryGuard(args[++i], "target_directory");
             } else if (args[i].equalsIgnoreCase("-h")) {
                 homefilepath = args[++i];
             } else if (args[i].equalsIgnoreCase("-b")) {
@@ -106,6 +106,10 @@ public class ApexDoc {
                 System.exit(-1);
             }
         }
+
+        // ensure our required arguments are present
+        directoryGuard(sourceDirectory, "source_directory");
+        directoryGuard(targetDirectory, "target_directory");
 
         // default scope to global and public if not specified
         if (rgstrScope == null || rgstrScope.length == 0) {
@@ -411,7 +415,6 @@ public class ApexDoc {
                     continue;
                 }
 
-
                 // must be a property
                 PropertyModel pModel = new PropertyModel(comments, line, lineNum);
                 Utils.parseAnnotations(previousLine, line, pModel);
@@ -432,8 +435,19 @@ public class ApexDoc {
     }
 
     // argument guards
+    private static String directoryGuard(String path, String arg) throws IllegalArgumentException {
+        if (path != null && new File(path).exists()) {
+            return path;
+        } else {
+            throw new IllegalArgumentException(
+                "Value for <" + arg + "> argument: '" + path +
+                "' is invalid. Please provide a valid diectory."
+            );
+        }
+    }
+
     private static String sourceURLGuard(String string) throws IllegalArgumentException {
-        if (Utils.isURL(string)) {
+        if (string != null && Utils.isURL(string)) {
             return string.trim();
         } else {
             throw new IllegalArgumentException(
@@ -445,7 +459,7 @@ public class ApexDoc {
     }
 
     private static boolean showTOCGuard(String string) throws IllegalArgumentException {
-        if (string.equalsIgnoreCase("true") || string.equalsIgnoreCase("false")) {
+        if (string != null && (string.equalsIgnoreCase("true") || string.equalsIgnoreCase("false"))) {
             return Boolean.valueOf(string);
         } else {
             throw new IllegalArgumentException(
@@ -471,7 +485,7 @@ public class ApexDoc {
     }
 
     private static String sortOrderGuard(String sortOrder) throws IllegalArgumentException {
-        if (sortOrder.equalsIgnoreCase(ORDER_LOGICAL) || sortOrder.equalsIgnoreCase(ORDER_ALPHA)) {
+        if (sortOrder != null && (sortOrder.equalsIgnoreCase(ORDER_LOGICAL) || sortOrder.equalsIgnoreCase(ORDER_ALPHA))) {
             return sortOrder.toLowerCase();
         } else {
             throw new IllegalArgumentException(

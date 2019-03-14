@@ -37,12 +37,6 @@ public class FileManager {
 
     private boolean createHTML(TreeMap<String, String> mapFNameToContent) {
         try {
-            if (path.endsWith("/") || path.endsWith("\\")) {
-                path += HTML.ROOT_DIRECTORY; // + "/" + fileName + ".html";
-            } else {
-                path += "/" + HTML.ROOT_DIRECTORY; // + "/" + fileName + ".html";
-            }
-
             (new File(path)).mkdirs();
 
             int i = 0;

@@ -27,7 +27,6 @@ public class HTML {
         "<center class='footer'><a href='https://github.com/no-stack-dub-sack/ApexDoc2' " +
         "target='_blank'>Powered By ApexDoc2</a></center></body></html>";
 
-    public static final String ROOT_DIRECTORY = "ApexDocumentation";
     public static final String DEFAULT_HOME_CONTENTS = "<h2>Project Home</h2>";
 
     public static final String EXTERNAL_LINK =

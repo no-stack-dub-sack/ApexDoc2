@@ -104,16 +104,6 @@ public class DocGen {
         return contents;
     }
 
-    private static String wrapInDetailsTag(String contents, String header, String className) {
-        String wrapped = "<details class='" + className + "' open>";
-        wrapped += "<summary>";
-        wrapped += header;
-        wrapped += "</summary>";
-        wrapped += contents;
-        wrapped += "</details>";
-        return wrapped;
-    }
-
     private static String documentProperties(ClassModel cModel) {
         String contents = "";
         // retrieve properties to work with in the order user specifies
@@ -383,6 +373,16 @@ public class DocGen {
         result = result.replaceAll("&#60;br\\s?/?&#62;", "<br>");
 
         return result;
+    }
+
+    private static String wrapInDetailsTag(String contents, String header, String className) {
+        String wrapped = "<details class='" + className + "' open>";
+        wrapped += "<summary>";
+        wrapped += header;
+        wrapped += "</summary>";
+        wrapped += contents;
+        wrapped += "</details>";
+        return wrapped;
     }
 
     private static String wrapInlineCode(String html) {
