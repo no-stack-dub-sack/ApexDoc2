@@ -61,11 +61,12 @@ body {
     border-top: 1px solid var(--grey-blue);
     font-size: 120%;
     padding: 2px;
-    margin: 0 0 10px 0;
+    margin: 0;
 }
 
 .subsectionContainer {
     padding: 0 0 0 14px;
+    margin-top: 10px;
 }
 
 /* the horizontal header for each Method */
@@ -175,6 +176,10 @@ most signatures will fit on a single lin */
 }
 
 /* method table of contents related classes */
+.methodsContainer {
+    margin-bottom: 10px;
+}
+
 ul.methodTOC {
     margin-top: 0;
 }
@@ -255,13 +260,26 @@ ul.methodTOC {
     margin: 0 0 0 1em;
 }
 
-/* SIDEBAR CSS */
+/* Style Details Caret Element */
 details summary::-webkit-details-marker {
     float: right;
     margin-top: 5px;
     color: black !important;
 }
 
+.contentTd details.section summary::-webkit-details-marker {
+    color: var(--light-grey) !important;
+}
+
+.contentTd details.subSection summary::-webkit-details-marker {
+    color: black !important;
+}
+
+.contentTd details summary::-webkit-details-marker {
+    margin-top: 10px;
+}
+
+/* SIDEBAR CSS */
 .navbar {
     font-size: .95em;
 }

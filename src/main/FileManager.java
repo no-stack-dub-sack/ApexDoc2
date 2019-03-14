@@ -124,7 +124,7 @@ public class FileManager {
                         DocGen.documentClass(cmChild, modelMap, models)).collect(Collectors.toList());
 
                     // join and concat with contents
-                    contents += "<p/>" + String.join("<p/>", childClassHTML);
+                    contents += String.join("", childClassHTML);
 
                 } else if (model.getModelType() == TopLevelModel.ModelType.ENUM) {
                     EnumModel eModel = (EnumModel) model;

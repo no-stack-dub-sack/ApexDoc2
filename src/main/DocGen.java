@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.function.Function;
 
@@ -18,9 +17,12 @@ public class DocGen {
     public static TreeMap<String, String> usedIds = new TreeMap<String, String>();
 
     public static String documentClass(ClassModel cModel, TreeMap<String, TopLevelModel> modelMap, ArrayList<TopLevelModel> models) {
-        String contents = "";
+        boolean hasSource = hostedSourceURL != null && !hostedSourceURL.equals("");
+        String sourceLinkIcon = hasSource ? "<span>" + HTML.EXTERNAL_LINK + "</span>" : "";
+        String sectionSourceLink = maybeMakeSourceLink(cModel, cModel.getTopmostClassName(), escapeHTML(cModel.getName(), false));
+        String header = "<h2 class='sectionTitle' id='" + cModel.getName() + "'>" + sectionSourceLink + sourceLinkIcon +"</h2>";
 
-        contents += documentTopLevelAttributes(cModel, modelMap, models, cModel.getTopmostClassName(), null);
+        String contents = documentTopLevelAttributes(cModel, modelMap, models, cModel.getTopmostClassName(), null);
 
         if (cModel.getProperties().size() > 0) {
             contents += documentProperties(cModel);
@@ -34,11 +36,14 @@ public class DocGen {
             contents += documentMethods(cModel, modelMap, models);
         }
 
-        return contents;
+        return wrapInDetailsTag(contents, header, "section");
     }
 
     public static String documentEnum(EnumModel eModel, TreeMap<String, TopLevelModel> modelMap, ArrayList<TopLevelModel> models) {
-        String contents = "";
+        boolean hasSource = hostedSourceURL != null && !hostedSourceURL.equals("");
+        String sourceLinkIcon = hasSource ? "<span>" + HTML.EXTERNAL_LINK + "</span>" : "";
+        String sectionSourceLink = maybeMakeSourceLink(eModel, eModel.getName(), escapeHTML(eModel.getName(), false));
+        String contents = "<h2 class='sectionTitle' id='" + eModel.getName() + "'>" + sectionSourceLink + sourceLinkIcon +"</h2>";
 
         String values = "<p />";
         values += "<table class='attrTable'>";
@@ -52,14 +57,8 @@ public class DocGen {
     }
 
     private static String documentTopLevelAttributes(TopLevelModel model, TreeMap<String, TopLevelModel> modelMap, ArrayList<TopLevelModel> models, String className, String additionalContent) {
-        String sectionSourceLink = maybeMakeSourceLink(model, className, escapeHTML(model.getName(), false));
         String classSourceLink = maybeMakeSourceLink(model, className, escapeHTML(model.getNameLine(), false));
-        boolean hasSource = hostedSourceURL != null && !hostedSourceURL.equals("");
         String contents = "";
-
-
-        contents += "<h2 class='sectionTitle' id='" + model.getName() + "'>" + sectionSourceLink +
-        (hasSource ? "<span>" + HTML.EXTERNAL_LINK + "</span>" : "") +"</h2>";
 
         if (model.getAnnotations().size() > 0) {
             contents += "<div class='classAnnotations'>" + String.join(" ", model.getAnnotations()) + "</div>";
@@ -105,6 +104,16 @@ public class DocGen {
         return contents;
     }
 
+    private static String wrapInDetailsTag(String contents, String header, String className) {
+        String wrapped = "<details class='" + className + "' open>";
+        wrapped += "<summary>";
+        wrapped += header;
+        wrapped += "</summary>";
+        wrapped += contents;
+        wrapped += "</details>";
+        return wrapped;
+    }
+
     private static String documentProperties(ClassModel cModel) {
         String contents = "";
         // retrieve properties to work with in the order user specifies
@@ -113,9 +122,8 @@ public class DocGen {
             : cModel.getProperties();
 
         // start Properties
-        contents += "<h2 class='subsectionTitle properties'>Properties</h2>" +
-                    "<div class='subsectionContainer'> " +
-                    "<table class='attrTable properties'>";
+        contents += "<div class='subsectionContainer'>";
+        contents += "<table class='attrTable properties'>";
 
         // iterate once first to determine if we need to
         // build annotations and and description columns
@@ -148,8 +156,10 @@ public class DocGen {
             contents += "</tr>";
         }
         // end Properties
-        contents += "</table></div><p/>";
-        return contents;
+        contents += "</table></div>";
+        contents += "<p/>";
+
+        return wrapInDetailsTag(contents, "<h2 class='subsectionTitle properties'>Properties</h2>", "subSection");
     }
 
     private static String documentInnerEnums(ClassModel cModel) {
@@ -160,8 +170,7 @@ public class DocGen {
             : cModel.getEnums();
 
         // start Properties
-        contents += "<h2 class='subsectionTitle enums'>Enums</h2>" +
-                    "<div class='subsectionContainer'> " +
+        contents += "<div class='subsectionContainer'> " +
                     "<table class='attrTable enums'>";
 
         // iterate once first to determine if we need to build the third column in the table
@@ -190,7 +199,7 @@ public class DocGen {
         // end Properties
         contents += "</table></div><p/>";
 
-        return contents;
+        return wrapInDetailsTag(contents, "<h2 class='subsectionTitle enums'>Enums</h2>", "subSection");
     }
 
     private static String documentMethods(ClassModel cModel, TreeMap<String, TopLevelModel> modelMap, ArrayList<TopLevelModel> models) {
@@ -244,7 +253,7 @@ public class DocGen {
             : cModel.getMethods();
 
         // start Methods
-        String contents = "<h2 class='subsectionTitle methods'>Methods</h2><div>";
+        String contents = "<div class='methodsContainer'>";
         String tocHTML = "<ul class='methodTOC'>";
         String methodsHTML = "";
 
@@ -351,7 +360,7 @@ public class DocGen {
         contents += methodsHTML;
         contents += "</div>";
 
-        return contents;
+        return wrapInDetailsTag(contents, "<h2 class='subsectionTitle methods'>Methods</h2>", "subSection");
     }
 
     public static String escapeHTML(String s, boolean wrapBackticks) {
