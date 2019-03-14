@@ -1,7 +1,6 @@
 package main.models;
 
 import main.ApexDoc;
-import main.HTML;
 import main.Utils;
 
 import java.io.File;
