@@ -15,6 +15,7 @@ import java.util.TreeMap;
 public class ApexDoc {
 
     // constants
+    private static final String APEX_DOC_VERSION = "1.0.0";
     private static final String COMMENT_CLOSE = "*/";
     private static final String COMMENT_OPEN = "/**";
     private static final String GLOBAL = "global";
@@ -77,6 +78,11 @@ public class ApexDoc {
         String sortOrder = ORDER_ALPHA;
 
         boolean showMethodTOCDescription = true;
+
+        if (args[0].equalsIgnoreCase("--v") && args.length == 1) {
+            Utils.log("ApexDoc2 version " + APEX_DOC_VERSION);
+            return;
+        }
 
         // parse command line parameters
         for (int i = 0; i < args.length; i++) {

@@ -227,7 +227,7 @@ public class Utils {
     public static void printHelp() {
         log("\nApexDoc2 - a tool for generating documentation from Salesforce Apex code class files.\n");
         log("    Invalid Arguments detected.  The correct syntax is:\n");
-        log("apexdoc2 -s <source_directory> -t <target_directory> [-u <source_url>] [-h <home_page>] [-b <banner_page>] [-p <scope>] [-d <document_title>] [-c <toc_descriptions>] [-o <sort_order>]\n");
+        log("ApexDoc2 -s <source_directory> -t <target_directory> [-u <source_url>] [-h <home_page>] [-b <banner_page>] [-p <scope>] [-d <document_title>] [-c <toc_descriptions>] [-o <sort_order>]\n");
         log("(S)ource Directory  - The folder location which contains your Apex .cls classes");
         log("(T)arget_directory  - Specifies your target folder where documentation will be generated.");
         log("Source (U)RL        - Optional. Specifies a URL where the source is hosted (so ApexDoc2 can provide links to your source).");

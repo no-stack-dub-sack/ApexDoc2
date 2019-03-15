@@ -27,13 +27,24 @@ As the Salesforce Foundation was [no longer able to offer direct support for rep
 | -d *(d)oc_title* | The value for the document's &lt;title&gt; attribute.  Defaults to 'ApexDocs'. Optional.|
 | -c *to(c)_descriptions* | If 'true', will hide the method's description snippet in the class's table of contents. Defaults to 'false'. Optional.|
 | -o *sort_(o)rder* | The order in which class methods, properties, and inner classes are presented. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. Optional.|
+| --v | Used alone; print the ApexDoc2 version. E.g. `ApexDoc2 --v` |
 
 ## Usage
-Copy apexdoc2.jar file to your local machine, somewhere on your path.  Each release tag in gitHub has the matching apexdoc2.jar attached to it.  Make sure that java is on your path.  Invoke ApexDoc2 like this example:
+For easiest usage, we recommend creating a simple batch file to run the program. Copy ApexDoc2.jar file to your local machine (each release tag in gitHub has the matching apexdoc2.jar attached to it). Make sure that java is on your path, and create a batch file called 'ApexDoc2' containing the following:
+
+```batch
+@echo off
+REM File Name: ApexDoc2.bat
+REM replace the path below with the path where the ApexDoc2.jar file lives on your machine
+java -jar C:\Users\path\to\ApexDoc2.jar %*
 ```
-java -jar apexdoc.jar
+
+Then add the directory where the batch file lives to your PATH environment variable, and you will be able to call ApexDoc2 like so:
+
+```shell
+ApexDoc2
     -s C:\Users\pweinberg\Workspaces\MyProject\src\classes
-    -t 'C:\Users\pweinberg\Documentation\My Project Docs'
+    -t "C:\Users\pweinberg\Documentation\My Project Docs"
     -p global;public;private;testmethod;webService
     -h C:\Users\pweinberg\Documentation\assets\homepage.htm
     -b C:\Users\pweinberg\Documentation\assets\projectheader.htm
@@ -76,7 +87,7 @@ In addition to the `@token`s listed above, there are a few other special tokens 
 ### Class Comments (includes class-level Interfaces and Enums)
 Located in the lines above any top-level type that lives within a .cls file, or in the lines above inner classes and interfaces.
 
-```
+```apex
 /**
 * @author P. Weinberg
 * @date 2014
@@ -97,7 +108,7 @@ public abstract class JobPlugin implements JobPluggable {
 ### Property and Inner Enum Comments
 These are the simplest comment blocks. They only accept description tokens (the token itself may optionally be omitted for brevity). For properties to be detected by ApexDoc2, they **must** be given an explicit access modifier or have signatures beginning with the `static` keywork. **Other implicitly private properties will not be detected.**
 
-```
+```apex
     /** The countries in which our accounts are located */
     public enum Countries { USA, CANADA, MEXICO, PERU, CHINA, RUSSIA, INDIA }
 
@@ -112,7 +123,7 @@ These are the simplest comment blocks. They only accept description tokens (the 
 ### Method Comments
 In order for ApexDoc2 to best identify class methods, the method line must contain an explicit access modifier / scope: global, public, private, testMethod, webService (some implicitly private methods can be detected, but be wary of this. See the note on implicit privacy in the [Tips](#Tips) section below).
 
-```
+```apex
     /**
     * @description A utility method for returning field describe data
     * @param objectName the name of the object to look up
