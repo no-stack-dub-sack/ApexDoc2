@@ -193,7 +193,7 @@ public class ApexModel {
                 } else if (currBlock.equals(DESCRIPTION)) {
                     description += (!description.isEmpty() ? " " : "") + line.trim();
                 } else if (currBlock.equals(GROUP)) {
-                    groupName += (!groupName.isEmpty() ? " " : "") + line.trim();
+                    groupName += line.trim();
                 } else if (currBlock.equals(EXAMPLE)) {
                     example += (!example.isEmpty() ? "\n" : "") + line;
                 } else if (currBlock.equals(GROUP_CONTENT)) {
@@ -220,7 +220,7 @@ public class ApexModel {
         }
 
         String path = root + line.trim();
-        if (line.trim().endsWith("html") && new File(path).exists()) {
+        if (line.trim().matches(".*\\.s?html?$") && new File(path).exists()) {
             return true;
         } else {
             Utils.log("\nWARNING: @group-content path: '" + path + "' is invalid!\n");

@@ -1,6 +1,6 @@
 ***
 
-**NOTE:** ApexDoc2 has not been released! See the CHANGELOG for updates that will be forthcoming in the next release. This note will be removed with the first release since forking ApexDoc.
+**NOTE:** ApexDoc2 has not yet been released! See the CHANGELOG for updates that will be forthcoming in the next release. This note will be removed with the first release since forking ApexDoc.
 
 ***
 
@@ -29,16 +29,16 @@ As the Salesforce Foundation was [no longer able to offer direct support for rep
 | -o *sort_(o)rder* | The order in which class methods, properties, and inner classes are presented. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. Optional.|
 
 ## Usage
-Copy apexdoc.jar file to your local machine, somewhere on your path.  Each release tag in gitHub has the matching apexdoc.jar attached to it.  Make sure that java is on your path.  Invoke ApexDoc2 like this example:
+Copy apexdoc2.jar file to your local machine, somewhere on your path.  Each release tag in gitHub has the matching apexdoc2.jar attached to it.  Make sure that java is on your path.  Invoke ApexDoc2 like this example:
 ```
 java -jar apexdoc.jar
-    -s C:\Users\pweinberg\Workspaces\Force.com IDE\Cumulus3\src\classes
-    -t C:\Users\pweinberg\Dropbox\Cumulus\ApexDoc2
+    -s C:\Users\pweinberg\Workspaces\MyProject\src\classes
+    -t 'C:\Users\pweinberg\Documentation\My Project Docs'
     -p global;public;private;testmethod;webService
-    -h C:\Users\pweinberg\Dropbox\Cumulus\ApexDoc2\homepage.htm
-    -b C:\Users\pweinberg\Dropbox\Cumulus\ApexDoc2\projectheader.htm
-    -u http://github.com/SalesforceFoundation/Cumulus/blob/dev/src/classes/
-    -d "My Docs Title"
+    -h C:\Users\pweinberg\Documentation\assets\homepage.htm
+    -b C:\Users\pweinberg\Documentation\assets\projectheader.htm
+    -u http://github.com/NotARealAccount/MyProject/blob/dev/src/classes/
+    -d "My Apex Project"
     -o logical
     -c false
 ```
@@ -48,13 +48,25 @@ A favicon has been added with ApexDoc2, so if you'd like to use your own favicon
 ## Documenting Class Files
 ApexDoc2 scans each class file, and looks for comment blocks with special keywords to identify the documentation to include for a given class, property, enum, or method.  The comment blocks must always begin with /** (or additional *'s) and can cover multiple lines.  Each line must start with * (or whitespace and then *).  The comment block ends with */.  Special tokens are called out with @token.
 
-### Tips
-- `@description` tokens are optional; you may omit them.
-- Class and method annotations such as `@IsTest` or `@Future` will be displayed above the class or method's signature, while property annotations such as `@TestVisible` or `@InvocableProperty` will be displayed in the generated properties table.
-- **Important note** on implicitly privacy: For ApexDoc2 to best document your class files, it is generally best practice to always give your classes, properties, interfaces, and emums explicit access modifiers. That said, ApexDoc2 does have some ability to detect implicitly private types and methods. For instance, implicitly private `@IsTest` and inner classes, or methods whose signatures start with keywords like `void`, `abstract`, `virtual`, or with primitive types or collections can still be detected and will be assumed to be private. However, in order to not confuse properties with local variables, properties *must* start with access modifiers or the `static` keyword in order to be detected. To best ensure accurate documentation, please always use access modifiers, which will only help to make your code more readable and easily understood!
+### Documentation Tokens
+Note that in the table below, the 'Class' column includes any top-level types that live within a .cls file, including interfaces and enums. Tokens are all optional and are located in the lines above the type's declaration.
+
+| Token | Description | Class | Method | Enum | Property |
+|-------|-------------|-------|--------|------|----------|
+| **@description** | A description or overview of the code you are documenting. | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| **@group** | The group to display a class under in the menu hierarchy. Un-grouped classes will be placed under 'Miscellaneous'. | :heavy_check_mark: | :x: | :x: | :x: |
+| **@group-content** | A relative path (to the provided source directory) to a static HTML file that provides content about the group. The group will be hyperlinked to this content, which will be parsed and placed into the documentation's content window. | :heavy_check_mark: | :x: | :x: | :x: |
+| **@author** | The author of a class or method. | :heavy_check_mark: | :heavy_check_mark: | :x: | :x: |
+| **@date** | The date a class or method was first implemented. | :heavy_check_mark: | :heavy_check_mark: | :x: | :x: |
+| **@deprecated** | Indicates class or method should no longer be used; message should indicate replacement path. | :heavy_check_mark: | :heavy_check_mark: | :x: | :x: |
+| **@example** | Example code usage. Start your example on the line below the token. Code will be given syntax highlighting complements of [highlight.js](https://highlightjs.org/) and be wrapped in `<pre><code>` tags to preserve whitespace. | :heavy_check_mark: | :heavy_check_mark: | :x: | :x: |
+| **@param** *param name* | A description of what a method's parameter does. | :x: | :heavy_check_mark: | :x: | :x: |
+| **@return** | A description of a method's return value. | :x: | :heavy_check_mark: | :x: | :x: |
+| **@exception** | A description of or list of exceptions that a method throws. | :x: | :heavy_check_mark: | :x: | :x: |
+| **@see** | A comma separated list of URLs, markdown URLs (e.g. '\[ApexDoc2\]\(https://github.com/no-stack-dub-sack/ApexDoc2)', or fully qualified class or method names. The latter creates link(s) to that class or method in the documentation. The name must be a fully qualified name, even if its a reference to another method in the same class, e.g. 'Class.Method', 'Class.InnerClass', 'Class.InnerClass.InnerClassMethod'. For overloaded constructors and methods, the `@see` token accepts a special syntax: 'MyClass.MyInnerClass.MyOverloadedMethod[3]' where '3' is a zero based index indicating the overloaded method to link to (this would indicate the 4th overload of `MyOverloadedMethod`). When a link cannot be made, a tooltip will be shown on hover. | :heavy_check_mark: | :heavy_check_mark: | :x: | :x: |
 
 ### Special Tokens
-In addition to the `@token`s listed below for each category, there are a few other special tokens to be aware of:
+In addition to the `@token`s listed above, there are a few other special tokens to be aware of:
 
 | Token | Description |
 |-------|-------------|
@@ -62,77 +74,47 @@ In addition to the `@token`s listed below for each category, there are a few oth
 | &lt;br&gt; | The &lt;br&gt; tag can be used to render line breaks in your comments when more complex formatting is needed. &lt;br /&gt; is also acceptable. |
 
 ### Class Comments (includes class-level Interfaces and Enums)
-In other words, includes any top-level types that live within a .cls file. Located in the lines above the type's declaration.  The special tokens are all optional.
+Located in the lines above any top-level type that lives within a .cls file, or in the lines above inner classes and interfaces.
 
-| Token | Description |
-|-------|-------------|
-| @author | The author of the class |
-| @date | The date the class was first implemented |
-| @group | A group to display this class under, in the menu hierarchy|
-| @group-content | A relative path (from the classes source directory) to a static html file that provides content about the group|
-| @description | One or more lines that provide an overview of the class|
-| @deprecated | Indicates class should no longer be used; message should indicate replacement |
-| @see | A comma separated list of fully qualified class or method names; creates link(s) to that class or method in the documentation. The name must be a fully qualified name, even if its a reference to another method in the same class, e.g. Class.Method, Class.InnerClass, Class.InnerClass.InnerClassMethod|
-| @example | Example code usage. Code will be given syntax highlighting complements of [highlight.js](https://highlightjs.org/) and be wrapped in `<pre><code>` tags to preserve whitespace|
-
-Example
 ```
 /**
-* @author Salesforce.com Foundation
+* @author P. Weinberg
 * @date 2014
 *
-* @group Accounts
-* @group-content ../../ApexDocContent/Accounts.htm
-* @deprecated Replaced by AccountTriggerHandler
-* @see AccountTriggerHandler
+* @group Core Framework
+* @group-content ../../ApexDocContent/Core_Framework.html
+* @deprecated Replaced by `JobExtension`
+* @see `JobExtension`, `JobPluggable`
 *
-* @description Trigger Handler on Accounts that handles ensuring the correct `System__c`
-* flags are set on our special accounts (Household, One-to-One).
+* @description This class is the base class from which all 'Plugins' will extend. It provides a suite of abstract and
+* virtual methods, which implement the `JobPluggable` interface.
 * &lt;br&gt;&lt;br&gt;
-* Also detects changes on Household Account that requires name updating.
+* To ensure flexibility, all methods can be overridden to accommodate a particular plugin's needs.
 */
-public with sharing class ACCT_Accounts_TDTM extends TDTM_Runnable {
+public abstract class JobPlugin implements JobPluggable {
 ```
 
 ### Property and Inner Enum Comments
-Located in the lines above a property or an enum nested inside a class.  The special tokens are all optional.
+These are the simplest comment blocks. They only accept description tokens (the token itself may optionally be omitted for brevity). For properties to be detected by ApexDoc2, they **must** be given an explicit access modifier or have signatures beginning with the `static` keywork. **Other implicitly private properties will not be detected.**
 
-| Token | Description |
-|-------|-------------|
-| @description | one or more lines that describe the property|
-
-Examples
 ```
     /** The countries in which our accounts are located */
     public enum Countries { USA, CANADA, MEXICO, PERU, CHINA, RUSSIA, INDIA }
 
     /**
-    * Specifies whether state and country picklists are enabled in this org.
-    * returns true if enabled.
+    * @description Specifies whether state and country picklists are enabled in this org.
+    * Returns true if enabled.
     */
     public static Boolean isStateCountryPicklistsEnabled {
         get {
 ```
 
 ### Method Comments
-In order for ApexDoc2 to identify class methods, the method line must contain an explicit scope (global, public, private, testMethod, webService).  The comment block is located in the lines above a method.  The special tokens are all optional.
+In order for ApexDoc2 to best identify class methods, the method line must contain an explicit access modifier / scope: global, public, private, testMethod, webService (some implicitly private methods can be detected, but be wary of this. See the note on implicit privacy in the [Tips](#Tips) section below).
 
-| Token | Description |
-|-------|-------------|
-| @author | The author of the method |
-| @date | The date the method was first implemented |
-| @description | One or more lines that provide an overview of the method|
-| @param *param name* | A description of what the parameter does|
-| @return | A description of the return value from the method|
-| @deprecated | Indicates method should no longer be used; message should indicate replacement |
-| @exception | A list of exceptions a method throws and/or description of Exception(s) that might be thrown |
-| @see | A comma separated list of fully qualified class or method names; creates link(s) to that class or method in the documentation. The name must be a fully qualified name, even if its a reference to another method in the same class, e.g. Class.Method, Class.InnerClass, Class.InnerClass.InnerClassMethod|
-| @example | Example code usage. Code will be given syntax highlighting complements of [highlight.js](https://highlightjs.org/) and be wrapped in `<pre><code>` tags to preserve whitespace|
-
-Example
 ```
     /**
-    * @description Returns field describe data
+    * @description A utility method for returning field describe data
     * @param objectName the name of the object to look up
     * @param fieldName the name of the field to look up
     * @return the describe field result for the given field
@@ -147,3 +129,12 @@ Example
     */
     public static Schema.DescribeFieldResult getFieldDescribe(String objectName, String fieldName) {
 ```
+
+### Tips
+- `@description` tokens are optional; you may omit them. ApexDoc2 comments without a token will be interpreted as the type's description.
+- All tokens except `@group`, and `@group-name` support comments over multiple lines.
+- Class and method annotations such as `@IsTest` or `@Future` will be displayed above the class or method's signature, while property annotations such as `@TestVisible` or `@InvocableProperty` will be displayed in the generated properties table.
+- **Important note** on implicitly privacy: For ApexDoc2 to best document your class files, it is generally best practice to always give your classes, methods, properties, interfaces, and emums explicit access modifiers. That said, ApexDoc2 does have some ability to detect implicitly private types and methods. For instance, implicitly private `@IsTest` and inner classes, or methods whose signatures start with keywords like `void`, `abstract`, `override` and `virtual`, or with collections or primitive types can still be detected and will be assumed to be private (methods without access modifiers and whose signatures start with custom types or complex built-in types e.g. `Messaging.SendEmailResult[]` will not be detectable). However, in order to not confuse properties with local variables, properties *must* start with access modifiers or the `static` keyword in order to be detected. To best ensure accurate documentation, please always use access modifiers, which can only help to keep your code readable and easily understood!
+
+## Support
+ApexDox2 uses some modern HTML5 tags and JavaScript features, so unfortunately Internet Explorer is not supported. If IE supported the HTML5 tags we use (namely `<summary>` and `<details>` for easy, script-less collapsible menus and sections), I would have made an effort to keep the JS supportable by IE, but since IE doesn't support the basic building blocks of the documentation, it made no sense to hold back on the JavaScript, even though there's very little of it.
