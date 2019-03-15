@@ -1,220 +1,208 @@
 package main;
 
+import main.models.*;
+import main.models.EnumModel;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Stack;
 import java.util.TreeMap;
 
 public class ApexDoc {
 
-    public static FileManager fm;
-    public static String[] rgstrScope;
-    public static String[] rgstrArgs;
+    // constants
+    private static final String APEX_DOC_VERSION = "1.0.0";
+    private static final String COMMENT_CLOSE = "*/";
+    private static final String COMMENT_OPEN = "/**";
+    private static final String GLOBAL = "global";
+    private static final String PUBLIC = "public";
+    private static final String WEB_SERVICE = "webService";
+    private static final String PROTECTED = "protected";
 
-    public ApexDoc() {
-        try {
-            File file = new File("apex_doc_log.txt");
-            FileOutputStream fos = new FileOutputStream(file);
-            PrintStream ps = new PrintStream(fos);
-            System.setOut(ps);
-        } catch (Exception ex) {
-        }
+    public static final String PRIVATE = "private";
+    public static final String TEST_METHOD = "testMethod";
+    public static final String CLASS = "class";
+    public static final String ENUM = "enum";
+    public static final String INTERFACE = "interface";
+    public static final String ORDER_ALPHA = "alpha";
+    public static final String ORDER_LOGICAL = "logical";
+
+    // use special token for marking the end of a doc block
+    // comment. Now that we're supporting multi-line for all
+    // tokens and using a common comment parser, the parser
+    // must know when a block ends in order to prevent weird
+    // behavior when lesser scopes than available are indicated
+    // e.g. private;public when there are protected methods
+    public static final String DOC_BLOCK_BREAK = "@@BREAK@@";
+    private static final ArrayList<String> SCOPES;
+
+    // non-constant properties
+    public static String[] rgstrScope;
+    private static FileManager fileManager;
+    public static String targetDirectory;
+    private static String sourceDirectory;
+
+    static {
+        // initialize scopes const
+        SCOPES = new ArrayList<String>();
+        SCOPES.add(GLOBAL);
+        SCOPES.add(PUBLIC);
+        SCOPES.add(PRIVATE);
+        SCOPES.add(PROTECTED);
+        SCOPES.add(WEB_SERVICE);
+        SCOPES.add(TEST_METHOD);
     }
 
     // public entry point when called from the command line.
     public static void main(String[] args) {
         try {
-            RunApexDoc(args, null);
+            RunApexDoc(args);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            System.out.println(ex.getMessage() + "\n");
-            printHelp();
+            Utils.log(ex);
+            Utils.printHelp();
             System.exit(-1);
         }
     }
 
-    // public entry point when called from the Eclipse PlugIn.
-    // assumes PlugIn previously sets rgstrArgs before calling run.
-    public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-        RunApexDoc(rgstrArgs, monitor);
-    }
-
     // public main routine which is used by both command line invocation and
     // Eclipse PlugIn invocation
-    public static void RunApexDoc(String[] args, IProgressMonitor monitor) throws IllegalArgumentException {
-        String sourceDirectory = "";
-        String targetDirectory = "";
+    public static void RunApexDoc(String[] args) {;
         String homefilepath = "";
-        String authorfilepath = "";
+        String bannerFilePath = "";
         String hostedSourceURL = "";
         String documentTitle = "";
-        String sortOrder = "";
+        String sortOrder = ORDER_ALPHA;
 
         boolean showMethodTOCDescription = true;
+
+        if (args[0].equalsIgnoreCase("--v") && args.length == 1) {
+            Utils.log("ApexDoc2 version " + APEX_DOC_VERSION);
+            return;
+        }
 
         // parse command line parameters
         for (int i = 0; i < args.length; i++) {
             if (args[i] == null) {
                 continue;
             } else if (args[i].equalsIgnoreCase("-s")) {
-                sourceDirectory = args[++i];
-            } else if (args[i].equalsIgnoreCase("-g")) {
-                hostedSourceURL = args[++i];
+                sourceDirectory = directoryGuard(args[++i], "source_directory");
+            } else if (args[i].equalsIgnoreCase("-u")) {
+                hostedSourceURL = sourceURLGuard(args[++i]);
             } else if (args[i].equalsIgnoreCase("-t")) {
-                targetDirectory = args[++i];
+                targetDirectory = directoryGuard(args[++i], "target_directory");
             } else if (args[i].equalsIgnoreCase("-h")) {
                 homefilepath = args[++i];
-            } else if (args[i].equalsIgnoreCase("-a")) {
-                authorfilepath = args[++i];
+            } else if (args[i].equalsIgnoreCase("-b")) {
+                bannerFilePath = args[++i];
             } else if (args[i].equalsIgnoreCase("-p")) {
                 String scope = args[++i];
-                rgstrScope = scope.split(";");
+                rgstrScope = scopeGuard(scope);
             } else if (args[i].equalsIgnoreCase("-d")) {
                 documentTitle = args[++i];
-            } else if (args[i].equalsIgnoreCase("-n")) {
-                showMethodTOCDescription = Boolean.valueOf(args[++i]);
+            } else if (args[i].equalsIgnoreCase("-c")) {
+                showMethodTOCDescription = showTOCGuard(args[++i]);
             } else if (args[i].equalsIgnoreCase("-o")) {
-                sortOrder = args[++i].trim();
+                sortOrder = sortOrderGuard(args[++i].trim());
             } else {
-                printHelp();
+                Utils.printHelp();
                 System.exit(-1);
             }
         }
 
-        // validate sortOrder argument, throw if invalid default to 'alpha' if not specified
-        if (!sortOrder.isEmpty()) {
-            if (!sortOrder.equalsIgnoreCase("logical") && !sortOrder.equalsIgnoreCase("alpha")) {
-                throw new IllegalArgumentException("Value for <sort_order> argument '" + sortOrder +
-                    "' is invalid. Options for this argument are: 'logical' or 'alpha'.");
-            }
-        } else {
-            sortOrder = "alpha";
-        }
+        // ensure our required arguments are present
+        directoryGuard(sourceDirectory, "source_directory");
+        directoryGuard(targetDirectory, "target_directory");
 
         // default scope to global and public if not specified
         if (rgstrScope == null || rgstrScope.length == 0) {
             rgstrScope = new String[3];
-            rgstrScope[0] = "global";
-            rgstrScope[1] = "public";
-            rgstrScope[2] = "webService";
+            rgstrScope[0] = GLOBAL;
+            rgstrScope[1] = PUBLIC;
+            rgstrScope[2] = WEB_SERVICE;
         }
 
         // find all the files to parse
-        fm = new FileManager(targetDirectory);
-        ArrayList<File> files = fm.getFiles(sourceDirectory);
-        ArrayList<ClassModel> cModels = new ArrayList<ClassModel>();
+        fileManager = new FileManager(targetDirectory);
+        ArrayList<File> files = fileManager.getFiles(sourceDirectory);
+        ArrayList<TopLevelModel> models = new ArrayList<TopLevelModel>();
+        TreeMap<String, TopLevelModel> modelMap = new TreeMap<String, TopLevelModel>();
 
-        // set document title & favicon
-        fm.setDocumentTitle(documentTitle);
-        // set property to determine method sort style and
-        // whether or not to hide method descriptions in TOC
-        fm.setShowMethodTOCDescription(showMethodTOCDescription);
-        fm.setSortOrderStyle(sortOrder);
+        fileManager.setDocumentTitle(documentTitle);
 
+        // set up document generator
+        DocGen.sortOrderStyle = sortOrder;
+        DocGen.hostedSourceURL = hostedSourceURL;
+        DocGen.showMethodTOCDescription = showMethodTOCDescription;
 
-        if (monitor != null) {
-            // each file is parsed, html created, written to disk.
-            // but for each class file, there is an xml file we'll ignore.
-            // plus we add 2 for the author file and home file loading.
-            monitor.beginTask("ApexDoc2 - documenting your Apex Class files.", (files.size() / 2) * 3 + 2);
-        }
-        // parse each file, creating a class model for it
-        for (File fromFile : files) {
+        // parse each file, creating a class or enum model for it
+        files.stream().forEach(fromFile -> {
             String fromFileName = fromFile.getAbsolutePath();
             if (fromFileName.endsWith(".cls")) {
-                ClassModel cModel = parseFileContents(fromFileName);
-                if (cModel != null) {
-                    cModels.add(cModel);
+                TopLevelModel model = parseFileContents(fromFileName);
+                modelMap.put(model.getName().toLowerCase(), model);
+                if (model != null) {
+                    models.add(model);
                 }
             }
-            if (monitor != null) {
-                monitor.worked(1);
-            }
-        }
+        });
 
         // create our Groups
-        TreeMap<String, ClassGroup> classGroupMap = createGroupNameToClassGroupMap(cModels, sourceDirectory);
+        TreeMap<String, ClassGroup> classGroupMap = createGroupNameMap(models, sourceDirectory);
 
         // load up optional specified file templates
-        String projectDetail = fm.parseHTMLFile(authorfilepath);
-        if (monitor != null) {
-            monitor.worked(1);
-        }
-        String homeContents = fm.parseHTMLFile(homefilepath);
-        if (monitor != null) {
-            monitor.worked(1);
-        }
+        String bannerContents = fileManager.parseHTMLFile(bannerFilePath);
+        String homeContents = fileManager.parseHTMLFile(homefilepath);
 
         // create our set of HTML files
-        fm.createDoc(classGroupMap, cModels, projectDetail, homeContents, hostedSourceURL, monitor);
-        if (monitor != null) {
-            monitor.done();
-        }
+        fileManager.createDocs(classGroupMap, modelMap, models, bannerContents, homeContents);
 
         // we are done!
-        System.out.println("ApexDoc2 has completed!");
+        Utils.log("ApexDoc2 has completed!");
     }
 
-    private static void printHelp() {
-        System.out.println("ApexDoc2 - a tool for generating documentation from Salesforce Apex code class files.\n");
-        System.out.println("    Invalid Arguments detected.  The correct syntax is:\n");
-        System.out.println("apexdoc -s <source_directory> [-t <target_directory>] [-g <source_url>] [-h <homefile>] [-a <authorfile>] [-p <scope>] [-o <sort_order>] [-n <toc_desc>] [-d <doc_title>]\n");
-        System.out.println("<source_directory> - The folder location which contains your apex .cls classes");
-        System.out.println("<target_directory> - Optional. Specifies your target folder where documentation will be generated.");
-        System.out.println("<source_url> - Optional. Specifies a URL where the source is hosted (so ApexDoc2 can provide links to your source).");
-        System.out.println("<homefile> - Optional. Specifies the html file that contains the contents for the home page\'s content area.");
-        System.out.println("<authorfile> - Optional. Specifies the text file that contains project information for the documentation header.");
-        System.out.println("<scope> - Optional. Semicolon seperated list of scopes to document.  Defaults to 'global;public'. ");
-        System.out.println("<doc_title> - Optional. The value for the document's <title> attribute.  Defaults to 'ApexDocs'. ");
-        System.out.println("<toc_desc> - Optional. If 'false', will hide the method's description in the class's TOC. Defaults to 'true'.");
-        System.out.println("<sort_order> - Optional. The order in which class methods, properties, and inner classes are presented. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. ");
-    }
-
-    private static TreeMap<String, ClassGroup> createGroupNameToClassGroupMap(ArrayList<ClassModel> cModels, String sourceDirectory) {
+    private static TreeMap<String, ClassGroup> createGroupNameMap(ArrayList<TopLevelModel> models,
+            String sourceDirectory) {
         TreeMap<String, ClassGroup> map = new TreeMap<String, ClassGroup>();
-        for (ClassModel cmodel : cModels) {
-            String group = cmodel.getClassGroup();
-            String groupContent = cmodel.getClassGroupContent();
-            if (groupContent != null && !groupContent.isEmpty()) {
-                groupContent = sourceDirectory + "/" + groupContent;
+
+        models.stream().forEach(model -> {
+            String group = model.getGroupName();
+            String contentPath = model.getGroupContentPath();
+            if (contentPath != null && !contentPath.isEmpty()) {
+                contentPath = sourceDirectory + "/" + contentPath;
             }
 
             ClassGroup cg;
             if (group != null) {
                 cg = map.get(group);
                 if (cg == null) {
-                    cg = new ClassGroup(group, groupContent);
+                    cg = new ClassGroup(group, contentPath);
                 } else if (cg.getContentSource() == null) {
-                    cg.setContentSource(groupContent);
+                    cg.setContentSource(contentPath);
                 }
                 // put the new or potentially modified ClassGroup back in the map
                 map.put(group, cg);
             }
-        }
+        });
+
         return map;
     }
 
-    public static ClassModel parseFileContents(String filePath) {
+    public static TopLevelModel parseFileContents(String filePath) {
         try {
             // Get the object of DataInputStream
             FileInputStream fileStream = new FileInputStream(filePath);
             DataInputStream inputStream = new DataInputStream(fileStream);
-            BufferedReader bufferReader = new BufferedReader(new InputStreamReader(inputStream));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
 
-            String line;
-            boolean commentsStarted = false;
-            boolean docBlockStarted = false;
-            int nestedCurlyBraceDepth = 0;
+            int nestedCurlyBraceDepth = 0, lineNum = 0;
+            String line, originalLine, previousLine = "";
+            boolean commentsStarted = false, docBlockStarted = false;
 
-            ClassModel cModel = null;
-            ClassModel cModelParent = null;
+            ClassModel cModel = null, cModelParent = null;
             ArrayList<String> comments = new ArrayList<String>();
             Stack<ClassModel> cModels = new Stack<ClassModel>();
 
@@ -232,60 +220,62 @@ public class ApexDoc {
             // with 1 param, are actually properties.
             //
 
-            int lineNum = 0;
-            while ((line = bufferReader.readLine()) != null) {
+            while ((line = reader.readLine()) != null) {
+                originalLine = line;
+                line = line.trim();
                 lineNum++;
 
-                line = line.trim();
-                if (line.length() == 0) continue;
+                if (line.length() == 0) {
+                    continue;
+                }
 
                 // ignore anything after // style comments. this allows hiding
-                //  of tokens from ApexDoc. However, don't ignore when line
+                // of tokens from ApexDoc. However, don't ignore when line
                 // doesn't start with //, we want to preserver @example comments
-                int shouldIgnore = line.indexOf("//");
-                if (shouldIgnore == 0) {
-                    line = line.substring(0, shouldIgnore);
+                int offset = line.indexOf("//");
+                if (offset == 0) {
+                    line = line.substring(0, offset);
                 }
 
                 // gather up our comments
                 if (line.startsWith("/*")) {
                     commentsStarted = true;
                     boolean commentEnded = false;
-                    if (line.startsWith("/**")) {
-                    	if (line.endsWith("*/")) {
-                            line = line.replace("*/", "");
+                    if (line.startsWith(COMMENT_OPEN)) {
+                        if (line.endsWith(COMMENT_CLOSE)) {
+                            line = line.replace(COMMENT_CLOSE, DOC_BLOCK_BREAK);
                             commentEnded = true;
-                    	}
-                    	comments.add(line);
-                    	docBlockStarted = true;
+                        }
+                        comments.add(line);
+                        docBlockStarted = true;
                     }
-                    if (line.endsWith("*/") || commentEnded) {
+                    if (line.endsWith(COMMENT_CLOSE) || commentEnded) {
                         commentsStarted = false;
                         docBlockStarted = false;
                     }
                     continue;
                 }
 
-                if (commentsStarted && line.endsWith("*/")) {
-                    line = line.replace("*/", "");
+                if (commentsStarted && line.endsWith(COMMENT_CLOSE)) {
+                    line = line.replace(COMMENT_CLOSE, DOC_BLOCK_BREAK);
                     if (docBlockStarted) {
-                    	comments.add(line);
-                    	docBlockStarted = false;
+                        comments.add(line);
+                        docBlockStarted = false;
                     }
                     commentsStarted = false;
                     continue;
                 }
 
                 if (commentsStarted) {
-                	if (docBlockStarted) {
-                		comments.add(line);
-                	}
+                    if (docBlockStarted) {
+                        comments.add(line);
+                    }
                     continue;
                 }
 
                 // keep track of our nesting so we know which class we are in
-                int openCurlies = countChars(line, '{');
-                int closeCurlies = countChars(line, '}');
+                int openCurlies = Utils.countChars(line, '{');
+                int closeCurlies = Utils.countChars(line, '}');
                 nestedCurlyBraceDepth += openCurlies;
                 nestedCurlyBraceDepth -= closeCurlies;
 
@@ -298,27 +288,33 @@ public class ApexDoc {
                 }
 
                 // ignore anything after an =. this avoids confusing properties with methods.
-                shouldIgnore = line.indexOf("=");
-                if (shouldIgnore > -1) {
-                    line = line.substring(0, shouldIgnore);
+                offset = line.indexOf("=");
+                if (offset > -1) {
+                    line = line.substring(0, offset);
                 }
 
-                // ignore anything after an {. this avoids confusing properties with methods.
-                shouldIgnore = line.indexOf("{");
-                if (shouldIgnore > -1) {
-                    line = line.substring(0, shouldIgnore);
+                // ignore anything after an '{' (if we're not dealing with an enum)
+                // this avoids confusing properties with methods.
+                offset = !Utils.isEnum(line) ? line.indexOf("{") : -1;
+                if (offset > -1) {
+                    line = line.substring(0, offset);
                 }
 
                 // skip lines not dealing with scope that are not inner
                 // classes, interface methods, or (assumed to be) @isTest
-                if (shouldSkipLine(line, cModel)) continue;
+                if (Utils.shouldSkipLine(line, cModel)) {
+                    // preserve skipped line, it may be an annotation
+                    // line for a class, method, prop, or enum (though
+                    // enums support few and are unlikely to have any)
+                    previousLine = originalLine;
+                    continue;
+                }
 
-                // look for a class. Use regexp to match class since we might be dealing with an inner
-                // class or @isTest class without an explicit access modifier (in other words, private)
-                if ((line.toLowerCase().matches(".*\\bclass\\b.*") || line.toLowerCase().contains(" interface "))) {
-
+                // look for a class.
+                if (Utils.isClassOrInterface(line)) {
                     // create the new class
-                    ClassModel cModelNew = createClass(cModelParent, line, comments, lineNum);
+                    ClassModel cModelNew = new ClassModel(cModelParent, comments, line, lineNum);
+                    Utils.parseAnnotations(previousLine, line, cModelNew);
                     comments.clear();
 
                     // keep track of the new class, as long as it wasn't a single liner {}
@@ -331,23 +327,86 @@ public class ApexDoc {
                     // add it to its parent (or track the parent)
                     if (cModelParent != null) {
                         cModelParent.addChildClass(cModelNew);
-                    }
-                    else {
+                    } else {
                         cModelParent = cModelNew;
                     }
+
+                    previousLine = null;
                     continue;
+                }
+
+                // look for an enum
+                if (Utils.isEnum(line)) {
+                    EnumModel eModel = new EnumModel(comments, line, lineNum);
+                    Utils.parseAnnotations(previousLine, line, eModel);
+                    comments.clear();
+
+                    ArrayList<String> values = new ArrayList<String>();
+                    String nameLine = eModel.getNameLine();
+                    // one-liner enum
+                    if (line.endsWith("}")) {
+                        line = line.replace("}", "");
+                        line = line.replace("{", "");
+                        // isolate values of one-liner, split at comma & add to list
+                        line = line.substring(line.indexOf(nameLine) + nameLine.length());
+                        values.addAll(Arrays.asList(line.trim().split(",")));
+                    }
+                    // enum is over multiple lines
+                    else {
+                        // handle fist line, there may be multiple values on it
+                        line = line.replace("{", "");
+                        line = line.substring(line.indexOf(nameLine) + nameLine.length());
+                        values.addAll(Arrays.asList(line.trim().split(",")));
+
+                        // handle each additional line of enum
+                        while (!line.contains("}")) {
+                            line = reader.readLine();
+                            lineNum++;
+                            // in case opening curly is on the second line
+                            // also handle replacing closing curly for last line
+                            String valLine = line.replace("{", "");
+                            valLine = valLine.replace("}", "");
+                            values.addAll(Arrays.asList(valLine.trim().split(",")));
+                        }
+                    }
+
+                    // add all enum values to model
+                    values.stream().forEach(value -> {
+                        if (!value.trim().isEmpty()) {
+                            eModel.getValues().add(value.trim());
+                        }
+                    });
+
+                    // if no class models have been created, and we see an
+                    // enum, we must be dealing with a class level enum and
+                    // should return early, otherwise we're dealing with
+                    // an inner enum and should add to our class model.
+                    if (cModel == null && cModels.size() == 0) {
+                        reader.close();
+                        inputStream.close();
+                        return eModel;
+                    } else {
+                        cModel.getEnums().add(eModel);
+                        previousLine = null;
+                        continue;
+                    }
                 }
 
                 // look for a method
                 if (line.contains("(")) {
+                    int startingLine = lineNum;
+
                     // deal with a method over multiple lines.
                     while (!line.contains(")")) {
-                        line += bufferReader.readLine();
+                        line += reader.readLine();
                         lineNum++;
                     }
-                    MethodModel mModel = createMethod(line, comments, lineNum);
+
+                    MethodModel mModel = new MethodModel(comments, line, startingLine);
+                    Utils.parseAnnotations(previousLine, line, mModel);
                     cModel.getMethods().add(mModel);
                     comments.clear();
+                    previousLine = null;
                     continue;
                 }
 
@@ -358,152 +417,87 @@ public class ApexDoc {
                     line.contains(" set;") ||
                     line.contains(" get{") ||
                     line.contains(" set{")) {
+                    previousLine = null;
                     continue;
                 }
 
                 // must be a property
-                PropertyModel pModel = createProperty(line, comments, lineNum);
+                PropertyModel pModel = new PropertyModel(comments, line, lineNum);
+                Utils.parseAnnotations(previousLine, line, pModel);
                 cModel.getProperties().add(pModel);
                 comments.clear();
+                previousLine = null;
                 continue;
-
             }
 
             // Close the input stream
             inputStream.close();
             // we only want to return the parent class
             return cModelParent;
-        } catch (Exception e) { // Catch exception if any
-            System.err.println("Error: " + e.getMessage());
-        }
-
-        return null;
-    }
-
-    /**
-     * @description Helper method to determine if a line being parsed should be skipped.
-     * Ignore lines not dealing with scope unless they start with the class keyword. If
-     * so, must be an @isTest class or inner class since Apex does not otherwise allow
-     * classes without access modifiers. Also, interface methods don't have scope, so
-     * don't skip those lines either.
-     */
-    private static boolean shouldSkipLine(String line, ClassModel cModel) {
-        if (containsScope(line) == null &&
-            !line.toLowerCase().startsWith("class ") &&
-                !(cModel != null && cModel.getIsInterface() && line.contains("("))) {
-                    return true;
-        }
-
-        return false;
-    }
-
-    public static String containsScope(String str) {
-        for (int i = 0; i < rgstrScope.length; i++) {
-            if (str.toLowerCase().contains(rgstrScope[i].toLowerCase() + " ")) {
-                return rgstrScope[i];
-            }
-        }
-        return null;
-    }
-
-    private static ClassModel createClass(ClassModel parent, String name, ArrayList<String> comments, int lineNum) {
-        ClassModel cModel = new ClassModel(parent);
-        cModel.setNameLine(name, lineNum);
-        if (name.toLowerCase().contains(" interface ")) {
-            cModel.setIsInterface(true);
-        }
-
-        cModel.parseComments(comments);
-        return cModel;
-    }
-
-    private static MethodModel createMethod(String name, ArrayList<String> comments, int lineNum) {
-        MethodModel mModel = new MethodModel();
-        mModel.setNameLine(name, lineNum);
-        mModel.parseComments(comments);
-        return mModel;
-    }
-
-    private static PropertyModel createProperty(String name, ArrayList<String> comments, int lineNum) {
-        PropertyModel pModel = new PropertyModel();
-        pModel.setNameLine(name, lineNum);
-        pModel.parseComments(comments);
-        return pModel;
-    }
-
-    /**
-     * @description returns the previous word in a string
-     * @param str string to search
-     * @param searchIdx where to start searching backwards from
-     * @return the previous word, or null if none found.
-     */
-    public static String previousWord(String str, int searchIdx) {
-        if (str == null) return null;
-        if (searchIdx >= str.length()) return null;
-
-        int idxStart;
-        int idxEnd;
-        for (idxStart = searchIdx - 1, idxEnd = 0; idxStart >= 0; idxStart--) {
-            if (idxEnd == 0) {
-                if (str.charAt(idxStart) == ' ') {
-                    continue;
-                }
-                idxEnd = idxStart + 1;
-            } else if (str.charAt(idxStart) == ' ') {
-                idxStart++;
-                break;
-            }
-        }
-
-        if (idxStart == -1) {
+        } catch (Exception ex) { // Catch exception if any
+            Utils.log(ex);
             return null;
-        } else {
-            return str.substring(idxStart, idxEnd);
         }
     }
 
-    /**
-     * @description Count the number of occurrences of character in the string
-     * @param str
-     * @param ch
-     * @return int
-     */
-    private static int countChars(String str, char ch) {
-        int count = 0;
-        for (int i = 0; i < str.length(); ++i) {
-            if (str.charAt(i) == ch) {
-                ++count;
+    // argument guards
+    private static String directoryGuard(String path, String arg) throws IllegalArgumentException {
+        if (path != null && new File(path).exists()) {
+            return path;
+        } else {
+            throw new IllegalArgumentException(
+                "Value for <" + arg + "> argument: '" + path +
+                "' is invalid. Please provide a valid diectory."
+            );
+        }
+    }
+
+    private static String sourceURLGuard(String string) throws IllegalArgumentException {
+        if (string != null && Utils.isURL(string)) {
+            return string.trim();
+        } else {
+            throw new IllegalArgumentException(
+                "Value for <source_url> argument: '" + string +
+                "' is invalid. Please provide a valid URL where your source code is hosted, e.g.: " +
+                "https://github.com/no-stack-dub-sack/ApexDoc2/tree/master/src/main"
+            );
+        }
+    }
+
+    private static boolean showTOCGuard(String string) throws IllegalArgumentException {
+        if (string != null && (string.equalsIgnoreCase("true") || string.equalsIgnoreCase("false"))) {
+            return Boolean.valueOf(string);
+        } else {
+            throw new IllegalArgumentException(
+                "Value for <toc_descriptions> argument: '" + string +
+                "' is invalid. Please provide either 'true' or 'false'."
+            );
+        }
+    }
+
+    private static String[] scopeGuard(String scopes) throws IllegalArgumentException {
+        String[] scopeRegister = scopes.split(";");
+        for (String scope : scopeRegister) {
+            if (!SCOPES.contains(scope)) {
+                throw new IllegalArgumentException(
+                    "Value for <scope> argument: '" + scope +
+                    "' is invalid. Please provide a semi-colon delimited list of valid scopes." +
+                    " Valid scopes include: " + String.join(", ", SCOPES)
+                );
             }
         }
-        return count;
+
+        return scopeRegister;
     }
 
-    /*
-     * private static void debug(ClassModel cModel){ try{
-     * System.out.println("Class::::::::::::::::::::::::");
-     * if(cModel.getClassName() != null)
-     * System.out.println(cModel.getClassName()); if(cModel.getNameLine() !=
-     * null) System.out.println(cModel.getNameLine());
-     * System.out.println(cModel.getAuthor());
-     * System.out.println(cModel.getDescription());
-     * System.out.println(cModel.getDate());
-     *
-     * System.out.println("Properties::::::::::::::::::::::::"); for
-     * (PropertyModel property : cModel.getProperties()) {
-     * System.out.println(property.getNameLine());
-     * System.out.println(property.getDescription()); }
-     *
-     * System.out.println("Methods::::::::::::::::::::::::"); for (MethodModel
-     * method : cModel.getMethods()) {
-     * System.out.println(method.getMethodName());
-     * System.out.println(method.getAuthor());
-     * System.out.println(method.getDescription());
-     * System.out.println(method.getDate()); for (String param :
-     * method.getParams()) { System.out.println(param); }
-     *
-     * }
-     *
-     * }catch (Exception e){ e.printStackTrace(); } }
-     */
-
+    private static String sortOrderGuard(String sortOrder) throws IllegalArgumentException {
+        if (sortOrder != null && (sortOrder.equalsIgnoreCase(ORDER_LOGICAL) || sortOrder.equalsIgnoreCase(ORDER_ALPHA))) {
+            return sortOrder.toLowerCase();
+        } else {
+            throw new IllegalArgumentException(
+                "Value for <sort_order> argument '" + sortOrder +
+                "' is invalid. Options for this argument are: 'logical' or 'alpha'."
+            );
+        }
+    }
 }

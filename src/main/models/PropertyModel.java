@@ -1,8 +1,15 @@
-package main;
+package main.models;
+
+import java.util.ArrayList;
 
 public class PropertyModel extends ApexModel {
 
-    public void setNameLine(String nameLine, int lineNum) {
+    public PropertyModel(ArrayList<String> comments, String nameLine, int lineNum) {
+        super(comments);
+        this.setNameLine(nameLine, lineNum);
+    }
+
+    protected void setNameLine(String nameLine, int lineNum) {
         if (nameLine != null) {
             // remove any trailing stuff after property name. { =
             int i = nameLine.indexOf('{');

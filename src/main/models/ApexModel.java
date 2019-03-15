@@ -1,5 +1,9 @@
-package main;
+package main.models;
 
+import main.ApexDoc;
+import main.Utils;
+
+import java.io.File;
 import java.util.ArrayList;
 
 public class ApexModel {
@@ -17,31 +21,41 @@ public class ApexModel {
     private static final String RETURN = "@return";
     private static final String SEE = "@see";
 
+    // model state variables
     private String author = "";
     private String date = "";
     private String deprecated = "";
     private String description = "";
-    private String example = "";
+    private ArrayList<String> annotations;
+    protected String example = "";
     protected String exception = "";
-    protected String classGroup = "";
-    protected String classGroupContent = "";
-    protected ArrayList<String> params = new ArrayList<String>();
-    private String see = "";
+    protected String groupName = "";
+    protected String groupContentPath = "";
+    protected ArrayList<String> params;
+    protected String see = "";
     protected String returns = "";
 
     private String nameLine;
     private int lineNum;
-    private String scope;
+    protected String scope;
 
-    // model attribute getters / setters
-    public String getNameLine() {
-        return nameLine;
+    public ApexModel(ArrayList<String> comments) {
+        annotations = new ArrayList<String>();
+        params = new ArrayList<String>();
+        this.parseComments(comments);
     }
 
-    public void setNameLine(String nameLine, int lineNum) {
-        this.nameLine = nameLine.trim();
+    // model attribute getters / setters
+    protected void setNameLine(String nameLine, int lineNum) {
+        // strip any annotations from the signature line
+        // we'll capture those and display them separately
+        this.nameLine = Utils.stripAnnotations(nameLine).trim();
         this.lineNum = lineNum;
         parseScope();
+    }
+
+    public String getNameLine() {
+        return nameLine;
     }
 
     public int getLineNum() {
@@ -52,23 +66,24 @@ public class ApexModel {
         return scope == null ? "" : scope;
     }
 
-    public void setScope(String scope) {
-        this.scope = scope;
-    }
-
-    private void parseScope() {
-        scope = null;
+    protected void parseScope() {
         if (nameLine != null) {
-            String str = ApexDoc.containsScope(nameLine);
+            String str = Utils.containsScope(nameLine);
             if (str != null) {
                 scope = str;
-            } else {
-                scope = "private";
+            }
+
+            // TODO: perhaps this branch of control flow should
+            // be present only in a class override method
+            else {
+
+                // this must be an inner class
+                // or an @IsTest class
+                scope = ApexDoc.PRIVATE;
             }
         }
     }
 
-    // common @token getters
     public String getDescription() {
         return description == null ? "" : description;
     }
@@ -86,21 +101,34 @@ public class ApexModel {
     }
 
     public String getExample() {
-        return example == null ? "" : example;
+        // return example and remove trailing white space which
+        // may have built up due to the allowance of preserving
+        // white pace in complex code example blocks for methods
+        return example == null ? "" : example.replace("\\s+$", "");
     }
 
     public String getSee() {
         return see == null ? "" : see;
     }
 
-    public void parseComments(ArrayList<String> comments) {
+    public ArrayList<String> getAnnotations() {
+        return annotations;
+    }
+
+    // comment parser
+    private void parseComments(ArrayList<String> comments) {
         String currBlock = null, block = null;
         for (String comment : comments) {
-            boolean newBlock = false;
+            boolean newBlock = false, isBreak = false;
             String lowerComment = comment.toLowerCase();
             int i;
 
-            // if we find a tag, start a new block
+            // skip lines that are just opening or closing comment blocks
+            if (comment.trim().equals("/**") || comment.trim().equals("*/")) {
+                continue;
+            }
+
+            // if we find a token, start a new block
             if (((i = lowerComment.indexOf(block = AUTHOR)) >= 0)
                 || ((i = lowerComment.indexOf(block = DATE)) >= 0)
                 || ((i = lowerComment.indexOf(block = SEE)) >= 0)
@@ -113,21 +141,35 @@ public class ApexModel {
                 || ((i = lowerComment.indexOf(block = GROUP_CONTENT)) >= 0)
                 || ((i = lowerComment.indexOf(block = EXAMPLE)) >= 0)) {
 
-                    comment = comment.substring(i + block.length());
-                    currBlock = block;
-                    newBlock = true;
+                comment = comment.substring(i + block.length());
+                currBlock = block;
+                newBlock = true;
+            }
+
+            // get everything after opening '*'s
+            String line = "";
+            comment = comment.trim();
+            for (int j = 0; j < comment.length(); ++j) {
+                char ch = comment.charAt(j);
+                // skip the '/' of the oppening
+                // block so comment is trimmed correctly
+                if (ch == '/' && j == 0) {
+                    continue;
                 }
 
-                // get everything after first '*'
-                String line = "";
-                comment = comment.trim();
-                for (int j = 0; j < comment.length(); ++j) {
-                    char ch = comment.charAt(j);
-                    if (ch != '*') {
-                        line = comment.substring(j);
-                        break;
-                    }
+                if (ch != '*') {
+                    line = comment.substring(j);
+                    break;
                 }
+            }
+
+            // replace docBlock break marker and indicate we should break after
+            // this round. Otherwise we may get some strange behavior due to
+            // multi-line support and this common parser for all models
+            if (line.contains(ApexDoc.DOC_BLOCK_BREAK)) {
+                line = line.replace(ApexDoc.DOC_BLOCK_BREAK, "");
+                isBreak = true;
+            };
 
             // add line to appropriate block...
             // if currBlock was not reset on this iteration we're on the next line of the last token, add line
@@ -151,13 +193,38 @@ public class ApexModel {
                 } else if (currBlock.equals(DESCRIPTION)) {
                     description += (!description.isEmpty() ? " " : "") + line.trim();
                 } else if (currBlock.equals(GROUP)) {
-                    classGroup += (!classGroup.isEmpty() ? " " : "") + line.trim();
-                } else if (currBlock.equals(GROUP_CONTENT)) {
-                    classGroupContent += (!classGroupContent.isEmpty() ? " " : "") + line.trim();
+                    groupName += line.trim();
                 } else if (currBlock.equals(EXAMPLE)) {
                     example += (!example.isEmpty() ? "\n" : "") + line;
+                } else if (currBlock.equals(GROUP_CONTENT)) {
+                    if (pathExists(line.trim())) groupContentPath += line.trim();
                 }
+            // not a recognized token, assume we're in un-tagged description
+            } else if (currBlock == null && !line.trim().isEmpty()) {
+                currBlock = block = DESCRIPTION;
+                description += (!description.isEmpty() ? " " : "") + line.trim();
+            } else if (line.trim().isEmpty()) {
+                currBlock = null;
             }
+
+            if (isBreak) break;
+        }
+    }
+
+    // make sure path relative to target
+    // directory exists for @group-content token
+    private boolean pathExists(String line) {
+        String root = ApexDoc.targetDirectory;
+        if (!root.endsWith("/") || !root.endsWith("\\")) {
+            root += "/";
+        }
+
+        String path = root + line.trim();
+        if (line.trim().matches(".*\\.s?html?$") && new File(path).exists()) {
+            return true;
+        } else {
+            Utils.log("\nWARNING: @group-content path: '" + path + "' is invalid!\n");
+            return false;
         }
     }
 }

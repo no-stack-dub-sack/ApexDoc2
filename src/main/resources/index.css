@@ -1,3 +1,13 @@
+:root {
+    --dark-blue: #003672;
+    --grey-blue: #51638A;
+    --light-grey: #f7f7f7;
+    --med-grey: #e7e7e7;
+    --med-blue: #00f;
+    --white: #fff;
+    --dark-red: #a31515;
+}
+
 body {
     font-family: "ProximaNovaSoft-Regular", Calibri, "Gill Sans",
         "Gill Sans MT", Candara, Segoe, "Segoe UI", Arial, sans-serif;
@@ -8,19 +18,19 @@ body {
 
 /* the top page banner  */
 .topsection {
-    background-color: #003672;
+    background-color: var(--dark-blue);
     width: 100%;
     height: 110px;
-    color: white;
+    color: var(--white);
 }
 
 .topsection td {
-    color: white;
+    color: var(--white);
     padding: 8px;
 }
 
 .topsection a {
-    color: white;
+    color: var(--white);
 }
 
 /* the area that holds the documentation on the right of the page */
@@ -32,81 +42,90 @@ body {
 }
 
 /* the horizontal section headers that declares the Class name */
-.section-title {
-    background-color: #003672; /* rgb(155,203,236); */
-    color: white;
+.sectionTitle {
+    background-color: var(--dark-blue); /* rgb(155,203,236); */
+    color: var(--white);
     font-size: 100%;
     font-weight: bold;
     padding: 5px 5px 5px 14px;
     margin: 0 0 5px 0;
 }
 
-.section-title a {
-    color: white;
+.sectionTitle a {
+    color: var(--white);
 }
 
 /* the horizontal section headers that declares the Methods & Properties subsections */
-.subsection-title {
-    color: #51638A;
-    border-top: 1px solid #51638A;
+.subsectionTitle {
+    color: var(--grey-blue);
+    border-top: 1px solid var(--grey-blue);
     font-size: 120%;
     padding: 2px;
-    margin: 0 0 10px 0;
+    margin: 0;
 }
 
-.subsection-container {
+.subsectionContainer {
     padding: 0 0 0 14px;
+    margin-top: 10px;
 }
 
 /* the horizontal header for each Method */
 .methodHeader {
     font-size: 1em;
-    color: #51638A;
-    border-top: 1px solid #51638A;
+    color: var(--grey-blue);
+    border-top: 1px solid var(--grey-blue);
     margin: 20px 0 0 0;
     padding: 4px 0 2px 0;
 }
 
-/* properties is used to display the table of class properties */
-.properties {
+/* attrTable is used to display the table of class attrTable */
+.attrTable {
     border-collapse: collapse;
+    max-width: 95%;
 }
 
-.properties th {
+.attrTable th {
     text-align: left;
-    color: #003672;
+    color: var(--dark-blue);
     /* OR */
-    /* background: #003672; */
-    /* color: white; */
+    /* background: var(--dark-blue); */
+    /* color: var(--white); */
 }
 
-.properties th,
-.properties td {
+.attrTable th,
+.attrTable td {
     padding: 5px;
     border: 1px solid #919191;
     font-size: .9em;
 }
 
-.properties tr:nth-child(odd) {
-    background: #f7f7f7;
+.attrTable tr:nth-child(odd) {
+    background: var(--light-grey);
 }
 
-.clsPropertyName {
+/* restrict width of enum value column so
+most signatures will fit on a single lin */
+.attrTable .enumValues {
+    max-width: 500px;
+}
+
+.attrName {
     font-size: .9em;
     font-weight: bold;
 }
 
-.clsPropertyDeclaration {
-    font-family: Courier;
-    font-weight: normal;
-    color: MediumBlue;
+.propAnnotations,
+.attrSignature {
+    background: none;
+    font-family: monospace;
+    padding: 0;
 }
 
-.clsPropertyDescription {
+.attrDescription {
     font-weight: normal;
 }
 
-.clsPropertyDescription.hasDescription {
+.attrDescription.hasDescription {
     height: 1em;
 }
 
@@ -115,13 +134,18 @@ body {
 }
 
 /* the class's signature line */
+.classAnnotations,
 .classSignature {
-    color: mediumblue;
-    font-family: Courier;
-    font-size: .9em;
+    font-family: monospace;
+    font-size: 1.05em;
     font-weight: normal;
     text-indent: -15px;
-    padding: 6px 0 4px 15px;
+    padding: 0 0 4px 15px;
+}
+
+/* the class's Annotation line */
+.classAnnotations {
+    padding: 0 0 0 15px;
 }
 
 /* the description, author, date and other class attributes */
@@ -130,7 +154,7 @@ body {
 }
 
 .classSubtitle {
-    color: #51638A;
+    color: var(--grey-blue);
     font-size: 1em;
     font-weight: bold;
     margin: .7em 0 0 0;
@@ -141,10 +165,10 @@ body {
     margin: 0 0 0 1em;
 }
 
-/* signatures of methods and properties */
+/* signatures of methods and attrTable */
 .hostedSourceLink {
     text-decoration: initial;
-    color: mediumblue;
+    color: var(--med-blue);
 }
 
 .hostedSourceLink:hover {
@@ -152,13 +176,17 @@ body {
 }
 
 /* method table of contents related classes */
+.methodsContainer {
+    margin-bottom: 10px;
+}
+
 ul.methodTOC {
     margin-top: 0;
 }
 
 .methodTOCEntry {
     font-size: .9em;
-    color: mediumblue;
+    color: var(--med-blue);
 }
 
 .methodTOCEntry:visited {
@@ -172,7 +200,7 @@ ul.methodTOC {
 
 .methodTOCEntry.deprecated:visited {
     font-size: .9em;
-    color: #a50000;
+    color: var(--dark-red);
 }
 
 .methodTOCDescription {
@@ -186,13 +214,12 @@ ul.methodTOC {
 }
 
 /* method listing related classes */
-.methodSignature {
-    font-family: Courier;
-    font-size: .8em;
-    font-weight: normal;
-    color: MediumBlue;
+.methodSignature,
+.methodAnnotations {
+    font-family: monospace;
+    font-size: 1em;
     text-indent: -15px;
-    padding-left: 15px;
+    padding: 0 0 0 15px;
 }
 
 .methodDescription {
@@ -207,17 +234,18 @@ ul.methodTOC {
 
 .methodSubTitle {
     font-size: .9em;
-    color: #51638A;
+    color: var(--grey-blue);
     font-weight: bold;
     margin: .7em 0 0 0;
 }
 
-.methodExample {
-    background-color: #f7f7f7;
-    display: block;
-    padding: 1em;
-    white-space: pre;
-    margin-right: 5px;
+.codeExample {
+    margin: 0 5px 0 0;
+}
+
+.codeExample code {
+    background: var(--light-grey);
+    padding: .5em .5em .5em .2em;
 }
 
 .paramName {
@@ -232,13 +260,26 @@ ul.methodTOC {
     margin: 0 0 0 1em;
 }
 
-/* SIDEBAR CSS */
+/* Style Details Caret Element */
 details summary::-webkit-details-marker {
     float: right;
     margin-top: 5px;
     color: black !important;
 }
 
+.contentTd details.section summary::-webkit-details-marker {
+    color: var(--light-grey) !important;
+}
+
+.contentTd details.subSection summary::-webkit-details-marker {
+    color: black !important;
+}
+
+.contentTd details summary::-webkit-details-marker {
+    margin-top: 10px;
+}
+
+/* SIDEBAR CSS */
 .navbar {
     font-size: .95em;
 }
@@ -247,7 +288,7 @@ details summary::-webkit-details-marker {
     height: 25px;
     padding: 6px 0 2px 40px;
     margin: 0;
-    background: #e7e7e7;
+    background: var(--med-grey);
     border-top: 1px solid #d1d1d1;
     cursor: pointer;
     user-select: none;
@@ -257,72 +298,80 @@ details summary::-webkit-details-marker {
     list-style: none;
     margin: 0;
     padding: 0;
-    background: #e7e7e7;
+    background: var(--med-grey);
 }
 
-.navbar .nav-item.active,
-.navbar .nav-item:hover {
+.navbar .navItem.active,
+.navbar .navItem:hover {
     background: #d9d9d9;
 }
 
-.navbar .nav-item a {
+.navbar .navItem a {
     color: black;
 }
 
-.navbar .nav-item a:focus,
-.navbar .nav-item:hover a {
-    color: mediumBlue;
+.navbar .navItem a:focus,
+.navbar .navItem:hover a {
+    color: var(--med-blue);
     outline: none;
 }
 
-.nav-header {
+.navHeader {
     height: 25px;
-    background: #f2f5f6;
+    background: var(--light-grey);
     border: 1px solid #dce4e7;
-    border-top-color: #fff;
+    border-top-color: var(--white);
     padding: 6px 0 0 6px;
     cursor: pointer;
     user-select: none;
 }
 
-a.nav-header {
+a.navHeader {
     display: block;
 }
 
-.nav-header,
-.nav-header a {
+.navHeader,
+.navHeader a {
     color: black;
 }
 
-.nav-header a:focus,
-.nav-header:focus {
+.navHeader a:focus,
+.navHeader:focus {
     outline: none;
-    color: mediumBlue;
+    color: var(--med-blue);
 }
 
-a.nav-header.active {
+/* Hmm not sure if we want this anymore... */
+/* a.navHeader.active {
     background: #cfcdcd;
 }
 
-details[open] .nav-header.active {
+details[open] .navHeader.active {
     background: #cfcdcd;
-}
+} */
 
-.nav-header:hover {
+.navHeader:hover,
+.navHeader:hover a {
     background: #cfcdcd;
-    color: mediumBlue;
+    color: var(--med-blue);
 }
 
 /* accents */
+/* .classAnnotations,
+.methodAnnotations {
+    color: var(--dark-blue);
+    font-weight: 600;
+} */
+
 .inlineCode {
-    background-color: #f2f2f2;
-    color: #c83434;
+    background-color: var(--light-grey);
+    color: var(--dark-red);
     font-family: monospace;
     padding: 1px 5px;
 }
 
 .deprecated {
-    color: #a50000;
+    color: var(--dark-red);
     font-weight: bold;
 }
 
@@ -334,7 +383,7 @@ details[open] .nav-header.active {
 .externalLink {
     margin: 0 5px;
     height: 10px;
-    fill: #ccc;
+    fill: var(--light-grey);
 }
 
 .hide {
