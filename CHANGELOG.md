@@ -41,6 +41,7 @@
 - Denote constructors with `.<init>`
 - Use `<details>` & `<summary>` tags for each section so that documentation becomes collapsible and more easily navigable for large files.
 - Upgraded the project to Java 8.
+- Remove the `ROOT_DIRECTORY` constant in HTML.java in favor of letting the user define the full target path for their docs. Make Target Directory argument required.
 
 ### Fixed
 - Fixed CSS bug for TOC method descriptions: `text-overflow: ellipsis;` was not working as `white-space: nowrap;` was missing. Also made the width of the descriptions smaller, as they were extending across the whole page which I found a bit distracting. Now will have ellipsis overflow at 500px;
