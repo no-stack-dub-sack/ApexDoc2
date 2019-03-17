@@ -27,7 +27,7 @@ As the Salesforce Foundation was [no longer able to offer direct support for rep
 | -d *(d)oc_title* | The value for the document's &lt;title&gt; attribute.  Defaults to 'ApexDocs'. Optional.|
 | -c *to(c)_descriptions* | If 'true', will hide the method's description snippet in the class's table of contents. Defaults to 'false'. Optional.|
 | -o *sort_(o)rder* | The order in which class methods, properties, and inner classes are presented. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. Optional.|
-| --v | Used alone; print the ApexDoc2 version. E.g. `ApexDoc2 --v` |
+| --v, --version | Used alone; print the ApexDoc2 version. E.g. `ApexDoc2 --v` |
 
 ## Usage
 For easiest usage, we recommend creating a simple batch file to run the program. Copy ApexDoc2.jar file to your local machine (each release tag in gitHub has the matching apexdoc2.jar attached to it). Make sure that java is on your path, and create a batch file called 'ApexDoc2' containing the following:
@@ -52,6 +52,12 @@ ApexDoc2
     -d "My Apex Project"
     -o logical
     -c false
+```
+
+The jar file can also be referenced directly:
+
+```shell
+java -jar c:\Users\pweinberg\path\to\ApexDoc2-1.0.0.jar --version
 ```
 
 A favicon has been added with ApexDoc2, so if you'd like to use your own favicon, simply replace the favicon png in the output directory with your own favicon. It must be a PNG and named favicon.png.

@@ -79,9 +79,10 @@ public class ApexDoc {
 
         boolean showMethodTOCDescription = true;
 
-        if (args[0].equalsIgnoreCase("--v") && args.length == 1) {
+        // print ApexDoc2 version
+        if (args.length == 1 && (args[0].equalsIgnoreCase("--v") || args[0].equalsIgnoreCase("--version"))) {
             Utils.log("ApexDoc2 version " + APEX_DOC_VERSION);
-            return;
+            System.exit(0);
         }
 
         // parse command line parameters
@@ -89,11 +90,11 @@ public class ApexDoc {
             if (args[i] == null) {
                 continue;
             } else if (args[i].equalsIgnoreCase("-s")) {
-                sourceDirectory = directoryGuard(args[++i], "source_directory");
+                sourceDirectory = sourceDirectoryGuard(args[++i]);
             } else if (args[i].equalsIgnoreCase("-u")) {
                 hostedSourceURL = sourceURLGuard(args[++i]);
             } else if (args[i].equalsIgnoreCase("-t")) {
-                targetDirectory = directoryGuard(args[++i], "target_directory");
+                targetDirectory = targetDirectoryGuard(args[++i]);
             } else if (args[i].equalsIgnoreCase("-h")) {
                 homefilepath = args[++i];
             } else if (args[i].equalsIgnoreCase("-b")) {
@@ -114,8 +115,8 @@ public class ApexDoc {
         }
 
         // ensure our required arguments are present
-        directoryGuard(sourceDirectory, "source_directory");
-        directoryGuard(targetDirectory, "target_directory");
+        sourceDirectoryGuard(sourceDirectory);
+        targetDirectoryGuard(targetDirectory);
 
         // default scope to global and public if not specified
         if (rgstrScope == null || rgstrScope.length == 0) {
@@ -162,6 +163,7 @@ public class ApexDoc {
 
         // we are done!
         Utils.log("ApexDoc2 has completed!");
+        System.exit(0);
     }
 
     private static TreeMap<String, ClassGroup> createGroupNameMap(ArrayList<TopLevelModel> models,
@@ -441,12 +443,23 @@ public class ApexDoc {
     }
 
     // argument guards
-    private static String directoryGuard(String path, String arg) throws IllegalArgumentException {
+    private static String sourceDirectoryGuard(String path) throws IllegalArgumentException {
         if (path != null && new File(path).exists()) {
             return path;
         } else {
             throw new IllegalArgumentException(
-                "Value for <" + arg + "> argument: '" + path +
+                "Value for <source_directory> argument: '" + path +
+                "' is invalid. Please provide a valid diectory."
+            );
+        }
+    }
+
+    private static String targetDirectoryGuard(String path) throws IllegalArgumentException {
+        if (path != null && path.length() > 0) {
+            return path;
+        } else {
+            throw new IllegalArgumentException(
+                "Value for <target_directory> argument: '" + path +
                 "' is invalid. Please provide a valid diectory."
             );
         }
