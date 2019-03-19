@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Stack;
 import java.util.TreeMap;
 
@@ -45,6 +46,7 @@ public class ApexDoc {
     private static FileManager fileManager;
     public static String targetDirectory;
     private static String sourceDirectory;
+    private static int numProcessed = 0;
 
     static {
         // initialize scopes const
@@ -70,12 +72,17 @@ public class ApexDoc {
 
     // public main routine which is used by both command line invocation and
     // Eclipse PlugIn invocation
-    public static void RunApexDoc(String[] args) {;
+    public static void RunApexDoc(String[] args) {
+        StopWatch timer = new StopWatch();
+        timer.start();
+
         String homefilepath = "";
         String bannerFilePath = "";
         String hostedSourceURL = "";
         String documentTitle = "";
         String sortOrder = ORDER_ALPHA;
+        String includes = "";
+        String excludes = "";
 
         boolean showMethodTOCDescription = true;
 
@@ -108,6 +115,10 @@ public class ApexDoc {
                 showMethodTOCDescription = showTOCGuard(args[++i]);
             } else if (args[i].equalsIgnoreCase("-o")) {
                 sortOrder = sortOrderGuard(args[++i].trim());
+            } else if (args[i].equalsIgnoreCase("-e")) {
+                excludes = args[++i].trim();
+            } else if (args[i].equalsIgnoreCase("-i")) {
+                includes = args[++i].trim();
             } else {
                 Utils.printHelp();
                 System.exit(-1);
@@ -126,6 +137,21 @@ public class ApexDoc {
             rgstrScope[2] = WEB_SERVICE;
         }
 
+        List<String> includeFiles = new ArrayList<String>();
+        List<String> includePattern = new ArrayList<String>();
+        List<String> excludeFiles = new ArrayList<String>();
+        List<String> excludePattern = new ArrayList<String>();
+
+        if (!includes.equals("")) {
+            includeFiles = Arrays.asList(includes.split(","));
+            for (String entry : includeFiles) {
+                if (entry.startsWith("*") || entry.endsWith("*")) {
+                    includePattern.add(entry);
+                    includeFiles.remove(entry);
+                }
+            }
+        }
+
         // find all the files to parse
         fileManager = new FileManager(targetDirectory);
         ArrayList<File> files = fileManager.getFiles(sourceDirectory);
@@ -142,12 +168,11 @@ public class ApexDoc {
         // parse each file, creating a class or enum model for it
         files.stream().forEach(fromFile -> {
             String fromFileName = fromFile.getAbsolutePath();
-            if (fromFileName.endsWith(".cls")) {
-                TopLevelModel model = parseFileContents(fromFileName);
-                modelMap.put(model.getName().toLowerCase(), model);
-                if (model != null) {
-                    models.add(model);
-                }
+            TopLevelModel model = parseFileContents(fromFileName);
+            modelMap.put(model.getName().toLowerCase(), model);
+            if (model != null) {
+                models.add(model);
+                numProcessed++;
             }
         });
 
@@ -162,7 +187,8 @@ public class ApexDoc {
         fileManager.createDocs(classGroupMap, modelMap, models, bannerContents, homeContents);
 
         // we are done!
-        Utils.log("ApexDoc2 has completed!");
+        timer.stop();
+        Utils.log("ApexDoc2 complete! " + numProcessed + " Apex files processed in " + timer.getTime() + " ms.");
         System.exit(0);
     }
 

@@ -11,8 +11,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class FileManager {
@@ -187,25 +189,113 @@ public class FileManager {
     }
 
     public ArrayList<File> getFiles(String path) {
-        File folder = new File(path);
-        ArrayList<File> listOfFilesToCopy = new ArrayList<File>();
-        try {
-            File[] listOfFiles = folder.listFiles();
-            Utils.log("\nProcessing files:\n");
-            if (listOfFiles != null && listOfFiles.length > 0) {
-                for (int i = 0; i < listOfFiles.length; i++) {
-                    Utils.log(listOfFiles[i].getName());
-                    if (listOfFiles[i].isFile()) {
-                        listOfFilesToCopy.add(listOfFiles[i]);
-                    }
+        ArrayList<String> include = new ArrayList<String>();
+        // include.add("NotificationsEmailer.cls");
+        ArrayList<String> includePatterns = new ArrayList<String>();
+        // includePatterns.add("SOT_*");
+        // includePatterns.add("*TriggerHandler.cls");
+
+        ArrayList<String> exclude = new ArrayList<String>();
+        exclude.add("QueueTriggerHandler.cls");
+        ArrayList<String> excludePatterns = new ArrayList<String>();
+        excludePatterns.add("*TriggerHandler.cls");
+        excludePatterns.add("*TriggerFacade.cls");
+        excludePatterns.add("*Processor.cls");
+        excludePatterns.add("Contact*");
+        excludePatterns.add("SOT_*");
+        excludePatterns.add("Opportunity*");
+        excludePatterns.add("Account*");
+        excludePatterns.add("*Test.cls");
+
+        boolean shouldFilter =
+            include.size() > 0 || includePatterns.size() > 0 ||
+            exclude.size() > 0 || excludePatterns.size() > 0;
+
+        // local function for testing file inclusivity
+        Function<String, Boolean> testIncludes = fileName -> {
+            // there are no include parameters, include file
+            if (include.size() == 0 && includePatterns.size() == 0) {
+                return true;
+            }
+
+            // file explicitly included
+            if (include.contains(fileName)) {
+                return true;
+            }
+
+            // filename matches include pattern
+            for (String pattern : includePatterns) {
+                // replace trailing or leading char that indicates this is a wildcard pattern
+                pattern = pattern.replace("*", "");
+                if (fileName.startsWith(pattern) || fileName.endsWith(pattern)) {
+                    return true;
                 }
+            }
+
+            // file was not explicitly included and does not match pattern
+            return false;
+        };
+
+        File folder = new File(path);
+        ArrayList<File> filesToCopy = new ArrayList<File>();
+        try {
+            List<File> files = Arrays.asList(folder.listFiles());
+            Utils.log("\nProcessing files:\n");
+            if (files != null && files.size() > 0) {
+                files.stream()
+
+                    // remove non-.cls files
+                    .filter(file -> file.getName().endsWith(".cls"))
+
+                    // decide which files to keep and which to add
+                    .forEach(file -> {
+                        String fileName = file.getName();
+                        // if include/exclude arguments provided, only add
+                        // files that pass exclusivity and inclusivity tests
+                        if (shouldFilter) {
+                            // start by filtering out files explitly not included
+                            if (!exclude.contains(fileName)) {
+                                // if there are exlude patterns, test file against those
+                                if (excludePatterns.size() > 0) {
+                                    for (String pattern : excludePatterns) {
+                                        pattern = pattern.replace("*", "");
+
+                                        // file is excluded by pattern, return early
+                                        if (fileName.startsWith(pattern) || fileName.endsWith(pattern)) {
+                                            return;
+                                        }
+                                    }
+
+                                    // file is definitely not excluded, test inclusivity
+                                    if (testIncludes.apply(fileName)) {
+                                        Utils.log(fileName);
+                                        filesToCopy.add(file);
+                                    }
+                                }
+                                // file not explicitly excluded, and no exclude
+                                // patterns to test. move on to testing inclusivity
+                                else {
+                                    if (testIncludes.apply(fileName)) {
+                                        Utils.log(fileName);
+                                        filesToCopy.add(file);
+                                    }
+                                }
+                            }
+                        }
+                        // No filtering arguents provided, add all files
+                        else {
+                            Utils.log(fileName);
+                            filesToCopy.add(file);
+                        }
+                    }
+                );
             } else {
                 System.out.println("WARNING: No files found in directory: " + path);
             }
         } catch (SecurityException e) {
             Utils.log(e);
         }
-        return listOfFilesToCopy;
+        return filesToCopy;
     }
 
     private String parseFile(String filePath) {
