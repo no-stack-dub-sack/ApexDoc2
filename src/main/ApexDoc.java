@@ -138,23 +138,19 @@ public class ApexDoc {
         }
 
         List<String> includeFiles = new ArrayList<String>();
-        List<String> includePattern = new ArrayList<String>();
         List<String> excludeFiles = new ArrayList<String>();
-        List<String> excludePattern = new ArrayList<String>();
 
         if (!includes.equals("")) {
             includeFiles = Arrays.asList(includes.split(","));
-            for (String entry : includeFiles) {
-                if (entry.startsWith("*") || entry.endsWith("*")) {
-                    includePattern.add(entry);
-                    includeFiles.remove(entry);
-                }
-            }
+        }
+
+        if (!excludes.equals("")) {
+            excludeFiles = Arrays.asList(excludes.split(","));
         }
 
         // find all the files to parse
         fileManager = new FileManager(targetDirectory);
-        ArrayList<File> files = fileManager.getFiles(sourceDirectory);
+        ArrayList<File> files = fileManager.getFiles(sourceDirectory, includeFiles, excludeFiles);
         ArrayList<TopLevelModel> models = new ArrayList<TopLevelModel>();
         TreeMap<String, TopLevelModel> modelMap = new TreeMap<String, TopLevelModel>();
 
