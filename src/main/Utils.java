@@ -227,9 +227,11 @@ public class Utils {
     public static void printHelp() {
         log("\nApexDoc2 - a tool for generating documentation from Salesforce Apex code class files.\n");
         log("    Invalid Arguments detected.  The correct syntax is:\n");
-        log("ApexDoc2 -s <source_directory> -t <target_directory> [-u <source_url>] [-h <home_page>] [-b <banner_page>] [-p <scope>] [-d <document_title>] [-c <toc_descriptions>] [-o <sort_order>]\n");
+        log("ApexDoc2 -s <source_directory> -t <target_directory> [-i <includes>] [-e <excludes>] [-u <source_url>] [-h <home_page>] [-b <banner_page>] [-p <scope>] [-d <document_title>] [-c <toc_descriptions>] [-o <sort_order>]\n");
         log("(S)ource Directory  - The folder location which contains your Apex .cls classes");
         log("(T)arget_directory  - Specifies your target folder where documentation will be generated.");
+        log("(I)ncludes          - Optional. A comma separated list of file names and/or wildcard patterns that indicate which files in your source directory should be documented.");
+        log("(E)xcludes          - Optional. A comma separated list of file names and/or wildcard patterns that indicate which files in your source directory should NOT be documented.");
         log("Source (U)RL        - Optional. Specifies a URL where the source is hosted (so ApexDoc2 can provide links to your source).");
         log("(H)ome Page         - Optional. Specifies the html file that contains the contents for the home page\'s content area.");
         log("(B)anner Page       - Optional. Specifies the text file that contains project information for the documentation header.");

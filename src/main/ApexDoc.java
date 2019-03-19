@@ -511,12 +511,12 @@ public class ApexDoc {
     }
 
     private static String[] scopeGuard(String scopes) throws IllegalArgumentException {
-        String[] scopeRegister = scopes.split(";");
+        String[] scopeRegister = scopes.split(",");
         for (String scope : scopeRegister) {
             if (!SCOPES.contains(scope)) {
                 throw new IllegalArgumentException(
                     "Value for <scope> argument: '" + scope +
-                    "' is invalid. Please provide a semi-colon delimited list of valid scopes." +
+                    "' is invalid. Please provide a comma delimited list of valid scopes." +
                     " Valid scopes include: " + String.join(", ", SCOPES)
                 );
             }
