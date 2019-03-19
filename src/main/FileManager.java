@@ -41,19 +41,17 @@ public class FileManager {
         try {
             (new File(path)).mkdirs();
 
-            int i = 0;
+            Utils.log("\nGenerating HTML...\n");
             for (String fileName : mapFNameToContent.keySet()) {
                 String contents = mapFNameToContent.get(fileName);
-                fileName = path + "/" + fileName + ".html";
-                File file = new File(fileName);
+                String fullyQualifiedFileName = path + fileName + ".html";
+                File file = new File(fullyQualifiedFileName);
                 fileOutputStream = new FileOutputStream(file);
                 dataOutputStream = new DataOutputStream(fileOutputStream);
                 dataOutputStream.write(contents.getBytes());
                 dataOutputStream.close();
                 fileOutputStream.close();
-                // prepend \n on 1st iteration for space between cmd line input & output
-                Utils.log((i == 0 ? "\n" : "") + fileName + " Processed...");
-                i++;
+                Utils.log(fileName + ".html" + " Generated...");
             }
 
             Utils.log(""); // print new line
