@@ -478,7 +478,7 @@ public class ApexDoc {
 
     private static String targetDirectoryGuard(String path) throws IllegalArgumentException {
         if (path != null && path.length() > 0) {
-            return path;
+            return path.endsWith("/") || path.endsWith("\\") ? path : path + "/";
         } else {
             throw new IllegalArgumentException(
                 "Value for <target_directory> argument: '" + path +
