@@ -8,8 +8,8 @@
 
   <packaging>jar</packaging>
   <properties>
-      <maven.compiler.source>1.8</maven.compiler.source>
-      <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
   </properties>
   <build>
     <sourceDirectory>src</sourceDirectory>
@@ -31,22 +31,22 @@
         </configuration>
       </plugin>
       <plugin>
-		<groupId>org.apache.maven.plugins</groupId>
-		<artifactId>maven-jar-plugin</artifactId>
-		<version>3.1.1</version>
-		<configuration>
-		  <!-- DO NOT include log4j.properties file in your Jar -->
-		  <excludes>
-			<exclude>**/log4j.properties</exclude>
-		  </excludes>
-		  <archive>
-			<manifest>
-				<!-- Jar file entry point -->
-				<mainClass>main.ApexDoc</mainClass>
-			</manifest>
-		  </archive>
-		</configuration>
-	  </plugin>
+		    <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.1.1</version>
+        <configuration>
+          <!-- DO NOT include log4j.properties file in your Jar -->
+          <excludes>
+			      <exclude>**/log4j.properties</exclude>
+		      </excludes>
+		      <archive>
+            <manifest>
+              <!-- Jar file entry point -->
+              <mainClass>main.ApexDoc</mainClass>
+            </manifest>
+		      </archive>
+		    </configuration>
+	    </plugin>
     </plugins>
   </build>
 </project>

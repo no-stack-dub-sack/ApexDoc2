@@ -20,10 +20,12 @@ As the Salesforce Foundation was [no longer able to offer direct support for rep
 |-------------------------- | ---------------------|
 | -s *(s)ource_directory* | The folder location which contains your apex .cls classes.|
 | -t *(t)arget_directory* | The folder location where documentation will be generated to.|
+| -i *(i)ncludes* | A comma separated list of file names and/or wildcard patterns that indicate which files in your source directory should be documented. Only simple leading and trailing wildcards are supported. E.g. 'NotificationsEmailer.cls,\*TriggerHandler.cls,Contact\*` will result in the file 'NotificationsEmailer.cls' being processed, as well as any files that begin with 'Contact' or end with 'TriggerHandler.cls'. Optional. |
+| -e *(e)xcludes* | A comma separated list of file names and/or wildcard patterns that indicate which files in your source directory should NOT be documented. Only simple leading and trailing wildcards are supported. E.g. 'NotificationsEmailer.cls,\*TriggerHandler.cls,Contact\*` will result in all files being processed EXCEPT 'NotificationsEmailer.cls' and those begin with 'Contact' or end with 'TriggerHandler.cls'. Note that files are excluded before they are included, so keep this in mind when using 'includes' and 'excludes' together. Optional. |
 | -u *source_(u)rl* | A URL where the source is hosted (so ApexDoc2 can provide links to your source). Optional.|
 | -h *(h)ome_page* | The full path to an html file that contains the contents for the home page's content area. Optional.|
 | -b *(b)anner_page* | The full path to an html file that contains the content for the banner section of each generated page. Optional.|
-| -p *sco(p)e* | A semicolon separated list of scopes to document.  Defaults to 'global;public;webService'. Optional.|
+| -p *sco(p)e* | A comma separated list of scopes to document.  Defaults to 'global,public,webService'. Optional.|
 | -d *(d)oc_title* | The value for the document's &lt;title&gt; attribute.  Defaults to 'ApexDocs'. Optional.|
 | -c *to(c)_descriptions* | If 'true', will hide the method's description snippet in the class's table of contents. Defaults to 'false'. Optional.|
 | -o *sort_(o)rder* | The order in which class methods, properties, and inner classes are presented. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. Optional.|
@@ -39,18 +41,18 @@ REM replace the path below with the path where the ApexDoc2.jar file lives on yo
 java -jar C:\Users\path\to\ApexDoc2.jar %*
 ```
 
-Then add the directory where the batch file lives to your PATH environment variable, and you will be able to call ApexDoc2 like so:
+Then add the directory where the batch file lives to your PATH environment variable, and you will be able to call ApexDoc2 like so (`^` char used to indicate command continues on next line in Windows CMD Prompt):
 
 ```shell
-ApexDoc2
-    -s C:\Users\pweinberg\Workspaces\MyProject\src\classes
-    -t "C:\Users\pweinberg\Documentation\My Project Docs"
-    -p global;public;private;testmethod;webService
-    -h C:\Users\pweinberg\Documentation\assets\homepage.htm
-    -b C:\Users\pweinberg\Documentation\assets\projectheader.htm
-    -u http://github.com/NotARealAccount/MyProject/blob/dev/src/classes/
-    -d "My Apex Project"
-    -o logical
+ApexDoc2 ^
+    -s C:\Users\pweinberg\Workspaces\MyProject\src\classes ^
+    -t "C:\Users\pweinberg\Documentation\My Project Docs" ^
+    -p global,public,private,testmethod,webService ^
+    -h C:\Users\pweinberg\Documentation\assets\homepage.htm ^
+    -b C:\Users\pweinberg\Documentation\assets\projectheader.htm ^
+    -u http://github.com/NotARealAccount/MyProject/blob/dev/src/classes/ ^
+    -d "My Apex Project" ^
+    -o logical ^
     -c false
 ```
 

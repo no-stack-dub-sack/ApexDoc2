@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Stack;
 import java.util.TreeMap;
 
@@ -45,6 +46,7 @@ public class ApexDoc {
     private static FileManager fileManager;
     public static String targetDirectory;
     private static String sourceDirectory;
+    private static int numProcessed = 0;
 
     static {
         // initialize scopes const
@@ -70,12 +72,17 @@ public class ApexDoc {
 
     // public main routine which is used by both command line invocation and
     // Eclipse PlugIn invocation
-    public static void RunApexDoc(String[] args) {;
+    public static void RunApexDoc(String[] args) {
+        StopWatch timer = new StopWatch();
+        timer.start();
+
         String homefilepath = "";
         String bannerFilePath = "";
         String hostedSourceURL = "";
         String documentTitle = "";
         String sortOrder = ORDER_ALPHA;
+        String includes = "";
+        String excludes = "";
 
         boolean showMethodTOCDescription = true;
 
@@ -108,6 +115,10 @@ public class ApexDoc {
                 showMethodTOCDescription = showTOCGuard(args[++i]);
             } else if (args[i].equalsIgnoreCase("-o")) {
                 sortOrder = sortOrderGuard(args[++i].trim());
+            } else if (args[i].equalsIgnoreCase("-e")) {
+                excludes = args[++i].trim();
+            } else if (args[i].equalsIgnoreCase("-i")) {
+                includes = args[++i].trim();
             } else {
                 Utils.printHelp();
                 System.exit(-1);
@@ -126,9 +137,20 @@ public class ApexDoc {
             rgstrScope[2] = WEB_SERVICE;
         }
 
+        List<String> includeFiles = new ArrayList<String>();
+        List<String> excludeFiles = new ArrayList<String>();
+
+        if (!includes.equals("")) {
+            includeFiles = Arrays.asList(includes.split(","));
+        }
+
+        if (!excludes.equals("")) {
+            excludeFiles = Arrays.asList(excludes.split(","));
+        }
+
         // find all the files to parse
         fileManager = new FileManager(targetDirectory);
-        ArrayList<File> files = fileManager.getFiles(sourceDirectory);
+        ArrayList<File> files = fileManager.getFiles(sourceDirectory, includeFiles, excludeFiles);
         ArrayList<TopLevelModel> models = new ArrayList<TopLevelModel>();
         TreeMap<String, TopLevelModel> modelMap = new TreeMap<String, TopLevelModel>();
 
@@ -142,12 +164,11 @@ public class ApexDoc {
         // parse each file, creating a class or enum model for it
         files.stream().forEach(fromFile -> {
             String fromFileName = fromFile.getAbsolutePath();
-            if (fromFileName.endsWith(".cls")) {
-                TopLevelModel model = parseFileContents(fromFileName);
-                modelMap.put(model.getName().toLowerCase(), model);
-                if (model != null) {
-                    models.add(model);
-                }
+            TopLevelModel model = parseFileContents(fromFileName);
+            modelMap.put(model.getName().toLowerCase(), model);
+            if (model != null) {
+                models.add(model);
+                numProcessed++;
             }
         });
 
@@ -162,7 +183,8 @@ public class ApexDoc {
         fileManager.createDocs(classGroupMap, modelMap, models, bannerContents, homeContents);
 
         // we are done!
-        Utils.log("ApexDoc2 has completed!");
+        timer.stop();
+        Utils.log("ApexDoc2 complete! " + numProcessed + " Apex files processed in " + timer.getTime() + " ms.");
         System.exit(0);
     }
 
@@ -489,15 +511,19 @@ public class ApexDoc {
     }
 
     private static String[] scopeGuard(String scopes) throws IllegalArgumentException {
-        String[] scopeRegister = scopes.split(";");
+        int i = 0;
+        String[] scopeRegister = scopes.split(",");
         for (String scope : scopeRegister) {
+            scope = scope.toLowerCase().trim();
             if (!SCOPES.contains(scope)) {
                 throw new IllegalArgumentException(
                     "Value for <scope> argument: '" + scope +
-                    "' is invalid. Please provide a semi-colon delimited list of valid scopes." +
+                    "' is invalid. Please provide a comma delimited list of valid scopes." +
                     " Valid scopes include: " + String.join(", ", SCOPES)
                 );
             }
+            scopeRegister[i] = scope;
+            i++;
         }
 
         return scopeRegister;

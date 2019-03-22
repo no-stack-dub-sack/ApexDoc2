@@ -20,6 +20,8 @@
 - Added optional **<toc_desc>** command line argument: `-c`. As a matter of preference, if you find the method description snippet in the class's table of contents distracting, you can now hide it with this argument. Defaults to `false`.
 - Added optional **<sort_order>** command line argument: `-o`. This controls the order in which methods, properties, and inner classes are presented in the output documentation. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to the ApexDoc original of alphabetical order.
 - Added optional **<doc_title>** command line argument: `-d`. Allows you to set the value of the HTML document's `<title>` attribute. Now defaults to 'ApexDocs' instead of 'index.html'.
+- Added optional **<includes>** command line argument: `-i`. Allows you to provide a comma separated list of file names and/or simple wildcard patterns that indicate which files in your source directory should be documented.
+- Added optional **<excludes>** command line argument: `-e`. Allows you to provide a comma separated list of file names and/or simple wildcard patterns that indicate which files in your source directory should NOT be documented.
 - Added support for `//` style comments inside of `@example` code snippets in case some explanation of the code is needed, it will appear properly commented out in the output docs.
 - Added support for empty line preservation inside of `@example` code snippets where spacing might be needed for complex code examples.
 - Added support for line breaks in ApexDoc comments with use of `<br>`, `<br />` or `<br >` tags.

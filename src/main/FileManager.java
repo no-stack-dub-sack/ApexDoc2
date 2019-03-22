@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -39,19 +40,17 @@ public class FileManager {
         try {
             (new File(path)).mkdirs();
 
-            int i = 0;
+            Utils.log("\nGenerating HTML...\n");
             for (String fileName : mapFNameToContent.keySet()) {
                 String contents = mapFNameToContent.get(fileName);
-                fileName = path + "/" + fileName + ".html";
-                File file = new File(fileName);
+                String fullyQualifiedFileName = path + fileName + ".html";
+                File file = new File(fullyQualifiedFileName);
                 fileOutputStream = new FileOutputStream(file);
                 dataOutputStream = new DataOutputStream(fileOutputStream);
                 dataOutputStream.write(contents.getBytes());
                 dataOutputStream.close();
                 fileOutputStream.close();
-                // prepend \n on 1st iteration for space between cmd line input & output
-                Utils.log((i == 0 ? "\n" : "") + fileName + " Processed...");
-                i++;
+                Utils.log(fileName + ".html" + " Generated...");
             }
 
             Utils.log(""); // print new line
@@ -186,26 +185,55 @@ public class FileManager {
         doCopy("highlight.js", toFileName);
     }
 
-    public ArrayList<File> getFiles(String path) {
+    public ArrayList<File> getFiles(String path, List<String> includes, List<String> excludes) {
         File folder = new File(path);
-        ArrayList<File> listOfFilesToCopy = new ArrayList<File>();
+        ArrayList<File> filesToCopy = new ArrayList<File>();
+
         try {
-            File[] listOfFiles = folder.listFiles();
+            List<File> files = Arrays.asList(folder.listFiles());
             Utils.log("\nProcessing files:\n");
-            if (listOfFiles != null && listOfFiles.length > 0) {
-                for (int i = 0; i < listOfFiles.length; i++) {
-                    Utils.log(listOfFiles[i].getName());
-                    if (listOfFiles[i].isFile()) {
-                        listOfFilesToCopy.add(listOfFiles[i]);
+            if (files != null && files.size() > 0) {
+                // decide which files to process. if include/excludes args provided
+                // only process files that pass exclusivity and inclusivity tests
+                files.stream().forEach(file -> {
+                    String fileName = file.getName();
+                    // skip files that are not class files
+                    if (!fileName.endsWith(".cls")) {
+                        return;
                     }
-                }
+
+                    for (String entry : excludes) {
+                        entry = entry.trim().replace("*", "");
+                        // file is explictly excluded or matches wildcard, return early
+                        if (fileName.startsWith(entry) || fileName.endsWith(entry))  {
+                            return;
+                        }
+                    }
+
+                    // no includes params, include file
+                    if (includes.size() == 0) {
+                        Utils.log(fileName);
+                        filesToCopy.add(file);
+                        return;
+                    }
+
+                    // there are includes params, only include files that pass test
+                    for (String entry : includes) {
+                        entry = entry.trim().replace("*", "");
+                        // file matches explicitly matches or matches wildcard
+                        if (fileName.startsWith(entry) || fileName.endsWith(entry))  {
+                            Utils.log(fileName);
+                            filesToCopy.add(file);
+                        }
+                    }
+                });
             } else {
                 System.out.println("WARNING: No files found in directory: " + path);
             }
         } catch (SecurityException e) {
             Utils.log(e);
         }
-        return listOfFilesToCopy;
+        return filesToCopy;
     }
 
     private String parseFile(String filePath) {
