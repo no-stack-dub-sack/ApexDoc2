@@ -511,8 +511,10 @@ public class ApexDoc {
     }
 
     private static String[] scopeGuard(String scopes) throws IllegalArgumentException {
+        int i = 0;
         String[] scopeRegister = scopes.split(",");
         for (String scope : scopeRegister) {
+            scope = scope.toLowerCase().trim();
             if (!SCOPES.contains(scope)) {
                 throw new IllegalArgumentException(
                     "Value for <scope> argument: '" + scope +
@@ -520,6 +522,8 @@ public class ApexDoc {
                     " Valid scopes include: " + String.join(", ", SCOPES)
                 );
             }
+            scopeRegister[i] = scope;
+            i++;
         }
 
         return scopeRegister;

@@ -41,18 +41,18 @@ REM replace the path below with the path where the ApexDoc2.jar file lives on yo
 java -jar C:\Users\path\to\ApexDoc2.jar %*
 ```
 
-Then add the directory where the batch file lives to your PATH environment variable, and you will be able to call ApexDoc2 like so:
+Then add the directory where the batch file lives to your PATH environment variable, and you will be able to call ApexDoc2 like so (`^` char used to indicate command continues on next line in Windows CMD Prompt):
 
 ```shell
-ApexDoc2
-    -s C:\Users\pweinberg\Workspaces\MyProject\src\classes
-    -t "C:\Users\pweinberg\Documentation\My Project Docs"
-    -p global,public,private,testmethod,webService
-    -h C:\Users\pweinberg\Documentation\assets\homepage.htm
-    -b C:\Users\pweinberg\Documentation\assets\projectheader.htm
-    -u http://github.com/NotARealAccount/MyProject/blob/dev/src/classes/
-    -d "My Apex Project"
-    -o logical
+ApexDoc2 ^
+    -s C:\Users\pweinberg\Workspaces\MyProject\src\classes ^
+    -t "C:\Users\pweinberg\Documentation\My Project Docs" ^
+    -p global,public,private,testmethod,webService ^
+    -h C:\Users\pweinberg\Documentation\assets\homepage.htm ^
+    -b C:\Users\pweinberg\Documentation\assets\projectheader.htm ^
+    -u http://github.com/NotARealAccount/MyProject/blob/dev/src/classes/ ^
+    -d "My Apex Project" ^
+    -o logical ^
     -c false
 ```
 
