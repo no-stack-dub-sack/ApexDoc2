@@ -16,20 +16,20 @@ As the name implies, ApexDoc2 is the second rendition of this project. Before fi
 As the Salesforce Foundation was [no longer able to offer direct support for reported issues or incorporate enhancement requests](https://github.com/SalesforceFoundation/ApexDoc#credits), I am attempting to revitalize the project as ApexDoc2. I believe there is still a need for this project, and pull requests and issues to the original ApexDoc continue to be submitted (however sparsely) which have, or report, some much needed bug fixes. Plus, it might even be fun! If anyone happens to notice this, pull requests, issues, and help are all welcome.
 
 ## Command Line Parameters
-| parameter | description |
-|-------------------------- | ---------------------|
-| -s *(s)ource_directory* | The folder location which contains your apex .cls classes.|
-| -t *(t)arget_directory* | The folder location where documentation will be generated to.|
-| -i *(i)ncludes* | A comma separated, case-sensitive list of file names and/or wildcard patterns that indicate which files in your source directory should be documented. Only simple leading and trailing wildcards are supported. E.g. 'NotificationsEmailer.cls,\*TriggerHandler.cls,Contact\*` will result in the file 'NotificationsEmailer.cls' being processed, as well as any files that begin with 'Contact' or end with 'TriggerHandler.cls'. Optional. |
-| -e *(e)xcludes* | A comma separated, case-sensitive list of file names and/or wildcard patterns that indicate which files in your source directory should NOT be documented. Only simple leading and trailing wildcards are supported. E.g. 'NotificationsEmailer.cls,\*TriggerHandler.cls,Contact\*` will result in all files being processed EXCEPT 'NotificationsEmailer.cls' and those begin with 'Contact' or end with 'TriggerHandler.cls'. Note that files are excluded before they are included, so keep this in mind when using 'includes' and 'excludes' together. Optional. |
-| -u *source_(u)rl* | A URL where the source is hosted (so ApexDoc2 can provide links to your source). Optional.|
-| -h *(h)ome_page* | The full path to an html file that contains the contents for the home page's content area. Optional.|
-| -b *(b)anner_page* | The full path to an html file that contains the content for the banner section of each generated page. Optional.|
-| -p *sco(p)e* | A comma separated list of scopes to document.  Defaults to 'global,public,webService'. Optional.|
-| -d *(d)oc_title* | The value for the document's &lt;title&gt; attribute.  Defaults to 'ApexDocs'. Optional.|
-| -c *to(c)_descriptions* | If 'true', will hide the method's description snippet in the class's table of contents. Defaults to 'false'. Optional.|
-| -o *sort_(o)rder* | The order in which class methods, properties, and inner classes are presented. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. Optional.|
-| --v, --version | Used alone; print the ApexDoc2 version. E.g. `ApexDoc2 --v` |
+| Name | Parameter | Required | Description |
+|------|-----------|----------|-------------|
+| *(s)ource_directory* | -s | :heavy_check_mark: | The folder location which contains your apex .cls classes.|
+| *(t)arget_directory* | -t | :heavy_check_mark: | The folder location where documentation will be generated to.|
+| *(i)ncludes* | -i | :x: | A comma separated, case-sensitive list of file names and/or wildcard patterns that indicate which files in your source directory should be documented. Only simple leading and trailing wildcards are supported. E.g. 'NotificationsEmailer.cls,\*TriggerHandler.cls,Contact\*` will result in the file 'NotificationsEmailer.cls' being processed, as well as any files that begin with 'Contact' or end with 'TriggerHandler.cls'. Optional. |
+| *(e)xcludes* | -e | :x: | A comma separated, case-sensitive list of file names and/or wildcard patterns that indicate which files in your source directory should NOT be documented. Only simple leading and trailing wildcards are supported. E.g. 'NotificationsEmailer.cls,\*TriggerHandler.cls,Contact\*` will result in all files being processed EXCEPT 'NotificationsEmailer.cls' and those begin with 'Contact' or end with 'TriggerHandler.cls'. Note that files are excluded before they are included, so keep this in mind when using 'includes' and 'excludes' together. Optional. |
+| *source_(u)rl* | -u | :x: | A URL where the source is hosted (so ApexDoc2 can provide links to your source). Optional.|
+| *(h)ome_page* | -h | :x: | The full path to an html file that contains the contents for the home page's content area. Optional.|
+| *(b)anner_page* | -b | :x: | The full path to an html file that contains the content for the banner section of each generated page. Optional.|
+| *sco(p)e* | -p | :x: | A comma separated list of scopes to document.  Defaults to 'global,public,webService'. Optional.|
+| *(d)oc_title* | -d | :x: | The value for the document's &lt;title&gt; attribute.  Defaults to 'ApexDocs'. Optional.|
+| *to(c)_descriptions* |  -c | :x: | If 'true', will hide the method's description snippet in the class's table of contents. Defaults to 'false'. Optional.|
+| *sort_(o)rder* | -o | :x: | The order in which class methods, properties, and inner classes are presented. Either 'logical', the order they appear in the source file, or 'alpha', alphabetically. Defaults to 'alpha'. Optional.|
+| *(v)ersion* | --v, --version | :x: | Used alone; print the ApexDoc2 version. E.g. `ApexDoc2 --v` |
 
 ## Usage
 For easiest usage, we recommend creating a simple batch file to run the program. Copy ApexDoc2.jar file to your local machine (each release tag in gitHub has the matching apexdoc2.jar attached to it). Make sure that java is on your path, and create a batch file called 'ApexDoc2' containing the following:
@@ -107,7 +107,7 @@ Located in the lines above any top-level type that lives within a .cls file, or 
 *
 * @description This class is the base class from which all 'Plugins' will extend. It provides a suite of abstract and
 * virtual methods, which implement the `JobPluggable` interface.
-* &lt;br&gt;&lt;br&gt;
+* <br><br>
 * To ensure flexibility, all methods can be overridden to accommodate a particular plugin's needs.
 */
 public abstract class JobPlugin implements JobPluggable {
