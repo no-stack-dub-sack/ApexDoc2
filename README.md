@@ -1,6 +1,6 @@
 ***
 
-**NOTE:** ApexDoc2 has not yet been released! See the CHANGELOG for updates that will be forthcoming in the next release. This note will be removed with the first release since forking ApexDoc.
+**NOTE:** ApexDoc2 ~~has not yet been~~ **will never be** released! ~~See the CHANGELOG for updates that will be forthcoming in the next release. This note will be removed with the first release since forking ApexDoc.~~ This project was improved from the original Java app, but has since changed direction, and been completely re-written as TypeScript, for use as a VSCode extension instead. Since it makes no sense to maintain both projects, this repo is being archived. If there ever seems like there is demand for it, and to protect it's viability outside of the VSCode ecosystem, command line capabilities may also be added to that project in the future.
 
 ***
 
